@@ -22,9 +22,7 @@ function App() {
   return (
     <div>
       <h1>Bienvenido, {session.user.email}</h1>
-      <button onClick={() => supabase.auth.signOut()}>
-        Cerrar sesión
-      </button>
+      <button onClick={() => supabase.auth.signOut()}>Cerrar sesión</button>
     </div>
   )
 }
