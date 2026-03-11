@@ -1,0 +1,86 @@
+import { useState, useEffect, useRef } from 'react'
+import { getMessages, saveMessage } from '../lib/messages'
+
+export default function Chat({ userId, profile }) {
+  const [messages, setMessages] = useState([])
+  const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
+  const bottomRef = useRef(null)
+
+  async function sendMessage() {
+    if (!input.trim()) return
+
+    const userMessage = input
+    setInput('')
+    setLoading(true)
+
+    await saveMessage(userId, 'user', userMessage)
+    setMessages((prev) => [...prev, { role: 'user', content: userMessage }])
+
+    const response = await fetch('/.netlify/functions/claude', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-tricoach-secret': import.meta.env.VITE_TRICOACH_SECRET || ''
+      },
+      body: JSON.stringify({
+        messages: [
+          ...messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
+          { role: 'user', content: userMessage }
+        ],
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000
+      }),
+    })
+
+    const data = await response.json()
+    const assistantMessage = data.content?.[0]?.text || 'Error al responder'
+
+    await saveMessage(userId, 'assistant', assistantMessage)
+    setMessages((prev) => [...prev, { role: 'assistant', content: assistantMessage }])
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    getMessages(userId).then(setMessages)
+  }, [userId])
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  return (
+    <div style={{ maxWidth: 600, margin: '0 auto', padding: 24 }}>
+      <div style={{ height: 400, overflowY: 'auto', border: '1px solid #ccc', padding: 16, marginBottom: 16 }}>
+        {messages.map((msg, i) => (
+          <div key={i} style={{ marginBottom: 12, textAlign: msg.role === 'user' ? 'right' : 'left' }}>
+            <span style={{
+              background: msg.role === 'user' ? '#0070f3' : '#f0f0f0',
+              color: msg.role === 'user' ? 'white' : 'black',
+              padding: '8px 12px',
+              borderRadius: 12,
+              display: 'inline-block',
+              maxWidth: '80%'
+            }}>
+              {msg.content}
+            </span>
+          </div>
+        ))}
+        {loading && <p style={{ color: '#999' }}>El coach está escribiendo...</p>}
+        <div ref={bottomRef} />
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input
+          style={{ flex: 1, padding: 8 }}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+          placeholder="Escribe un mensaje..."
+        />
+        <button onClick={sendMessage} disabled={loading}>
+          Enviar
+        </button>
+      </div>
+    </div>
+  )
+}

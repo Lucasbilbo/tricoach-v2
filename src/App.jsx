@@ -3,6 +3,7 @@ import { supabase } from './lib/supabase'
 import { getProfile, createProfile } from './lib/profiles'
 import Login from './components/Login'
 import Onboarding from './components/Onboarding'
+import Chat from './components/Chat'
 
 function App() {
   const [session, setSession] = useState(null)
@@ -10,15 +11,19 @@ function App() {
   const [loading, setLoading] = useState(true)
 
   async function loadOrCreateProfile(user) {
+    console.log('Cargando perfil para:', user.id)
     let profile = await getProfile(user.id)
+    console.log('Perfil obtenido:', profile)
     if (!profile) {
       profile = await createProfile(user)
+      console.log('Perfil creado:', profile)
     }
     setProfile(profile)
   }
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Sesión:', session)
       setSession(session)
       if (session) loadOrCreateProfile(session.user)
       setLoading(false)
@@ -43,13 +48,14 @@ function App() {
 
   return (
     <div>
-      <h1>Bienvenido, {profile?.nombre || profile?.email}</h1>
-      <p>Deporte: {profile?.deporte}</p>
-      <p>Nivel: {profile?.nivel}</p>
-      <p>Plan: {profile?.plan}</p>
-      <button onClick={() => supabase.auth.signOut()}>
-        Cerrar sesión
-      </button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 24px', borderBottom: '1px solid #eee' }}>
+        <h2>TriCoach AI</h2>
+        <div>
+          <span style={{ marginRight: 16 }}>{profile?.nombre}</span>
+          <button onClick={() => supabase.auth.signOut()}>Cerrar sesión</button>
+        </div>
+      </div>
+      <Chat userId={session.user.id} profile={profile} />
     </div>
   )
 }

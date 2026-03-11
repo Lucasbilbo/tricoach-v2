@@ -16,11 +16,15 @@ export default function Onboarding({ userId, onComplete }) {
   }
 
   const handleSubmit = async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    console.log('Sesión en onboarding:', session)
+
     const { error } = await supabase
       .from('profiles')
       .update(form)
       .eq('id', userId)
 
+    console.log('Error al actualizar:', error)
     if (!error) onComplete()
   }
 
