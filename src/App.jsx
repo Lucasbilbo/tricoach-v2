@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
 import { getProfile, createProfile } from './lib/profiles'
+import { getPlan, generatePlan } from './lib/plans'
 import Login from './components/Login'
 import Onboarding from './components/Onboarding'
 import Chat from './components/Chat'
+import WeeklyPlan from './components/WeeklyPlan'
 import EditProfile from './components/EditProfile'
 import StravaConnect from './components/StravaConnect'
 import CookieBanner from './components/CookieBanner'
@@ -11,6 +13,7 @@ import CookieBanner from './components/CookieBanner'
 function App() {
   const [session, setSession] = useState(null)
   const [profile, setProfile] = useState(null)
+  const [plan, setPlan] = useState(null)
   const [loading, setLoading] = useState(true)
   const [editando, setEditando] = useState(false)
 
@@ -31,13 +34,19 @@ function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
-      if (session) loadOrCreateProfile(session.user)
+      if (session) {
+        loadOrCreateProfile(session.user)
+        getPlan(session.user.id).then(setPlan).catch(() => {})
+      }
       setLoading(false)
     })
 
     supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
-      if (session) loadOrCreateProfile(session.user)
+      if (session) {
+        loadOrCreateProfile(session.user)
+        getPlan(session.user.id).then(setPlan).catch(() => {})
+      }
     })
   }, [])
 
@@ -47,7 +56,11 @@ function App() {
     return (
       <Onboarding
         userId={session.user.id}
-        onComplete={() => loadOrCreateProfile(session.user)}
+        onComplete={async () => {
+          await loadOrCreateProfile(session.user)
+          const newPlan = await generatePlan(session.user.id).catch(() => null)
+          if (newPlan) setPlan(newPlan)
+        }}
       />
     )
   }
@@ -74,6 +87,7 @@ function App() {
       <div style={{ padding: '8px 24px', borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 12 }}>
         <StravaConnect userId={session.user.id} onConnected={() => loadOrCreateProfile(session.user)} />
       </div>
+      <WeeklyPlan userId={session.user.id} plan={plan} onPlanUpdate={setPlan} />
       <Chat userId={session.user.id} profile={profile} />
       {editando && (
         <EditProfile

@@ -39,6 +39,6 @@ created_at, messages_today, last_message_date, personalidad (default: 'cercano')
 contexto, strava_token, strava_refresh_token, strava_token_expires_at,
 intervals_athlete_id, intervals_api_key
 
-## Tests actuales: 35
-- 31 Vitest (npm test)
+## Tests actuales: 39
+- 35 Vitest (npm test)
 - 4 Playwright E2E (npx playwright test)

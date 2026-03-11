@@ -14,7 +14,7 @@ Sin perder nunca el rigor técnico.`,
 Usas frases poderosas, referencias a grandes atletas y haces que el usuario sienta que puede con todo.`,
 }
 
-export function buildSystemPrompt(profile, personalidad = 'cercano', actividades = null) {
+export function buildSystemPrompt(profile, personalidad = 'cercano', actividades = null, plan = null) {
   const deporte = profile.deporte || 'deporte de resistencia'
   const nivel = profile.nivel || 'principiante'
   const objetivo = profile.objetivo || 'mejorar mi forma física'
@@ -38,6 +38,12 @@ export function buildSystemPrompt(profile, personalidad = 'cercano', actividades
     ? `\nACTIVIDADES RECIENTES DEL ATLETA:\n${actividades.resumen}\n\nUsa esta información para personalizar tus respuestas.`
     : '\nEl atleta no tiene Strava conectado. Puedes sugerirle que lo conecte para darte más contexto.'
 
+  const planSection = plan
+    ? `\nPLAN DE ESTA SEMANA:\n${plan.sesiones.map(s =>
+        `${s.dia}: ${s.tipo} - ${s.descripcion}${s.completada ? ' ✓ completada' : ' (pendiente)'}`
+      ).join('\n')}`
+    : ''
+
   return `Eres un coach deportivo personal experto en ${deporteInfo[deporte] || deporte}.
 Tu atleta se llama ${nombre}, tiene nivel ${nivel} y su objetivo es: ${objetivo}.
 ${fechaCarrera}
@@ -54,5 +60,5 @@ Tu rol es:
 
 Responde siempre en español, de forma clara y concisa.
 Usa datos concretos: distancias, tiempos, zonas de frecuencia cardíaca cuando sea relevante.
-${actividadesSection}`
+${actividadesSection}${planSection}`
 }
