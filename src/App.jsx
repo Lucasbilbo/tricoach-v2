@@ -6,6 +6,7 @@ import Onboarding from './components/Onboarding'
 import Chat from './components/Chat'
 import EditProfile from './components/EditProfile'
 import StravaConnect from './components/StravaConnect'
+import CookieBanner from './components/CookieBanner'
 
 function App() {
   const [session, setSession] = useState(null)
@@ -81,6 +82,7 @@ function App() {
           onClose={() => setEditando(false)}
         />
       )}
+      <CookieBanner />
     </div>
   )
 }
