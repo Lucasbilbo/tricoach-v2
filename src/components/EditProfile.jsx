@@ -8,6 +8,8 @@ export default function EditProfile({ profile, onUpdate, onClose }) {
   const [objetivo, setObjetivo] = useState(profile.objetivo || '')
   const [fechaCarrera, setFechaCarrera] = useState(profile.fecha_carrera || '')
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   async function handleSave() {
     setSaving(true)
@@ -21,6 +23,25 @@ export default function EditProfile({ profile, onUpdate, onClose }) {
     if (!error) onUpdate(data)
     setSaving(false)
     onClose()
+  }
+
+  async function handleDelete() {
+    setDeleting(true)
+    try {
+      await fetch('/.netlify/functions/delete-account', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-tricoach-secret': import.meta.env.VITE_TRICOACH_SECRET || ''
+        },
+        body: JSON.stringify({ userId: profile.id })
+      })
+      await supabase.auth.signOut()
+    } catch (error) {
+      console.error('Error borrando cuenta:', error)
+    } finally {
+      setDeleting(false)
+    }
   }
 
   return (
@@ -60,11 +81,43 @@ export default function EditProfile({ profile, onUpdate, onClose }) {
           value={fechaCarrera} onChange={e => setFechaCarrera(e.target.value)} />
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button onClick={onClose} disabled={saving}>Cancelar</button>
-          <button onClick={handleSave} disabled={saving}
+          <button onClick={onClose} disabled={saving || deleting}>Cancelar</button>
+          <button onClick={handleSave} disabled={saving || deleting}
             style={{ background: '#0070f3', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 6 }}>
             {saving ? 'Guardando...' : 'Guardar'}
           </button>
+        </div>
+
+        <hr style={{ margin: '24px 0' }} />
+
+        <div>
+          <p style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>
+            Zona de peligro — esta acción es irreversible.
+          </p>
+          {!confirmDelete ? (
+            <button
+              onClick={() => setConfirmDelete(true)}
+              style={{ background: 'none', border: '1px solid #ef4444', color: '#ef4444', padding: '8px 16px', borderRadius: 6, cursor: 'pointer' }}
+            >
+              Eliminar mi cuenta
+            </button>
+          ) : (
+            <div>
+              <p style={{ fontSize: 13, color: '#ef4444', marginBottom: 8 }}>
+                ¿Seguro? Se borrarán todos tus datos y conversaciones.
+              </p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => setConfirmDelete(false)} disabled={deleting}>Cancelar</button>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  style={{ background: '#ef4444', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 6, cursor: 'pointer' }}
+                >
+                  {deleting ? 'Eliminando...' : 'Sí, eliminar cuenta'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
