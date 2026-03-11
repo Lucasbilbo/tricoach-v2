@@ -17,7 +17,13 @@ function formatPace(distanceM, movingTimeSec) {
 }
 
 function formatActivities(raw) {
-  const actividades = raw.map(a => ({
+  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const recentRaw = raw.filter(a => a.start_date_local && new Date(a.start_date_local).getTime() >= sevenDaysAgo);
+
+  const usandoUltimaSemana = recentRaw.length > 0;
+  const rawToUse = usandoUltimaSemana ? recentRaw : raw.slice(0, 3);
+
+  const actividades = rawToUse.map(a => ({
     tipo: a.type,
     distancia_km: Math.round((a.distance / 1000) * 10) / 10,
     duracion_min: Math.round(a.moving_time / 60),
@@ -28,7 +34,7 @@ function formatActivities(raw) {
   const total_km = actividades.reduce((sum, a) => sum + a.distancia_km, 0);
   const n = actividades.length;
 
-  const runActivities = raw.filter(a => a.type === 'Run' || a.type === 'VirtualRun');
+  const runActivities = rawToUse.filter(a => a.type === 'Run' || a.type === 'VirtualRun');
   let ritmoMedio = null;
   if (runActivities.length > 0) {
     const totalSec = runActivities.reduce((s, a) => s + a.moving_time, 0);
@@ -36,7 +42,12 @@ function formatActivities(raw) {
     ritmoMedio = formatPace(totalDist, totalSec);
   }
 
-  const resumenParts = [`Última semana: ${n} salidas, ${Math.round(total_km * 10) / 10}km totales`];
+  let resumenParts;
+  if (usandoUltimaSemana) {
+    resumenParts = [`Última semana: ${n} salidas, ${Math.round(total_km * 10) / 10}km totales`];
+  } else {
+    resumenParts = [`Últimas actividades: ${n} salidas, ${Math.round(total_km * 10) / 10}km totales`];
+  }
   if (ritmoMedio) resumenParts.push(`ritmo medio ${ritmoMedio}/km`);
 
   return {
