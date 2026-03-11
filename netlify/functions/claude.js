@@ -1,4 +1,5 @@
 const https = require('https');
+const { createClient } = require('@supabase/supabase-js');
 
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT_MAX = 10;
@@ -65,12 +66,55 @@ exports.handler = async (event) => {
     parsed.messages = parsed.messages.slice(-60);
   }
 
+  // ── Validar límite Free en backend ──
+const { userId } = parsed;
+if (userId) {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+
+  const profileData = await new Promise((res) => {
+    const path = `/rest/v1/profiles?id=eq.${userId}&select=plan,messages_today,last_message_date`;
+    const options = {
+      hostname: new URL(supabaseUrl).hostname,
+      path,
+      method: 'GET',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json'
+      }
+    };
+    const req = https.request(options, (r) => {
+      let d = '';
+      r.on('data', chunk => d += chunk);
+      r.on('end', () => {
+        try { res(JSON.parse(d)[0]); } catch { res(null); }
+      });
+    });
+    req.on('error', () => res(null));
+    req.end();
+  });
+
+  if (profileData && profileData.plan === 'free') {
+    const today = new Date().toISOString().split('T')[0];
+    if (profileData.last_message_date === today && profileData.messages_today >= 1) {
+      return {
+        statusCode: 429,
+        headers: CORS,
+        body: JSON.stringify({ error: 'Límite diario alcanzado. Actualiza a Pro.' })
+      };
+    }
+  }
+}
+
   const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
   if (!ANTHROPIC_KEY) {
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'API key not configured' }) };
   }
 
-  const body = JSON.stringify(parsed);
+  // Eliminar userId del body antes de enviar a Anthropic
+  const { userId: _removed, ...parsedClean } = parsed;
+  const body = JSON.stringify(parsedClean);
 
   return new Promise((resolve) => {
     const options = {

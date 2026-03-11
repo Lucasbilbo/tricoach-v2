@@ -14,7 +14,7 @@ export default function Chat({ userId, profile }) {
 
     const canSend = await canSendMessage(profile)
     if (!canSend) {
-      alert('Has alcanzado el límite de 10 mensajes diarios del plan Free. Actualiza a Pro para mensajes ilimitados.')
+      setMessages((prev) => [...prev, { role: 'assistant', content: '⚠️ Has alcanzado el límite de 10 mensajes diarios del plan Free. Actualiza a Pro para mensajes ilimitados.' }])
       return
     }
 
@@ -22,33 +22,45 @@ export default function Chat({ userId, profile }) {
     setInput('')
     setLoading(true)
 
-    await saveMessage(userId, 'user', userMessage)
-    await incrementMessageCount(userId, profile)
-    setMessages((prev) => [...prev, { role: 'user', content: userMessage }])
+    try {
+      await saveMessage(userId, 'user', userMessage)
+      await incrementMessageCount(userId, profile)
+      setMessages((prev) => [...prev, { role: 'user', content: userMessage }])
 
-    const response = await fetch('/.netlify/functions/claude', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'x-tricoach-secret': import.meta.env.VITE_TRICOACH_SECRET || ''
-  },
-  body: JSON.stringify({
-    system: buildSystemPrompt(profile, profile.personalidad || 'cercano'),
-    messages: [
-      ...messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
-      { role: 'user', content: userMessage }
-    ],
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 1000
-  }),
-    })
+      const response = await fetch('/.netlify/functions/claude', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-tricoach-secret': import.meta.env.VITE_TRICOACH_SECRET || ''
+        },
+        body: JSON.stringify({
+          userId,
+          system: buildSystemPrompt(profile, profile.personalidad || 'cercano'),
+          messages: [
+            ...messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
+            { role: 'user', content: userMessage }
+          ],
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000
+        }),
+      })
 
-    const data = await response.json()
-    const assistantMessage = data.content?.[0]?.text || 'Error al responder'
+      const data = await response.json()
 
-    await saveMessage(userId, 'assistant', assistantMessage)
-    setMessages((prev) => [...prev, { role: 'assistant', content: assistantMessage }])
-    setLoading(false)
+      if (response.status === 429) {
+        setMessages((prev) => [...prev, { role: 'assistant', content: '⚠️ Has alcanzado el límite diario del plan Free. Actualiza a Pro para mensajes ilimitados.' }])
+        return
+      }
+
+      const assistantMessage = data.content?.[0]?.text || 'Error al responder'
+      await saveMessage(userId, 'assistant', assistantMessage)
+      setMessages((prev) => [...prev, { role: 'assistant', content: assistantMessage }])
+    } catch (error) {
+      console.error('Error:', error)
+      setMessages((prev) => [...prev, { role: 'assistant', content: 'Hubo un error al conectar con el coach. Inténtalo de nuevo.' }])
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {

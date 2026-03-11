@@ -9,10 +9,10 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "lint": "eslint src --ext .js,.jsx",
-"format": "prettier --write src"
+    "format": "prettier --write src"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.99.0",
+    "@supabase/supabase-js": "^2.99.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
