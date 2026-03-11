@@ -33,7 +33,7 @@ export default function Chat({ userId, profile }) {
     'x-tricoach-secret': import.meta.env.VITE_TRICOACH_SECRET || ''
   },
   body: JSON.stringify({
-    system: buildSystemPrompt(profile),
+    system: buildSystemPrompt(profile, profile.personalidad || 'cercano'),
     messages: [
       ...messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
       { role: 'user', content: userMessage }

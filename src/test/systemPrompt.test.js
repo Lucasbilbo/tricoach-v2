@@ -37,4 +37,27 @@ describe('System Prompt dinámico', () => {
     const prompt = buildSystemPrompt(profile)
     expect(prompt).toBeDefined()
   })
+  it('usa personalidad cercana por defecto', () => {
+    const profile = { nombre: 'Lucas', deporte: 'triatlon', nivel: 'principiante', objetivo: 'terminar' }
+    const prompt = buildSystemPrompt(profile)
+    expect(prompt).toContain('amigo')
+  })
+
+  it('usa personalidad estricta', () => {
+    const profile = { nombre: 'Lucas', deporte: 'triatlon', nivel: 'principiante', objetivo: 'terminar' }
+    const prompt = buildSystemPrompt(profile, 'estricto')
+    expect(prompt).toContain('exigente')
+  })
+
+  it('usa personalidad graciosa', () => {
+    const profile = { nombre: 'Lucas', deporte: 'triatlon', nivel: 'principiante', objetivo: 'terminar' }
+    const prompt = buildSystemPrompt(profile, 'gracioso')
+    expect(prompt).toContain('humor')
+  })
+
+  it('usa personalidad motivadora', () => {
+    const profile = { nombre: 'Lucas', deporte: 'triatlon', nivel: 'principiante', objetivo: 'terminar' }
+    const prompt = buildSystemPrompt(profile, 'motivador')
+    expect(prompt).toContain('energía')
+  })
 })
