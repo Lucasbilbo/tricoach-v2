@@ -4,11 +4,13 @@ import { getProfile, createProfile } from './lib/profiles'
 import Login from './components/Login'
 import Onboarding from './components/Onboarding'
 import Chat from './components/Chat'
+import EditProfile from './components/EditProfile'
 
 function App() {
   const [session, setSession] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [editando, setEditando] = useState(false)
 
   async function loadOrCreateProfile(user) {
     let profile = await getProfile(user.id)
@@ -52,8 +54,9 @@ function App() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 24px', borderBottom: '1px solid #eee' }}>
         <h2>TriCoach AI</h2>
-        <div>
-          <span style={{ marginRight: 16 }}>{profile?.nombre}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span>{profile?.nombre}</span>
+          <button onClick={() => setEditando(true)}>✏️ Perfil</button>
           <button onClick={() => supabase.auth.signOut()}>Cerrar sesión</button>
         </div>
       </div>
@@ -67,6 +70,13 @@ function App() {
         </select>
       </div>
       <Chat userId={session.user.id} profile={profile} />
+      {editando && (
+        <EditProfile
+          profile={profile}
+          onUpdate={(updated) => setProfile(updated)}
+          onClose={() => setEditando(false)}
+        />
+      )}
     </div>
   )
 }
