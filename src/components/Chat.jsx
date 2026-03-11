@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { getMessages, saveMessage } from '../lib/messages'
 import { canSendMessage, incrementMessageCount } from '../lib/profiles'
+import { buildSystemPrompt } from '../prompts/buildSystemPrompt'
 
 export default function Chat({ userId, profile }) {
   const [messages, setMessages] = useState([])
@@ -26,19 +27,20 @@ export default function Chat({ userId, profile }) {
     setMessages((prev) => [...prev, { role: 'user', content: userMessage }])
 
     const response = await fetch('/.netlify/functions/claude', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-tricoach-secret': import.meta.env.VITE_TRICOACH_SECRET || ''
-      },
-      body: JSON.stringify({
-        messages: [
-          ...messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
-          { role: 'user', content: userMessage }
-        ],
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000
-      }),
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'x-tricoach-secret': import.meta.env.VITE_TRICOACH_SECRET || ''
+  },
+  body: JSON.stringify({
+    system: buildSystemPrompt(profile),
+    messages: [
+      ...messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
+      { role: 'user', content: userMessage }
+    ],
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 1000
+  }),
     })
 
     const data = await response.json()
