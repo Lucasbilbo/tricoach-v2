@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
 import { getProfile, createProfile } from './lib/profiles'
 import Login from './components/Login'
+import Onboarding from './components/Onboarding'
 
 function App() {
   const [session, setSession] = useState(null)
@@ -31,10 +32,20 @@ function App() {
 
   if (loading) return <p>Cargando...</p>
   if (!session) return <Login />
+  if (!profile?.deporte) {
+    return (
+      <Onboarding
+        userId={session.user.id}
+        onComplete={() => loadOrCreateProfile(session.user)}
+      />
+    )
+  }
 
   return (
     <div>
-      <h1>Bienvenido, {profile?.email}</h1>
+      <h1>Bienvenido, {profile?.nombre || profile?.email}</h1>
+      <p>Deporte: {profile?.deporte}</p>
+      <p>Nivel: {profile?.nivel}</p>
       <p>Plan: {profile?.plan}</p>
       <button onClick={() => supabase.auth.signOut()}>
         Cerrar sesión
