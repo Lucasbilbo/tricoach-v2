@@ -8,6 +8,7 @@ export default function Chat({ userId, profile }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [stravaData, setStravaData] = useState(null)
   const bottomRef = useRef(null)
 
   async function sendMessage() {
@@ -25,7 +26,6 @@ export default function Chat({ userId, profile }) {
 
     try {
       await saveMessage(userId, 'user', userMessage)
-      await incrementMessageCount(userId, profile)
       const updatedMessages = [...messages, { role: 'user', content: userMessage }]
       setMessages(updatedMessages)
 
@@ -37,25 +37,27 @@ export default function Chat({ userId, profile }) {
         },
         body: JSON.stringify({
           userId,
-          system: buildSystemPrompt(profile, profile.personalidad || 'cercano'),
+          system: buildSystemPrompt(profile, profile.personalidad || 'cercano', stravaData),
           messages: [
             ...messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
             { role: 'user', content: userMessage }
           ],
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000
+          // model y max_tokens ya no vienen del frontend — están fijos en el backend
         }),
       })
-
-      const data = await response.json()
 
       if (response.status === 429) {
         setMessages((prev) => [...prev, { role: 'assistant', content: '⚠️ Has alcanzado el límite diario del plan Free. Actualiza a Pro para mensajes ilimitados.' }])
         return
       }
 
+      const data = await response.json()
       const assistantMessage = data.content?.[0]?.text || 'Error al responder'
+
+      // ── Incrementar contador solo si la llamada tuvo éxito ──
+      await incrementMessageCount(userId, profile)
       await saveMessage(userId, 'assistant', assistantMessage)
+
       const finalMessages = [...updatedMessages, { role: 'assistant', content: assistantMessage }]
       setMessages(finalMessages)
 
@@ -72,6 +74,21 @@ export default function Chat({ userId, profile }) {
 
   useEffect(() => {
     getMessages(userId).then(setMessages)
+  }, [userId])
+
+  useEffect(() => {
+    if (!userId) return
+    fetch('/.netlify/functions/strava-activities', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-tricoach-secret': import.meta.env.VITE_TRICOACH_SECRET || ''
+      },
+      body: JSON.stringify({ userId })
+    })
+      .then(r => r.json())
+      .then(data => { if (!data.sinStrava) setStravaData(data) })
+      .catch(() => {})
   }, [userId])
 
   useEffect(() => {
