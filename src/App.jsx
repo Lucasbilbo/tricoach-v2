@@ -5,6 +5,7 @@ import Login from './components/Login'
 import Onboarding from './components/Onboarding'
 import Chat from './components/Chat'
 import EditProfile from './components/EditProfile'
+import StravaConnect from './components/StravaConnect'
 
 function App() {
   const [session, setSession] = useState(null)
@@ -68,6 +69,9 @@ function App() {
           <option value="gracioso">😄 Gracioso</option>
           <option value="motivador">🔥 Motivador</option>
         </select>
+      </div>
+      <div style={{ padding: '8px 24px', borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <StravaConnect userId={session.user.id} onConnected={() => loadOrCreateProfile(session.user)} />
       </div>
       <Chat userId={session.user.id} profile={profile} />
       {editando && (
