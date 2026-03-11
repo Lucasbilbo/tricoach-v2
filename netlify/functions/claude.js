@@ -97,7 +97,7 @@ if (userId) {
 
   if (profileData && profileData.plan === 'free') {
     const today = new Date().toISOString().split('T')[0];
-    if (profileData.last_message_date === today && profileData.messages_today >= 1) {
+    if (profileData.last_message_date === today && profileData.messages_today >= 10) {
       return {
         statusCode: 429,
         headers: CORS,

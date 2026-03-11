@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { getMessages, saveMessage } from '../lib/messages'
 import { canSendMessage, incrementMessageCount } from '../lib/profiles'
 import { buildSystemPrompt } from '../prompts/buildSystemPrompt'
+import { updateContext } from '../lib/context'
 
 export default function Chat({ userId, profile }) {
   const [messages, setMessages] = useState([])
@@ -25,7 +26,8 @@ export default function Chat({ userId, profile }) {
     try {
       await saveMessage(userId, 'user', userMessage)
       await incrementMessageCount(userId, profile)
-      setMessages((prev) => [...prev, { role: 'user', content: userMessage }])
+      const updatedMessages = [...messages, { role: 'user', content: userMessage }]
+      setMessages(updatedMessages)
 
       const response = await fetch('/.netlify/functions/claude', {
         method: 'POST',
@@ -54,7 +56,12 @@ export default function Chat({ userId, profile }) {
 
       const assistantMessage = data.content?.[0]?.text || 'Error al responder'
       await saveMessage(userId, 'assistant', assistantMessage)
-      setMessages((prev) => [...prev, { role: 'assistant', content: assistantMessage }])
+      const finalMessages = [...updatedMessages, { role: 'assistant', content: assistantMessage }]
+      setMessages(finalMessages)
+
+      // Actualizar contexto en segundo plano, sin bloquear el chat
+      updateContext(userId, finalMessages, profile.contexto).catch(() => {})
+
     } catch (error) {
       console.error('Error:', error)
       setMessages((prev) => [...prev, { role: 'assistant', content: 'Hubo un error al conectar con el coach. Inténtalo de nuevo.' }])
