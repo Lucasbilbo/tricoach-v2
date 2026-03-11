@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { getMessages, saveMessage } from '../lib/messages'
+import { canSendMessage, incrementMessageCount } from '../lib/profiles'
 
 export default function Chat({ userId, profile }) {
   const [messages, setMessages] = useState([])
@@ -10,11 +11,18 @@ export default function Chat({ userId, profile }) {
   async function sendMessage() {
     if (!input.trim()) return
 
+    const canSend = await canSendMessage(profile)
+    if (!canSend) {
+      alert('Has alcanzado el límite de 10 mensajes diarios del plan Free. Actualiza a Pro para mensajes ilimitados.')
+      return
+    }
+
     const userMessage = input
     setInput('')
     setLoading(true)
 
     await saveMessage(userId, 'user', userMessage)
+    await incrementMessageCount(userId, profile)
     setMessages((prev) => [...prev, { role: 'user', content: userMessage }])
 
     const response = await fetch('/.netlify/functions/claude', {
