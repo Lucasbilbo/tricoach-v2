@@ -179,7 +179,7 @@ exports.handler = async (event) => {
   // Obtener perfil del usuario (incluyendo campos de Strava)
   const profiles = await supabaseGet(
     hostname,
-    `/rest/v1/profiles?id=eq.${userId}&select=deporte,nivel,objetivo,fecha_carrera,contexto,strava_token,strava_token_expires_at`,
+    `/rest/v1/profiles?id=eq.${userId}&select=deporte,nivel,objetivo,fecha_carrera,contexto,strava_token,strava_token_expires_at,plan`,
     supabaseKey
   );
 
@@ -188,9 +188,11 @@ exports.handler = async (event) => {
     return { statusCode: 404, headers: CORS, body: JSON.stringify({ error: 'Perfil no encontrado' }) };
   }
 
-  // Obtener actividades de Strava si hay token válido
+  const isPro = profile.plan === 'pro';
+
+  // Obtener actividades de Strava solo para usuarios Pro
   let stravaText = null;
-  if (profile.strava_token) {
+  if (isPro && profile.strava_token) {
     const now = Math.floor(Date.now() / 1000);
     const tokenOk = !profile.strava_token_expires_at || profile.strava_token_expires_at > now;
     if (tokenOk) {
@@ -211,7 +213,7 @@ exports.handler = async (event) => {
     hyrox: 'Hyrox (carrera funcional con estaciones de fitness)',
   };
 
-  const analisisSection = planAnterior
+  const analisisSection = (isPro && planAnterior)
     ? '\n\n' + buildAnalisisSemanaAnterior(planAnterior, stravaText)
     : '';
 

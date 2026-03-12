@@ -32,13 +32,16 @@ App web React + Vite, backend Netlify Functions, base de datos Supabase.
 - ANTHROPIC_API_KEY
 - STRAVA_CLIENT_ID (208711), STRAVA_CLIENT_SECRET, STRAVA_REDIRECT_URI
 - TRICOACH_SECRET, VITE_TRICOACH_SECRET
+- STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
+- VITE_STRIPE_PRICE_MONTHLY, VITE_STRIPE_PRICE_ANNUAL
+- RESEND_API_KEY
 
 ## Schema Supabase — tabla profiles
 id, email, nombre, deporte, nivel, objetivo, fecha_carrera, plan (default: 'free'),
 created_at, messages_today, last_message_date, personalidad (default: 'cercano'),
 contexto, strava_token, strava_refresh_token, strava_token_expires_at,
-intervals_athlete_id, intervals_api_key
+intervals_athlete_id, intervals_api_key, stripe_customer_id
 
-## Tests actuales: 43
-- 39 Vitest (npm test)
+## Tests actuales: 47
+- 43 Vitest (npm test)
 - 4 Playwright E2E (npx playwright test)

@@ -10,7 +10,7 @@ const DEPORTE_LABELS = {
   hyrox: '💪 Hyrox',
 }
 
-export default function Chat({ userId, profile, personalidad, onPersonalidadChange }) {
+export default function Chat({ userId, profile, personalidad, onPersonalidadChange, onShowUpgrade }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -102,7 +102,8 @@ export default function Chat({ userId, profile, personalidad, onPersonalidadChan
   }, [messages])
 
   const messagesHoy = profile?.messages_today || 0
-  const esFree = profile?.plan === 'free'
+  const esFree = !profile?.plan || profile?.plan === 'free'
+  const limitAlcanzado = esFree && messagesHoy >= 10
 
   return (
     <div style={{
@@ -210,6 +211,34 @@ export default function Chat({ userId, profile, personalidad, onPersonalidadChan
           <div ref={bottomRef} />
         </div>
       </div>
+
+      {/* Upgrade banner when limit reached */}
+      {limitAlcanzado && (
+        <div style={{
+          background: 'oklch(0.7 0.18 45 / 0.08)',
+          borderTop: '1px solid oklch(0.7 0.18 45 / 0.35)',
+          padding: '10px 16px',
+          flexShrink: 0,
+          textAlign: 'center',
+        }}>
+          <button
+            onClick={onShowUpgrade}
+            style={{
+              background: 'var(--primary)',
+              color: 'var(--primary-foreground)',
+              border: 'none',
+              borderRadius: 24,
+              padding: '8px 20px',
+              fontFamily: 'var(--font-sans)',
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            🏆 Hazte Pro — mensajes ilimitados
+          </button>
+        </div>
+      )}
 
       {/* Input */}
       <div style={{
