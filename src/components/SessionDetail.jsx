@@ -1,5 +1,15 @@
 import { useState } from 'react'
 
+function highlightNumbers(text) {
+  if (!text) return text
+  const parts = text.split(/(\d+(?:[.,]\d+)?(?:\s*(?:km|m|min|seg|s|kg|rep|x|rpm|bpm))?(?:\/(?:km|min|h))?)/gi)
+  return parts.map((part, i) =>
+    /^\d/.test(part)
+      ? <span key={i} style={{ color: 'var(--primary)', fontWeight: 600 }}>{part}</span>
+      : part
+  )
+}
+
 const ICONOS = {
   Correr: '🏃',
   Bici: '🚴',
@@ -32,7 +42,7 @@ function getMetrica(tipo, nivel) {
   return null
 }
 
-export default function SessionDetail({ sesion, profile, onClose, onComplete }) {
+export default function SessionDetail({ sesion, profile, onClose, onComplete, onAskCoach }) {
   const [completando, setCompletando] = useState(false)
   const [rpe, setRpe] = useState(6)
 
@@ -115,7 +125,7 @@ export default function SessionDetail({ sesion, profile, onClose, onComplete }) 
               <span style={{ fontWeight: 600, fontSize: 14 }}>{bloque.label}</span>
               <span style={{ color: 'var(--muted-foreground)', fontSize: 13 }}>{bloque.duracion} min</span>
             </div>
-            <p style={{ color: 'var(--muted-foreground)', fontSize: 13, lineHeight: 1.4 }}>{bloque.desc}</p>
+            <p style={{ color: 'var(--muted-foreground)', fontSize: 13, lineHeight: 1.4 }}>{highlightNumbers(bloque.desc)}</p>
           </div>
         ))}
 
@@ -130,6 +140,28 @@ export default function SessionDetail({ sesion, profile, onClose, onComplete }) 
           }}>
             <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--primary)' }}>🎯 {metrica}</p>
           </div>
+        )}
+
+        {/* Ask coach */}
+        {onAskCoach && sesion.tipo !== 'Descanso' && (
+          <button
+            onClick={() => onAskCoach(`Tengo una pregunta sobre mi sesión de ${sesion.tipo} del ${sesion.dia}: `)}
+            style={{
+              width: '100%',
+              background: 'var(--secondary)',
+              border: '1px solid var(--border)',
+              borderRadius: 24,
+              color: 'var(--foreground)',
+              padding: '12px',
+              fontFamily: 'var(--font-sans)',
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: 'pointer',
+              marginBottom: 10,
+            }}
+          >
+            💬 Preguntar al coach sobre esta sesión
+          </button>
         )}
 
         {/* Complete */}

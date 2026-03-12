@@ -244,7 +244,19 @@ El JSON debe tener esta estructura exacta:
 
 tipos posibles: "Correr", "Bici", "Nadar", "Fuerza", "Brick", "Descanso"
 intensidades posibles: "suave", "moderada", "fuerte", "descanso"
-Devuelve exactamente 7 sesiones, una por día de la semana (Lunes a Domingo).`;
+Devuelve exactamente 7 sesiones, una por día de la semana (Lunes a Domingo).
+
+Para la descripción de cada sesión activa incluye en una sola línea:
+- Calentamiento específico (10-15% del tiempo): qué hacer exactamente
+- Bloque principal con detalles concretos según el deporte:
+  * Correr: series con distancia y ritmo (ej: "4x1000m a 4:45/km, 90seg recuperación trote")
+  * Bici: intervalos con zona o vatios (ej: "3x10min zona 3 a 85rpm")
+  * Nadar: series con distancia y descanso (ej: "6x100m estilo libre, 20seg descanso")
+  * Fuerza/Hyrox: ejercicios, series y repeticiones (ej: "Sentadilla 3x10, Remo 3x12, Core 3x15")
+- Vuelta a la calma (10% del tiempo): estiramientos o recuperación suave
+- RPE objetivo para el bloque principal (ej: "RPE 6-7")
+Ejemplo descripción running: "Cal 10min trote suave z1. Principal: 4x1000m a 5:10/km con 90seg recuperación. Vuelta 5min estiramientos. RPE 7-8"`;
+
 
   const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
   if (!ANTHROPIC_KEY) {

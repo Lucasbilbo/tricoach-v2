@@ -25,6 +25,7 @@ function App() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [upgradeSuccess, setUpgradeSuccess] = useState(false)
   const [selectedSession, setSelectedSession] = useState(null)
+  const [chatPrefill, setChatPrefill] = useState('')
 
   async function loadOrCreateProfile(user) {
     let profile = await getProfile(user.id)
@@ -131,6 +132,7 @@ function App() {
             personalidad={profile?.personalidad || 'cercano'}
             onPersonalidadChange={handlePersonalidadChange}
             onShowUpgrade={() => setShowUpgradeModal(true)}
+            prefillMessage={chatPrefill}
           />
         </ErrorBoundary>
       )}
@@ -240,6 +242,11 @@ function App() {
           sesion={selectedSession}
           profile={profile}
           onClose={() => setSelectedSession(null)}
+          onAskCoach={(text) => {
+            setSelectedSession(null)
+            setChatPrefill(text)
+            setCurrentScreen('coach')
+          }}
           onComplete={async (rpe) => {
             if (plan?.id) {
               const updated = await markSessionComplete(plan.id, selectedSession.dia, rpe).catch(() => null)

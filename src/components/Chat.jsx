@@ -10,7 +10,7 @@ const DEPORTE_LABELS = {
   hyrox: '💪 Hyrox',
 }
 
-export default function Chat({ userId, profile, personalidad, onPersonalidadChange, onShowUpgrade }) {
+export default function Chat({ userId, profile, personalidad, onPersonalidadChange, onShowUpgrade, prefillMessage }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -100,6 +100,10 @@ export default function Chat({ userId, profile, personalidad, onPersonalidadChan
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  useEffect(() => {
+    if (prefillMessage) setInput(prefillMessage)
+  }, [prefillMessage])
 
   const messagesHoy = profile?.messages_today || 0
   const esFree = !profile?.plan || profile?.plan === 'free'

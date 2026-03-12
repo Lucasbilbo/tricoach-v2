@@ -252,6 +252,8 @@ export default function Onboarding({ userId, onComplete }) {
   const [nuevaCarrera, setNuevaCarrera] = useState({ nombre: '', tipo: '', fecha: '' })
   const [submitted, setSubmitted] = useState(false)
   const [otroEquipamiento, setOtroEquipamiento] = useState('')
+  const [sinCarrera, setSinCarrera] = useState(false)
+  const [errores, setErrores] = useState({ carreras: '', historial: '', disponibilidad: '', equipamiento: '' })
 
   // Si volvemos del OAuth de Strava, saltar al paso de integraciones
   // Usar href.includes para compatibilidad con Safari móvil
@@ -452,7 +454,7 @@ export default function Onboarding({ userId, onComplete }) {
             )}
 
             {/* Formulario añadir carrera */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16, opacity: sinCarrera ? 0.4 : 1, pointerEvents: sinCarrera ? 'none' : 'auto' }}>
               <input
                 placeholder="Nombre de la carrera (ej: Media Maratón Valencia)"
                 value={nuevaCarrera.nombre}
@@ -493,8 +495,29 @@ export default function Onboarding({ userId, onComplete }) {
               </button>
             </div>
 
-            <button onClick={() => setStep(5)} style={PRIMARY_BTN}>Siguiente</button>
-            <button onClick={() => setStep(5)} style={SKIP_BTN}>Saltar por ahora</button>
+            {/* Checkbox sin carrera */}
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={sinCarrera}
+                onChange={e => { setSinCarrera(e.target.checked); setErrores(prev => ({ ...prev, carreras: '' })) }}
+                style={{ width: 16, height: 16, accentColor: 'var(--primary)' }}
+              />
+              <span style={{ fontSize: 13, color: 'var(--muted-foreground)' }}>No tengo carrera todavía</span>
+            </label>
+
+            {errores.carreras && (
+              <p style={{ color: 'var(--destructive)', fontSize: 13, marginBottom: 8, textAlign: 'center' }}>{errores.carreras}</p>
+            )}
+
+            <button onClick={() => {
+              if (carreras.length === 0 && !sinCarrera) {
+                setErrores(prev => ({ ...prev, carreras: 'Añade una carrera o indica que no tienes objetivo de carrera' }))
+                return
+              }
+              setErrores(prev => ({ ...prev, carreras: '' }))
+              setStep(5)
+            }} style={PRIMARY_BTN}>Siguiente</button>
             <button onClick={() => setStep(3)} style={BACK_BTN}>← Atrás</button>
           </div>
         )}
@@ -508,7 +531,7 @@ export default function Onboarding({ userId, onComplete }) {
             {/* A. Historial deportivo */}
             <div style={{ marginBottom: 20 }}>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
-                Historial deportivo
+                Historial deportivo <span style={{ color: 'var(--destructive)' }}>*</span>
               </label>
               <div style={{ position: 'relative' }}>
                 <textarea
@@ -525,6 +548,9 @@ export default function Onboarding({ userId, onComplete }) {
                   {form.historial_deportivo.length}/300
                 </span>
               </div>
+              {errores.historial && (
+                <p style={{ color: 'var(--destructive)', fontSize: 12, marginTop: 4 }}>{errores.historial}</p>
+              )}
             </div>
 
             {/* B. Lesiones */}
@@ -563,7 +589,7 @@ export default function Onboarding({ userId, onComplete }) {
             {/* C. Disponibilidad */}
             <div style={{ marginBottom: 20 }}>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 10 }}>
-                ¿Cuándo puedes entrenar?
+                ¿Cuándo puedes entrenar? <span style={{ color: 'var(--destructive)' }}>*</span>
               </label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {DIAS_SLOTS.map(([man, tar]) => (
@@ -573,12 +599,15 @@ export default function Onboarding({ userId, onComplete }) {
                   </div>
                 ))}
               </div>
+              {errores.disponibilidad && (
+                <p style={{ color: 'var(--destructive)', fontSize: 12, marginTop: 6 }}>{errores.disponibilidad}</p>
+              )}
             </div>
 
             {/* D. Equipamiento */}
             <div style={{ marginBottom: 24 }}>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 10 }}>
-                ¿Con qué cuentas para entrenar?
+                ¿Con qué cuentas para entrenar? <span style={{ color: 'var(--destructive)' }}>*</span>
               </label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {EQUIPAMIENTO_OPTIONS.map(opt => (
@@ -598,10 +627,23 @@ export default function Onboarding({ userId, onComplete }) {
                   style={{ ...INPUT_STYLE, marginTop: 10 }}
                 />
               )}
+              {errores.equipamiento && (
+                <p style={{ color: 'var(--destructive)', fontSize: 12, marginTop: 6 }}>{errores.equipamiento}</p>
+              )}
             </div>
 
-            <button onClick={() => setStep(6)} style={PRIMARY_BTN}>Siguiente</button>
-            <button onClick={() => setStep(6)} style={SKIP_BTN}>Saltar</button>
+            <button onClick={() => {
+              const newErrors = {}
+              if (form.historial_deportivo.trim().length < 20) newErrors.historial = 'Cuéntanos algo sobre tu historial (mínimo 20 caracteres)'
+              if (disponibilidadSlots.length === 0) newErrors.disponibilidad = 'Selecciona al menos un horario disponible'
+              if (form.equipamiento.length === 0) newErrors.equipamiento = 'Selecciona al menos una opción de equipamiento'
+              if (Object.keys(newErrors).length > 0) {
+                setErrores(prev => ({ ...prev, ...newErrors }))
+                return
+              }
+              setErrores(prev => ({ ...prev, historial: '', disponibilidad: '', equipamiento: '' }))
+              setStep(6)
+            }} style={PRIMARY_BTN}>Siguiente</button>
             <button onClick={() => setStep(4)} style={BACK_BTN}>← Atrás</button>
           </div>
         )}
