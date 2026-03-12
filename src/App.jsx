@@ -202,6 +202,7 @@ function App() {
             profile={profile}
             onUpdate={(updated) => setProfile(updated)}
             onClose={() => setCurrentScreen('coach')}
+            onShowUpgrade={() => setShowUpgradeModal(true)}
           />
 
           <div style={{ padding: '0 16px 16px', textAlign: 'center' }}>

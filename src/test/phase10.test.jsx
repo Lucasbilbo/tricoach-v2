@@ -87,6 +87,6 @@ describe('Fase 10: Monetización Stripe', () => {
         onShowUpgrade={onShowUpgrade}
       />
     )
-    expect(screen.getByText(/Hazte Pro/i)).toBeDefined()
+    expect(screen.getAllByText(/Hazte Pro/i).length).toBeGreaterThan(0)
   })
 })

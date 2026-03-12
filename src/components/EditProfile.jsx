@@ -23,7 +23,7 @@ const labelStyle = {
   fontWeight: 500,
 }
 
-export default function EditProfile({ profile, onUpdate, onClose }) {
+export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade }) {
   const [nombre, setNombre] = useState(profile.nombre || '')
   const [deporte, setDeporte] = useState(profile.deporte || '')
   const [nivel, setNivel] = useState(profile.nivel || '')
@@ -66,8 +66,44 @@ export default function EditProfile({ profile, onUpdate, onClose }) {
     }
   }
 
+  const esFree = !profile?.plan || profile?.plan === 'free'
+
   return (
     <div style={{ padding: '0 16px 16px' }}>
+      {/* Upgrade banner */}
+      {esFree && onShowUpgrade && (
+        <div style={{
+          background: 'oklch(0.7 0.18 45 / 0.1)',
+          border: '1px solid oklch(0.7 0.18 45 / 0.4)',
+          borderRadius: 'var(--radius)',
+          padding: '16px 18px',
+          marginBottom: 12,
+        }}>
+          <p style={{ fontWeight: 700, fontSize: 14, color: 'var(--foreground)', marginBottom: 4 }}>
+            Estás en el plan gratuito
+          </p>
+          <p style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 14, lineHeight: 1.5 }}>
+            Hazte Pro y desbloquea planes adaptativos con Strava, 150 mensajes/día y mucho más
+          </p>
+          <button
+            onClick={onShowUpgrade}
+            style={{
+              background: 'var(--primary)',
+              color: 'var(--primary-foreground)',
+              border: 'none',
+              borderRadius: 24,
+              padding: '10px 20px',
+              fontFamily: 'var(--font-sans)',
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            Hazte Pro — 9,99€/mes
+          </button>
+        </div>
+      )}
+
       {/* Datos del perfil */}
       <div style={{
         background: 'var(--card)',

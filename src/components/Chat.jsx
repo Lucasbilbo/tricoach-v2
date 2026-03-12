@@ -132,27 +132,48 @@ export default function Chat({ userId, profile, personalidad, onPersonalidadChan
               {DEPORTE_LABELS[profile?.deporte] || profile?.deporte || ''}
             </div>
           </div>
-          {onPersonalidadChange && (
-            <select
-              value={personalidad || 'cercano'}
-              onChange={onPersonalidadChange}
-              style={{
-                background: 'var(--input)',
-                border: '1px solid var(--border)',
-                borderRadius: 8,
-                color: 'var(--foreground)',
-                padding: '4px 8px',
-                fontFamily: 'var(--font-sans)',
-                fontSize: 13,
-                cursor: 'pointer',
-              }}
-            >
-              <option value="cercano">😊 Cercano</option>
-              <option value="estricto">💪 Estricto</option>
-              <option value="gracioso">😄 Gracioso</option>
-              <option value="motivador">🔥 Motivador</option>
-            </select>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {esFree && onShowUpgrade && (
+              <button
+                onClick={onShowUpgrade}
+                style={{
+                  background: 'var(--primary)',
+                  color: 'var(--primary-foreground)',
+                  border: 'none',
+                  borderRadius: 24,
+                  padding: '5px 12px',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                ✦ Hazte Pro
+              </button>
+            )}
+            {onPersonalidadChange && (
+              <select
+                value={personalidad || 'cercano'}
+                onChange={onPersonalidadChange}
+                style={{
+                  background: 'var(--input)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                  color: 'var(--foreground)',
+                  padding: '4px 8px',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 13,
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="cercano">😊 Cercano</option>
+                <option value="estricto">💪 Estricto</option>
+                <option value="gracioso">😄 Gracioso</option>
+                <option value="motivador">🔥 Motivador</option>
+              </select>
+            )}
+          </div>
         </div>
       </div>
 

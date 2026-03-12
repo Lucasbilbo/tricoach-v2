@@ -97,8 +97,8 @@ exports.handler = async (event) => {
 
   const params = {
     mode: 'subscription',
-    'success_url': 'https://tricoach.app/?upgrade=success',
-    'cancel_url': 'https://tricoach.app/',
+    'success_url': 'https://tricoach-v2.netlify.app/?upgrade=success',
+    'cancel_url': 'https://tricoach-v2.netlify.app/',
     'line_items[0][price]': priceId,
     'line_items[0][quantity]': '1',
     'metadata[userId]': userId,
