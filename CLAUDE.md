@@ -3,45 +3,193 @@
 ## Qué es esto
 Entrenador IA conversacional para triatletas, runners y atletas de Hyrox hispanohablantes.
 App web React + Vite, backend Netlify Functions, base de datos Supabase.
+Freemium: Free (10 msg/día, plan básico) / Pro (9,99€/mes, Strava + plan adaptativo).
 
 ## Stack
-- Frontend: React + Vite
+- Frontend: React + Vite (JavaScript, NO TypeScript)
 - Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co)
-- Backend: Netlify Functions (CommonJS, NO usar ESM)
-- Tests: Vitest + Playwright
-- Deploy: Netlify
+- Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
+- Tests: Vitest (43 tests) + Playwright E2E (4 tests)
+- Deploy: Netlify (producción: https://tricoach-v2.netlify.app)
+- Pagos: Stripe (checkout + webhooks)
+- Email: Resend (onboarding@resend.dev)
 
-## Reglas importantes
-- Las Netlify Functions usan CommonJS (require, exports.handler) — NUNCA usar import/export
-- Para llamar a Supabase desde las Functions: usar REST API con https nativo, NO @supabase/supabase-js (incompatible con CommonJS)
-- El modelo de Claude está fijo en claude.js como CLAUDE_MODEL — nunca viene del frontend
-- Siempre ejecutar `npm test` al terminar para verificar que los 31 tests siguen pasando
-- No tocar .env ni subirlo a git
+## Reglas críticas — leer siempre antes de tocar código
 
-## Estructura de archivos clave
-- netlify/functions/claude.js — función principal del chat
-- netlify/functions/strava-auth.js — OAuth de Strava
-- src/components/Chat.jsx — UI del chat
-- src/lib/profiles.js — gestión de perfiles y límites
-- src/prompts/buildSystemPrompt.js — system prompt dinámico
-- src/lib/context.js — memoria del coach
+### Netlify Functions
+- CommonJS SIEMPRE: `const x = require('x')` y `exports.handler = async (event) => {}`
+- NO usar @supabase/supabase-js — usar REST API con https nativo
+- Validar siempre el header `x-tricoach-secret` contra `process.env.TRICOACH_SECRET`
+- El modelo de Claude está fijo: `CLAUDE_MODEL = 'claude-sonnet-4-20250514'` en claude.js — nunca viene del frontend
 
-## Variables de entorno disponibles (en .env)
+### Supabase desde Functions
+Patrón estándar para GET:
+```javascript
+const https = require('https')
+function supabaseGet(path) {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'luqpjgzpydquqturgjmt.supabase.co',
+      path: `/rest/v1/${path}`,
+      headers: {
+        'apikey': process.env.SUPABASE_SERVICE_KEY,
+        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_KEY}`
+      }
+    }
+    https.get(options, (res) => {
+      let data = ''
+      res.on('data', chunk => data += chunk)
+      res.on('end', () => resolve(JSON.parse(data)))
+    }).on('error', reject)
+  })
+}
+```
+
+### Frontend
+- Sistema de diseño: variables CSS en src/index.css (--background, --primary, --card, etc.)
+- Fuentes: Playfair Display (serif, títulos) + Source Sans 3 (sans, texto)
+- Sin librerías de UI externas (no shadcn, no lucide-react, no Material UI)
+- Usar emojis o SVG inline para iconos
+
+### Tests
+- Ejecutar `npm test` al terminar SIEMPRE
+- 43 tests deben pasar — si alguno falla, arreglarlo antes de terminar
+- No borrar ni modificar tests existentes sin motivo explícito
+
+## Estructura de archivos completa
+
+```
+tricoach-v2/
+├── CLAUDE.md
+├── src/
+│   ├── components/
+│   │   ├── Login.jsx          — login con Google
+│   │   ├── Onboarding.jsx     — onboarding nuevo usuario
+│   │   ├── Chat.jsx           — chat con el coach IA
+│   │   ├── EditProfile.jsx    — editar perfil (página, no modal)
+│   │   ├── StravaConnect.jsx  — conectar Strava
+│   │   ├── WeeklyPlan.jsx     — plan semanal con cards
+│   │   ├── BottomNav.jsx      — navegación fija abajo
+│   │   ├── UpgradeModal.jsx   — modal upgrade Free→Pro con Stripe
+│   │   └── CookieBanner.jsx   — banner GDPR
+│   ├── lib/
+│   │   ├── supabase.js        — cliente Supabase
+│   │   ├── profiles.js        — getProfile, updateProfile, checkLimit
+│   │   ├── messages.js        — getMessages, saveMessage
+│   │   ├── context.js         — memoria del coach
+│   │   └── plans.js           — getPlan, generatePlan, markSessionComplete,
+│   │                             getLastWeekPlan, adjustPlan, analizarPlan
+│   ├── pages/
+│   │   ├── Privacidad.jsx
+│   │   └── Terminos.jsx
+│   ├── prompts/
+│   │   └── buildSystemPrompt.js — system prompt dinámico (perfil + actividades + plan)
+│   ├── test/
+│   │   ├── setup.js
+│   │   ├── example.test.jsx
+│   │   ├── supabase.test.js
+│   │   ├── auth.test.jsx
+│   │   ├── netlify-functions.test.js
+│   │   ├── profiles.test.js
+│   │   ├── onboarding.test.jsx
+│   │   ├── limits.test.js
+│   │   ├── systemPrompt.test.js
+│   │   ├── strava-activities.test.js
+│   │   ├── weeklyPlan.test.js
+│   │   ├── phase8.test.jsx
+│   │   ├── phase10.test.jsx
+│   │   └── e2e/auth.spec.js
+│   ├── index.css              — variables CSS del sistema de diseño
+│   ├── App.jsx
+│   └── main.jsx
+├── netlify/
+│   └── functions/
+│       ├── claude.js          — chat con Claude (modelo fijo, límite Free)
+│       ├── strava-auth.js     — OAuth Strava
+│       ├── strava-activities.js — actividades Strava + refresh token
+│       ├── generate-plan.js   — genera plan semanal con Claude
+│       ├── adjust-plan.js     — ajusta plan (lesión/viaje/día suelto)
+│       ├── create-checkout.js — crea Stripe Checkout Session
+│       ├── stripe-webhook.js  — webhook Stripe (activar/revocar Pro)
+│       └── delete-account.js  — borrar cuenta GDPR
+├── index.html                 — incluye fuentes Google Fonts
+├── netlify.toml
+├── vite.config.js
+└── package.json
+```
+
+## Schema Supabase
+
+### tabla `profiles`
+```
+id, email, nombre, deporte, nivel, objetivo, fecha_carrera,
+plan ('free'|'pro'), created_at, messages_today, last_message_date,
+personalidad ('cercano'|'estricto'|'gracioso'|'motivador'),
+contexto, strava_token, strava_refresh_token, strava_token_expires_at,
+stripe_customer_id, intervals_athlete_id, intervals_api_key
+```
+
+### tabla `messages`
+```
+id, user_id, role, content, created_at
+```
+
+### tabla `plans`
+```
+id, user_id, semana (date — lunes de la semana), sesiones (jsonb), created_at
+```
+
+Estructura de `sesiones` (array de 7 objetos):
+```json
+{
+  "dia": "Lunes",
+  "tipo": "run|bike|swim|strength|rest",
+  "descripcion": "string",
+  "distancia": "string",
+  "duracion": "string",
+  "intensidad": "string",
+  "completada": false,
+  "rpe_usuario": null
+}
+```
+
+## Variables de entorno
+
+Frontend (VITE_*):
 - VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
+- VITE_TRICOACH_SECRET
+- VITE_STRAVA_CLIENT_ID (208711), VITE_STRAVA_REDIRECT_URI
+- VITE_STRIPE_PUBLISHABLE_KEY
+
+Backend (solo en Netlify Functions):
 - SUPABASE_URL, SUPABASE_SERVICE_KEY
 - ANTHROPIC_API_KEY
-- STRAVA_CLIENT_ID (208711), STRAVA_CLIENT_SECRET, STRAVA_REDIRECT_URI
-- TRICOACH_SECRET, VITE_TRICOACH_SECRET
+- TRICOACH_SECRET
+- STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET, STRAVA_REDIRECT_URI
 - STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
-- VITE_STRIPE_PRICE_MONTHLY, VITE_STRIPE_PRICE_ANNUAL
+- STRIPE_PRICE_MONTHLY, STRIPE_PRICE_ANNUAL
 - RESEND_API_KEY
 
-## Schema Supabase — tabla profiles
-id, email, nombre, deporte, nivel, objetivo, fecha_carrera, plan (default: 'free'),
-created_at, messages_today, last_message_date, personalidad (default: 'cercano'),
-contexto, strava_token, strava_refresh_token, strava_token_expires_at,
-intervals_athlete_id, intervals_api_key, stripe_customer_id
+## Diferenciación Free vs Pro
 
-## Tests actuales: 47
-- 43 Vitest (npm test)
-- 4 Playwright E2E (npx playwright test)
+| Feature | Free | Pro |
+|---------|------|-----|
+| Mensajes/día | 10 | Ilimitados |
+| Plan semanal | Básico (sin Strava) | Con datos Strava |
+| Análisis semana anterior | No | Sí |
+| Plan adaptativo | No | Sí |
+
+Validación Free/Pro siempre en **backend** (claude.js, generate-plan.js) — nunca confiar solo en el frontend.
+
+## Flujo de trabajo
+1. `netlify dev` para desarrollo local → http://localhost:8888
+2. Claude Code implementa → `npm test` → `npm run build`
+3. `git add . && git commit -m "..." && git push`
+4. Netlify despliega automáticamente
+
+## Tests: 43 pasando
+- systemPrompt.test.js (10), strava-activities.test.js (4), weeklyPlan.test.js (4)
+- phase8.test.jsx (4), phase10.test.jsx (4), limits.test.js (4)
+- onboarding.test.jsx (3), netlify-functions.test.js (3)
+- profiles.test.js (2), supabase.test.js (2), auth.test.jsx (2), example.test.jsx (1)
+- E2E: auth.spec.js (4)
