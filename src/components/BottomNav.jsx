@@ -1,6 +1,8 @@
 const tabs = [
-  { id: 'coach', icon: '💬', label: 'Coach' },
+  { id: 'dashboard', icon: '🏠', label: 'Hoy' },
   { id: 'plan', icon: '📅', label: 'Plan' },
+  { id: 'progress', icon: '📈', label: 'Progreso' },
+  { id: 'coach', icon: '💬', label: 'Coach' },
   { id: 'profile', icon: '👤', label: 'Perfil' },
 ]
 
@@ -35,13 +37,13 @@ export default function BottomNav({ currentScreen, onNavigate }) {
             cursor: 'pointer',
             color: currentScreen === tab.id ? 'var(--primary)' : 'var(--muted-foreground)',
             fontFamily: 'var(--font-sans)',
-            fontSize: 10,
+            fontSize: 9,
             fontWeight: currentScreen === tab.id ? 600 : 400,
             padding: 0,
             transition: 'color 0.2s',
           }}
         >
-          <span style={{ fontSize: 20, lineHeight: 1 }}>{tab.icon}</span>
+          <span style={{ fontSize: 18, lineHeight: 1 }}>{tab.icon}</span>
           <span>{tab.label}</span>
         </button>
       ))}

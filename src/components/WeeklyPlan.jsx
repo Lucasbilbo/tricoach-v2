@@ -21,7 +21,7 @@ function getCurrentWeekStart() {
   return monday.toISOString().split('T')[0]
 }
 
-export default function WeeklyPlan({ userId, plan, onPlanUpdate }) {
+export default function WeeklyPlan({ userId, plan, onPlanUpdate, onSessionDetail }) {
   const [generando, setGenerando] = useState(false)
   const [completando, setCompletando] = useState(null)
   const [rpe, setRpe] = useState(5)
@@ -283,7 +283,24 @@ export default function WeeklyPlan({ userId, plan, onPlanUpdate }) {
                   </p>
                 </div>
 
-                <div style={{ flexShrink: 0 }}>
+                <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
+                  {onSessionDetail && sesion.tipo !== 'Descanso' && (
+                    <button
+                      onClick={() => onSessionDetail(sesion)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--muted-foreground)',
+                        fontFamily: 'var(--font-sans)',
+                        fontSize: 11,
+                        cursor: 'pointer',
+                        padding: '2px 0',
+                        textDecoration: 'underline',
+                      }}
+                    >
+                      Ver detalles
+                    </button>
+                  )}
                   {sesion.completada ? (
                     <span style={{ color: 'var(--success)', fontWeight: 600, fontSize: 13 }}>
                       ✓{sesion.rpe ? ` RPE ${sesion.rpe}` : ''}

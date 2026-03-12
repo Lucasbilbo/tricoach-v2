@@ -1,0 +1,300 @@
+import { useState } from 'react'
+import { generatePlan, markSessionComplete } from '../lib/plans'
+
+const ICONOS = {
+  Correr: '🏃',
+  Bici: '🚴',
+  Nadar: '🏊',
+  Fuerza: '💪',
+  Brick: '🧱',
+  Descanso: '😴',
+}
+
+const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+const DIAS_ORDEN = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+
+const MENSAJES_DESCANSO = [
+  'El descanso es parte del entrenamiento. Recupérate bien.',
+  'Hoy recuperas energía para los próximos retos.',
+  'El cuerpo crece en el descanso. Aprovéchalo.',
+]
+
+function getSaludo(nombre) {
+  const hora = new Date().getHours()
+  let saludo
+  if (hora < 13) saludo = 'Buenos días'
+  else if (hora < 20) saludo = 'Buenas tardes'
+  else saludo = 'Buenas noches'
+  return nombre ? `${saludo}, ${nombre}` : saludo
+}
+
+function getFechaHoy() {
+  return new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
+}
+
+export default function Dashboard({ userId, plan, profile, onPlanUpdate, onNavigate }) {
+  const [generando, setGenerando] = useState(false)
+  const [completando, setCompletando] = useState(false)
+  const [rpe, setRpe] = useState(6)
+
+  const today = DIAS_SEMANA[new Date().getDay()]
+  const sesionHoy = plan?.sesiones?.find(s => s.dia === today) || null
+
+  const todayIdx = DIAS_ORDEN.indexOf(today)
+  const siguiente = plan?.sesiones?.find(s => {
+    const idx = DIAS_ORDEN.indexOf(s.dia)
+    return idx > todayIdx && s.tipo?.toLowerCase() !== 'descanso'
+  }) || null
+
+  async function handleGenerar() {
+    setGenerando(true)
+    try {
+      const nuevo = await generatePlan(userId)
+      onPlanUpdate(nuevo)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setGenerando(false)
+    }
+  }
+
+  async function handleCompletar() {
+    if (!plan?.id || !sesionHoy) return
+    try {
+      const updated = await markSessionComplete(plan.id, sesionHoy.dia, rpe)
+      onPlanUpdate(updated)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setCompletando(false)
+    }
+  }
+
+  return (
+    <div style={{
+      height: 'calc(100vh - 60px)',
+      overflowY: 'auto',
+      background: 'var(--background)',
+    }}>
+      {/* Header */}
+      <div style={{
+        background: 'var(--card)',
+        borderBottom: '1px solid var(--border)',
+        padding: '16px 16px 12px',
+      }}>
+        <div style={{ maxWidth: 640, margin: '0 auto' }}>
+          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 22, fontWeight: 600, marginBottom: 2 }}>
+            {getSaludo(profile?.nombre)}
+          </h2>
+          <p style={{ fontSize: 13, color: 'var(--muted-foreground)', textTransform: 'capitalize' }}>
+            {getFechaHoy()}
+          </p>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: 16 }}>
+
+        {/* No plan */}
+        {!plan && (
+          <div style={{
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius)',
+            padding: 32,
+            textAlign: 'center',
+            marginTop: 32,
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>📅</div>
+            <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, marginBottom: 8 }}>
+              Sin plan esta semana
+            </h3>
+            <p style={{ color: 'var(--muted-foreground)', fontSize: 14, marginBottom: 24 }}>
+              Genera tu plan personalizado para empezar
+            </p>
+            <button
+              onClick={handleGenerar}
+              disabled={generando}
+              style={{
+                background: generando ? 'var(--muted)' : 'var(--primary)',
+                color: 'var(--primary-foreground)',
+                border: 'none',
+                borderRadius: 24,
+                padding: '12px 28px',
+                fontFamily: 'var(--font-sans)',
+                fontSize: 15,
+                fontWeight: 600,
+                cursor: generando ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {generando ? 'Generando...' : 'Generar mi plan'}
+            </button>
+          </div>
+        )}
+
+        {/* Today's session */}
+        {sesionHoy && (
+          <>
+            <div style={{
+              background: 'var(--card)',
+              border: sesionHoy.completada
+                ? '1px solid oklch(0.7 0.14 180 / 0.35)'
+                : '2px solid var(--primary)',
+              borderRadius: 'var(--radius)',
+              padding: '24px 20px',
+              marginBottom: 16,
+              minHeight: '55vh',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 64, marginBottom: 16 }}>
+                {ICONOS[sesionHoy.tipo] || '🏋️'}
+              </div>
+              <h2 style={{
+                fontFamily: 'var(--font-serif)',
+                fontSize: 28,
+                fontWeight: 700,
+                marginBottom: 8,
+                color: sesionHoy.completada ? 'var(--success)' : 'var(--foreground)',
+              }}>
+                {sesionHoy.tipo === 'Descanso' ? 'Día de descanso' : sesionHoy.tipo}
+              </h2>
+              {sesionHoy.duracion_min > 0 && (
+                <p style={{ color: 'var(--muted-foreground)', fontSize: 15, marginBottom: 4 }}>
+                  {sesionHoy.duracion_min} min · {sesionHoy.intensidad}
+                </p>
+              )}
+              <p style={{ color: 'var(--muted-foreground)', fontSize: 14, lineHeight: 1.5, marginBottom: 24, padding: '0 8px', maxWidth: 340 }}>
+                {sesionHoy.tipo === 'Descanso'
+                  ? MENSAJES_DESCANSO[new Date().getDay() % MENSAJES_DESCANSO.length]
+                  : sesionHoy.descripcion}
+              </p>
+
+              {sesionHoy.completada ? (
+                <div>
+                  <div style={{ fontSize: 20, color: 'var(--success)', fontWeight: 700, marginBottom: 8 }}>
+                    ✓ Completada{sesionHoy.rpe ? ` · RPE ${sesionHoy.rpe}` : ''}
+                  </div>
+                  {siguiente && (
+                    <p style={{ fontSize: 13, color: 'var(--muted-foreground)' }}>
+                      Próxima: {ICONOS[siguiente.tipo] || ''} {siguiente.tipo} ({siguiente.duracion_min} min)
+                    </p>
+                  )}
+                </div>
+              ) : sesionHoy.tipo !== 'Descanso' && (
+                completando ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
+                    <p style={{ fontSize: 14, color: 'var(--muted-foreground)' }}>¿Cómo fue el esfuerzo? (RPE 1-10)</p>
+                    <select
+                      value={rpe}
+                      onChange={e => setRpe(Number(e.target.value))}
+                      style={{
+                        background: 'var(--input)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 8,
+                        color: 'var(--foreground)',
+                        fontFamily: 'var(--font-sans)',
+                        fontSize: 16,
+                        padding: '6px 12px',
+                      }}
+                    >
+                      {[1,2,3,4,5,6,7,8,9,10].map(n => (
+                        <option key={n} value={n}>{n}</option>
+                      ))}
+                    </select>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        onClick={handleCompletar}
+                        style={{
+                          background: 'var(--success)',
+                          color: 'oklch(0.13 0.01 60)',
+                          border: 'none',
+                          borderRadius: 24,
+                          padding: '10px 24px',
+                          fontFamily: 'var(--font-sans)',
+                          fontSize: 14,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Guardar
+                      </button>
+                      <button
+                        onClick={() => setCompletando(false)}
+                        style={{
+                          background: 'var(--secondary)',
+                          border: '1px solid var(--border)',
+                          borderRadius: 24,
+                          color: 'var(--muted-foreground)',
+                          padding: '10px 16px',
+                          fontSize: 13,
+                          cursor: 'pointer',
+                          fontFamily: 'var(--font-sans)',
+                        }}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setCompletando(true)}
+                    style={{
+                      background: 'var(--primary)',
+                      color: 'var(--primary-foreground)',
+                      border: 'none',
+                      borderRadius: 24,
+                      padding: '14px 32px',
+                      fontFamily: 'var(--font-sans)',
+                      fontSize: 16,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    ✓ Completar sesión
+                  </button>
+                )
+              )}
+            </div>
+
+            {/* Coach button */}
+            <button
+              onClick={() => onNavigate('coach')}
+              style={{
+                width: '100%',
+                background: 'var(--secondary)',
+                border: '1px solid var(--border)',
+                borderRadius: 24,
+                color: 'var(--foreground)',
+                fontFamily: 'var(--font-sans)',
+                fontSize: 15,
+                fontWeight: 500,
+                padding: '12px',
+                cursor: 'pointer',
+              }}
+            >
+              💬 Hablar con el coach
+            </button>
+          </>
+        )}
+
+        {/* Plan exists but no session for today */}
+        {plan && !sesionHoy && (
+          <div style={{
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius)',
+            padding: 24,
+            textAlign: 'center',
+            marginTop: 32,
+          }}>
+            <p style={{ color: 'var(--muted-foreground)' }}>No hay sesión para hoy en tu plan.</p>
+          </div>
+        )}
+
+      </div>
+    </div>
+  )
+}

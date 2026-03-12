@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
 import { getProfile, createProfile } from './lib/profiles'
-import { getPlan, generatePlan } from './lib/plans'
+import { getPlan, generatePlan, markSessionComplete } from './lib/plans'
 import Login from './components/Login'
 import Onboarding from './components/Onboarding'
 import Chat from './components/Chat'
@@ -11,15 +11,19 @@ import StravaConnect from './components/StravaConnect'
 import BottomNav from './components/BottomNav'
 import CookieBanner from './components/CookieBanner'
 import UpgradeModal from './components/UpgradeModal'
+import Dashboard from './components/Dashboard'
+import Progress from './components/Progress'
+import SessionDetail from './components/SessionDetail'
 
 function App() {
   const [session, setSession] = useState(null)
   const [profile, setProfile] = useState(null)
   const [plan, setPlan] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [currentScreen, setCurrentScreen] = useState('coach')
+  const [currentScreen, setCurrentScreen] = useState('dashboard')
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [upgradeSuccess, setUpgradeSuccess] = useState(false)
+  const [selectedSession, setSelectedSession] = useState(null)
 
   async function loadOrCreateProfile(user) {
     let profile = await getProfile(user.id)
@@ -106,6 +110,16 @@ function App() {
         </div>
       )}
 
+      {currentScreen === 'dashboard' && (
+        <Dashboard
+          userId={session.user.id}
+          plan={plan}
+          profile={profile}
+          onPlanUpdate={setPlan}
+          onNavigate={setCurrentScreen}
+        />
+      )}
+
       {currentScreen === 'coach' && (
         <Chat
           userId={session.user.id}
@@ -121,6 +135,15 @@ function App() {
           userId={session.user.id}
           plan={plan}
           onPlanUpdate={setPlan}
+          onSessionDetail={setSelectedSession}
+        />
+      )}
+
+      {currentScreen === 'progress' && (
+        <Progress
+          userId={session.user.id}
+          profile={profile}
+          plan={plan}
         />
       )}
 
@@ -203,6 +226,21 @@ function App() {
 
       <BottomNav currentScreen={currentScreen} onNavigate={setCurrentScreen} />
       <CookieBanner />
+
+      {selectedSession && (
+        <SessionDetail
+          sesion={selectedSession}
+          profile={profile}
+          onClose={() => setSelectedSession(null)}
+          onComplete={async (rpe) => {
+            if (plan?.id) {
+              const updated = await markSessionComplete(plan.id, selectedSession.dia, rpe).catch(() => null)
+              if (updated) setPlan(updated)
+            }
+            setSelectedSession(null)
+          }}
+        />
+      )}
 
       {showUpgradeModal && (
         <UpgradeModal

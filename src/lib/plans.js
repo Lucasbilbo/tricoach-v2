@@ -87,6 +87,32 @@ export async function adjustPlan(userId, planId, motivo, descripcion) {
   return response.json()
 }
 
+export async function getRecentPlans(userId, numSemanas = 4) {
+  const { data } = await supabase
+    .from('plans')
+    .select('*')
+    .eq('user_id', userId)
+    .order('semana', { ascending: false })
+    .limit(numSemanas)
+  return data || []
+}
+
+export function calcularConsistencia(planes) {
+  if (!planes || planes.length === 0) return null
+  let completadas = 0
+  let total = 0
+  for (const plan of planes) {
+    for (const s of (plan.sesiones || [])) {
+      if (s.tipo?.toLowerCase() !== 'descanso') {
+        total++
+        if (s.completada) completadas++
+      }
+    }
+  }
+  if (total === 0) return null
+  return Math.round((completadas / total) * 100)
+}
+
 export function analizarPlan(plan) {
   if (!plan?.sesiones) return null
 

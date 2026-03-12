@@ -187,9 +187,9 @@ Validación Free/Pro siempre en **backend** (claude.js, generate-plan.js) — nu
 3. `git add . && git commit -m "..." && git push`
 4. Netlify despliega automáticamente
 
-## Tests: 43 pasando
+## Tests: 48 pasando
 - systemPrompt.test.js (10), strava-activities.test.js (4), weeklyPlan.test.js (4)
-- phase8.test.jsx (4), phase10.test.jsx (4), limits.test.js (4)
+- phase8.test.jsx (4), phase10.test.jsx (4), phase105.test.jsx (5), limits.test.js (4)
 - onboarding.test.jsx (3), netlify-functions.test.js (3)
 - profiles.test.js (2), supabase.test.js (2), auth.test.jsx (2), example.test.jsx (1)
 - E2E: auth.spec.js (4)
