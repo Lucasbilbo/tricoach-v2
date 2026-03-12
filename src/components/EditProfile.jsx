@@ -114,6 +114,22 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
       }}>
         <p style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 14, fontWeight: 600 }}>Datos del perfil</p>
 
+        {profile?.plan === 'pro' && (
+          <span style={{
+            display: 'inline-block',
+            background: 'oklch(0.7 0.18 45 / 0.2)',
+            border: '1px solid var(--primary)',
+            color: 'var(--primary)',
+            borderRadius: 999,
+            padding: '4px 12px',
+            fontSize: 12,
+            fontWeight: 700,
+            marginBottom: 14,
+          }}>
+            ✦ Pro
+          </span>
+        )}
+
         <label style={labelStyle}>Nombre</label>
         <input style={inputStyle} value={nombre} onChange={e => setNombre(e.target.value)} />
 

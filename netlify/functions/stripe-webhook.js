@@ -74,7 +74,7 @@ function supabaseGet(hostname, path, key) {
 
 function sendWelcomeEmail(resendKey, to, nombre) {
   const bodyStr = JSON.stringify({
-    from: 'TriCoach <noreply@tricoach.app>',
+    from: 'TriCoach <onboarding@resend.dev>',
     to: [to],
     subject: '¡Bienvenido a TriCoach Pro! 🏆',
     html: `<h2>¡Hola${nombre ? ` ${nombre}` : ''}!</h2><p>Tu cuenta TriCoach Pro ya está activa. Ahora tienes mensajes ilimitados con tu coach AI, análisis de Strava y planes adaptados cada semana.</p><p>¡A entrenar!</p>`
