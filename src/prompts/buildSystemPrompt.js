@@ -30,8 +30,13 @@ export function buildSystemPrompt(profile, personalidad = 'cercano', actividades
   const deporteInfo = {
     triatlon: 'triatlón olímpico (natación 1.5km, ciclismo 40km, running 10km)',
     running: 'running y carreras populares',
+    natacion: 'natación (piscina y aguas abiertas)',
     hyrox: 'Hyrox (carrera funcional con estaciones de fitness)',
   }
+
+  const natacionContext = deporte === 'natacion'
+    ? `\nContexto técnico natación: trabaja estilo crol como base. Incluye ejercicios de técnica (patada tabla, pull con paletas, drills de brazada) si el nivel es principiante o intermedio. Para series: especifica estilo, distancia, tiempo de descanso y referencia de ritmo por 100m.`
+    : ''
 
   const estiloPersonalidad = personalidades[personalidad] || personalidades.cercano
 
@@ -46,7 +51,7 @@ export function buildSystemPrompt(profile, personalidad = 'cercano', actividades
     : ''
 
   return `Eres un coach deportivo personal experto en ${deporteInfo[deporte] || deporte}.
-Tu nombre es ${nombreCoach}. El usuario te llama así.
+Tu nombre es ${nombreCoach}. El usuario te llama así.${natacionContext}
 Tu atleta se llama ${nombre}, tiene nivel ${nivel} y su objetivo es: ${objetivo}.
 ${fechaCarrera}
 ${contexto}

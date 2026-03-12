@@ -7,6 +7,7 @@ import StravaConnect from './StravaConnect'
 const DEPORTES = [
   { value: 'triatlon', label: 'Triatlón', emoji: '🏊🚴🏃', desc: 'Natación, ciclismo y running' },
   { value: 'running', label: 'Running', emoji: '🏃', desc: 'Carreras populares y trail' },
+  { value: 'natacion', label: 'Natación', emoji: '🏊', desc: 'Piscina, aguas abiertas, técnica' },
   { value: 'hyrox', label: 'Hyrox', emoji: '💪', desc: 'Carrera funcional con estaciones' },
 ]
 
@@ -26,6 +27,7 @@ const PERSONALIDADES = [
 const TIPOS_CARRERA = {
   triatlon: ['Sprint', 'Olímpico', '70.3', 'Ironman'],
   running: ['5K', '10K', 'Media Maratón', 'Maratón', 'Trail'],
+  natacion: ['100m', '200m', '400m', '800m', '1500m', 'Aguas abiertas 1km', 'Aguas abiertas 3km', 'Aguas abiertas 5km'],
   hyrox: ['Hyrox Individual', 'Hyrox Dobles'],
 }
 
@@ -253,7 +255,7 @@ export default function Onboarding({ userId, onComplete }) {
   const [submitted, setSubmitted] = useState(false)
   const [otroEquipamiento, setOtroEquipamiento] = useState('')
   const [sinCarrera, setSinCarrera] = useState(false)
-  const [errores, setErrores] = useState({ carreras: '', historial: '', disponibilidad: '', equipamiento: '' })
+  const [errores, setErrores] = useState({ nivel: '', carreras: '', historial: '', disponibilidad: '', equipamiento: '' })
 
   // Si volvemos del OAuth de Strava, saltar al paso de integraciones
   // Usar href.includes para compatibilidad con Safari móvil
@@ -271,13 +273,15 @@ export default function Onboarding({ userId, onComplete }) {
       prev.includes(slot) ? prev.filter(s => s !== slot) : [...prev, slot]
     )
 
-  const toggleEquip = (value) =>
-    setForm(prev => ({
-      ...prev,
-      equipamiento: prev.equipamiento.includes(value)
-        ? prev.equipamiento.filter(e => e !== value)
-        : [...prev.equipamiento, value],
-    }))
+  const toggleEquip = (value) => {
+    const nuevoEquipamiento = form.equipamiento.includes(value)
+      ? form.equipamiento.filter(e => e !== value)
+      : [...form.equipamiento, value]
+    setForm(prev => ({ ...prev, equipamiento: nuevoEquipamiento }))
+    if (nuevoEquipamiento.length > 0) {
+      setErrores(prev => ({ ...prev, equipamiento: '' }))
+    }
+  }
 
   const addCarrera = () => {
     if (!nuevaCarrera.nombre || !nuevaCarrera.tipo) return
@@ -396,19 +400,29 @@ export default function Onboarding({ userId, onComplete }) {
           <div>
             {heading('¿Cuál es tu nivel?')}
             {subheading('Adaptaremos la intensidad a ti')}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
               {NIVELES.map(n => (
                 <OptionCard
                   key={n.value}
                   selected={form.nivel === n.value}
-                  onClick={() => handleSelect('nivel', n.value)}
+                  onClick={() => { handleSelect('nivel', n.value); setErrores(prev => ({ ...prev, nivel: '' })) }}
                   emoji={n.emoji}
                   label={n.label}
                   desc={n.desc}
                 />
               ))}
             </div>
-            <button onClick={() => setStep(4)} style={PRIMARY_BTN}>Siguiente</button>
+            {errores.nivel && (
+              <p style={{ color: 'var(--destructive)', fontSize: 13, marginBottom: 8, textAlign: 'center' }}>{errores.nivel}</p>
+            )}
+            <button onClick={() => {
+              if (!form.nivel) {
+                setErrores(prev => ({ ...prev, nivel: 'Selecciona tu nivel para continuar' }))
+                return
+              }
+              setErrores(prev => ({ ...prev, nivel: '' }))
+              setStep(4)
+            }} style={PRIMARY_BTN}>Siguiente</button>
             <button onClick={() => setStep(2)} style={BACK_BTN}>← Atrás</button>
           </div>
         )}

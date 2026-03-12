@@ -210,6 +210,7 @@ exports.handler = async (event) => {
   const deporteInfo = {
     triatlon: 'triatlón olímpico (natación 1.5km, ciclismo 40km, running 10km)',
     running: 'running y carreras populares',
+    natacion: 'natación (piscina y aguas abiertas)',
     hyrox: 'Hyrox (carrera funcional con estaciones de fitness)',
   };
 
@@ -251,7 +252,7 @@ Para la descripción de cada sesión activa incluye en una sola línea:
 - Bloque principal con detalles concretos según el deporte:
   * Correr: series con distancia y ritmo (ej: "4x1000m a 4:45/km, 90seg recuperación trote")
   * Bici: intervalos con zona o vatios (ej: "3x10min zona 3 a 85rpm")
-  * Nadar: series con distancia y descanso (ej: "6x100m estilo libre, 20seg descanso")
+  * Nadar: estilo (crol/espalda/braza), distancia, descanso y ritmo por 100m; añadir drills de técnica si nivel principiante (ej: "6x100m crol con 20seg descanso, ritmo 2:00/100m")
   * Fuerza/Hyrox: ejercicios, series y repeticiones (ej: "Sentadilla 3x10, Remo 3x12, Core 3x15")
 - Vuelta a la calma (10% del tiempo): estiramientos o recuperación suave
 - RPE objetivo para el bloque principal (ej: "RPE 6-7")
