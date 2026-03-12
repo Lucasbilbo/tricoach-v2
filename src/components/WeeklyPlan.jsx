@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { generatePlan, markSessionComplete } from '../lib/plans'
+import { generatePlan, markSessionComplete, adjustPlan, analizarPlan } from '../lib/plans'
 
 const ICONOS = {
   Correr: '🏃',
@@ -12,17 +12,31 @@ const ICONOS = {
 
 const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
+function getCurrentWeekStart() {
+  const now = new Date()
+  const day = now.getDay()
+  const diff = day === 0 ? -6 : 1 - day
+  const monday = new Date(now)
+  monday.setDate(now.getDate() + diff)
+  return monday.toISOString().split('T')[0]
+}
+
 export default function WeeklyPlan({ userId, plan, onPlanUpdate }) {
   const [generando, setGenerando] = useState(false)
   const [completando, setCompletando] = useState(null)
   const [rpe, setRpe] = useState(5)
+  const [ajustando, setAjustando] = useState(false)
 
   const today = DIAS_SEMANA[new Date().getDay()]
+  const currentWeekStart = getCurrentWeekStart()
+  const esSemanaPasada = plan && plan.semana < currentWeekStart
 
-  async function handleGenerarPlan() {
+  const hayPendientes = plan?.sesiones?.some(s => !s.completada && s.tipo?.toLowerCase() !== 'descanso')
+
+  async function handleGenerarPlan(planAnteriorParaAnalisis = null) {
     setGenerando(true)
     try {
-      const nuevoPlan = await generatePlan(userId)
+      const nuevoPlan = await generatePlan(userId, planAnteriorParaAnalisis)
       onPlanUpdate(nuevoPlan)
     } catch (e) {
       console.error('Error al generar plan:', e)
@@ -39,6 +53,18 @@ export default function WeeklyPlan({ userId, plan, onPlanUpdate }) {
       console.error('Error al completar sesión:', e)
     } finally {
       setCompletando(null)
+    }
+  }
+
+  async function handleAjustar(motivo, descripcion = '') {
+    setAjustando(motivo)
+    try {
+      const updated = await adjustPlan(userId, plan.id, motivo, descripcion)
+      onPlanUpdate(updated)
+    } catch (e) {
+      console.error('Error al ajustar plan:', e)
+    } finally {
+      setAjustando(false)
     }
   }
 
@@ -60,7 +86,7 @@ export default function WeeklyPlan({ userId, plan, onPlanUpdate }) {
           No tienes un plan para esta semana.
         </p>
         <button
-          onClick={handleGenerarPlan}
+          onClick={() => handleGenerarPlan()}
           disabled={generando}
           style={{
             background: generando ? 'var(--muted)' : 'var(--primary)',
@@ -79,6 +105,8 @@ export default function WeeklyPlan({ userId, plan, onPlanUpdate }) {
       </div>
     )
   }
+
+  const analisis = analizarPlan(plan)
 
   return (
     <div style={{
@@ -99,29 +127,108 @@ export default function WeeklyPlan({ userId, plan, onPlanUpdate }) {
           <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 600 }}>
             Semana del {plan.semana}
           </h3>
-          <button
-            onClick={handleGenerarPlan}
-            disabled={generando}
-            style={{
-              background: 'var(--secondary)',
-              border: '1px solid var(--border)',
-              borderRadius: 8,
-              color: 'var(--muted-foreground)',
-              fontFamily: 'var(--font-sans)',
-              fontSize: 12,
-              padding: '4px 10px',
-              cursor: 'pointer',
-            }}
-          >
-            {generando ? '...' : '↻ Regenerar'}
-          </button>
+          {!esSemanaPasada && (
+            <button
+              onClick={() => handleGenerarPlan()}
+              disabled={generando}
+              style={{
+                background: 'var(--secondary)',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                color: 'var(--muted-foreground)',
+                fontFamily: 'var(--font-sans)',
+                fontSize: 12,
+                padding: '4px 10px',
+                cursor: 'pointer',
+              }}
+            >
+              {generando ? '...' : '↻ Regenerar'}
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Sessions */}
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '12px 16px' }}>
+
+        {/* Banner semana pasada */}
+        {esSemanaPasada && (
+          <div style={{
+            background: 'oklch(0.7 0.18 45 / 0.08)',
+            border: '1px solid oklch(0.7 0.18 45 / 0.35)',
+            borderRadius: 'var(--radius)',
+            padding: '14px 16px',
+            marginBottom: 16,
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+              <div>
+                <p style={{ fontWeight: 600, fontSize: 15, color: 'var(--primary)', marginBottom: 4 }}>
+                  📅 Nueva semana
+                </p>
+                <p style={{ fontSize: 13, color: 'var(--muted-foreground)' }}>
+                  Semana anterior: {analisis?.sesionesCompletadas ?? 0}/7 sesiones completadas
+                  {analisis?.rpeMedia != null ? ` · RPE medio ${analisis.rpeMedia}` : ''}
+                </p>
+              </div>
+              <button
+                onClick={() => handleGenerarPlan(plan)}
+                disabled={generando}
+                style={{
+                  background: generando ? 'var(--muted)' : 'var(--primary)',
+                  color: 'var(--primary-foreground)',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '8px 14px',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: generando ? 'not-allowed' : 'pointer',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                }}
+              >
+                {generando ? '...' : 'Generar esta semana'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Botones de ajuste rápido */}
+        {!esSemanaPasada && hayPendientes && (
+          <div style={{
+            display: 'flex',
+            gap: 6,
+            marginBottom: 12,
+            flexWrap: 'wrap',
+          }}>
+            {[
+              { motivo: 'dia_suelto', label: 'No puedo hoy', desc: `hoy es ${today}` },
+              { motivo: 'lesion', label: 'Estoy lesionado', desc: '' },
+              { motivo: 'viaje', label: 'Voy de viaje', desc: '' },
+            ].map(({ motivo, label, desc }) => (
+              <button
+                key={motivo}
+                onClick={() => handleAjustar(motivo, desc)}
+                disabled={ajustando !== false}
+                style={{
+                  background: 'var(--secondary)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 20,
+                  color: ajustando === motivo ? 'var(--foreground)' : 'var(--muted-foreground)',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 12,
+                  padding: '5px 12px',
+                  cursor: ajustando !== false ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {ajustando === motivo ? '...' : label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Sessions */}
         {plan.sesiones.map((sesion) => {
-          const esHoy = sesion.dia === today
+          const esHoy = sesion.dia === today && !esSemanaPasada
           return (
             <div
               key={sesion.dia}
@@ -142,7 +249,7 @@ export default function WeeklyPlan({ userId, plan, onPlanUpdate }) {
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
                     <span style={{ fontSize: 20 }}>{ICONOS[sesion.tipo] || '🏋️'}</span>
                     <div>
                       <span style={{
@@ -181,7 +288,7 @@ export default function WeeklyPlan({ userId, plan, onPlanUpdate }) {
                     <span style={{ color: 'var(--success)', fontWeight: 600, fontSize: 13 }}>
                       ✓{sesion.rpe ? ` RPE ${sesion.rpe}` : ''}
                     </span>
-                  ) : sesion.tipo !== 'Descanso' && (
+                  ) : sesion.tipo !== 'Descanso' && !esSemanaPasada && (
                     completando === sesion.dia ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

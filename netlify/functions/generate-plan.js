@@ -11,7 +11,7 @@ const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
 
 function getWeekStart() {
   const now = new Date();
-  const day = now.getDay(); // 0=Dom, 1=Lun, ..., 6=Sáb
+  const day = now.getDay();
   const diff = day === 0 ? -6 : 1 - day;
   const monday = new Date(now);
   monday.setDate(now.getDate() + diff);
@@ -103,6 +103,54 @@ function callClaude(apiKey, systemPrompt, userMessage) {
   });
 }
 
+function fetchStravaActivities(accessToken) {
+  return new Promise((resolve) => {
+    const options = {
+      hostname: 'www.strava.com',
+      path: '/api/v3/athlete/activities?per_page=7',
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    };
+    const req = https.request(options, (r) => {
+      let d = '';
+      r.on('data', chunk => d += chunk);
+      r.on('end', () => {
+        try { resolve(JSON.parse(d)); } catch { resolve(null); }
+      });
+    });
+    req.on('error', () => resolve(null));
+    req.end();
+  });
+}
+
+function buildAnalisisSemanaAnterior(planAnterior, stravaText) {
+  const sesiones = planAnterior.sesiones || [];
+  const completadas = sesiones.filter(s => s.completada);
+  const saltadas = sesiones.filter(s => !s.completada && s.tipo?.toLowerCase() !== 'descanso');
+
+  const getRpe = s => s.rpe ?? s.rpe_usuario;
+  const rpesValidos = completadas.filter(s => getRpe(s) != null);
+  const rpeMedia = rpesValidos.length > 0
+    ? Math.round(rpesValidos.reduce((acc, s) => acc + getRpe(s), 0) / rpesValidos.length * 10) / 10
+    : null;
+
+  const saltadasStr = saltadas.length > 0
+    ? saltadas.map(s => `${s.dia} (${s.tipo})`).join(', ')
+    : 'Ninguna';
+
+  return `ANÁLISIS DE LA SEMANA ANTERIOR:
+- Sesiones completadas: ${completadas.length} de 7
+- RPE medio: ${rpeMedia != null ? `${rpeMedia}/10` : 'No registrado'}
+- Sesiones no completadas: ${saltadasStr}
+- Actividades Strava registradas: ${stravaText || 'Sin datos'}
+
+CRITERIOS PARA ESTA SEMANA:
+- Si RPE medio > 7 o completadas < 4: reducir carga un 15%, más recuperación
+- Si RPE medio < 5 y completadas >= 6: se puede aumentar carga un 10%
+- Si hay sesiones saltadas de un tipo específico: no acumular deuda, redistribuir
+- Mantener progresión hacia la fecha de carrera`;
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS, body: 'Method Not Allowed' };
@@ -119,7 +167,7 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'JSON inválido' }) };
   }
 
-  const { userId } = parsed;
+  const { userId, planAnterior } = parsed;
   if (!userId) {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId requerido' }) };
   }
@@ -128,16 +176,31 @@ exports.handler = async (event) => {
   const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
   const hostname = new URL(supabaseUrl).hostname;
 
-  // Obtener perfil del usuario
+  // Obtener perfil del usuario (incluyendo campos de Strava)
   const profiles = await supabaseGet(
     hostname,
-    `/rest/v1/profiles?id=eq.${userId}&select=deporte,nivel,objetivo,fecha_carrera,contexto`,
+    `/rest/v1/profiles?id=eq.${userId}&select=deporte,nivel,objetivo,fecha_carrera,contexto,strava_token,strava_token_expires_at`,
     supabaseKey
   );
 
   const profile = Array.isArray(profiles) ? profiles[0] : null;
   if (!profile) {
     return { statusCode: 404, headers: CORS, body: JSON.stringify({ error: 'Perfil no encontrado' }) };
+  }
+
+  // Obtener actividades de Strava si hay token válido
+  let stravaText = null;
+  if (profile.strava_token) {
+    const now = Math.floor(Date.now() / 1000);
+    const tokenOk = !profile.strava_token_expires_at || profile.strava_token_expires_at > now;
+    if (tokenOk) {
+      const activities = await fetchStravaActivities(profile.strava_token);
+      if (Array.isArray(activities) && activities.length > 0) {
+        stravaText = activities.slice(0, 5)
+          .map(a => `${a.type} ${(a.distance / 1000).toFixed(1)}km en ${Math.round(a.moving_time / 60)}min`)
+          .join(', ');
+      }
+    }
   }
 
   const weekStart = getWeekStart();
@@ -148,6 +211,10 @@ exports.handler = async (event) => {
     hyrox: 'Hyrox (carrera funcional con estaciones de fitness)',
   };
 
+  const analisisSection = planAnterior
+    ? '\n\n' + buildAnalisisSemanaAnterior(planAnterior, stravaText)
+    : '';
+
   const systemPrompt = `Eres un coach deportivo experto. Genera planes de entrenamiento personalizados en JSON.
 Instrucción: devuelve SOLO un JSON válido, sin texto adicional, sin markdown, sin bloques de código.`;
 
@@ -157,7 +224,7 @@ Deporte: ${deporteInfo[profile.deporte] || profile.deporte || 'deporte de resist
 Nivel: ${profile.nivel || 'principiante'}
 Objetivo: ${profile.objetivo || 'mejorar forma física'}
 ${profile.fecha_carrera ? `Próximo evento: ${profile.fecha_carrera}` : ''}
-${profile.contexto ? `Contexto del atleta: ${profile.contexto}` : ''}
+${profile.contexto ? `Contexto del atleta: ${profile.contexto}` : ''}${analisisSection}
 
 El JSON debe tener esta estructura exacta:
 {
@@ -190,7 +257,6 @@ Devuelve exactamente 7 sesiones, una por día de la semana (Lunes a Domingo).`;
 
   let planData;
   try {
-    // Extraer JSON limpio (por si Claude añade texto extra)
     const text = claudeResponse.content[0].text.trim();
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     planData = JSON.parse(jsonMatch ? jsonMatch[0] : text);

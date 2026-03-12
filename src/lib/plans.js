@@ -2,10 +2,19 @@ import { supabase } from './supabase'
 
 function getWeekStart() {
   const now = new Date()
-  const day = now.getDay() // 0=Dom, 1=Lun, ..., 6=Sáb
+  const day = now.getDay()
   const diff = day === 0 ? -6 : 1 - day
   const monday = new Date(now)
   monday.setDate(now.getDate() + diff)
+  return monday.toISOString().split('T')[0]
+}
+
+function getLastWeekStart() {
+  const now = new Date()
+  const day = now.getDay()
+  const diff = day === 0 ? -6 : 1 - day
+  const monday = new Date(now)
+  monday.setDate(now.getDate() + diff - 7)
   return monday.toISOString().split('T')[0]
 }
 
@@ -20,7 +29,18 @@ export async function getPlan(userId) {
   return data
 }
 
-export async function generatePlan(userId) {
+export async function getLastWeekPlan(userId) {
+  const semana = getLastWeekStart()
+  const { data } = await supabase
+    .from('plans')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('semana', semana)
+    .single()
+  return data
+}
+
+export async function generatePlan(userId, planAnterior = null) {
   const secret = import.meta.env.VITE_TRICOACH_SECRET || ''
   const res = await fetch('/.netlify/functions/generate-plan', {
     method: 'POST',
@@ -28,7 +48,7 @@ export async function generatePlan(userId) {
       'Content-Type': 'application/json',
       'x-tricoach-secret': secret
     },
-    body: JSON.stringify({ userId })
+    body: JSON.stringify({ userId, planAnterior })
   })
   return res.json()
 }
@@ -52,4 +72,38 @@ export async function markSessionComplete(planId, dia, rpe) {
     .single()
 
   return data
+}
+
+export async function adjustPlan(userId, planId, motivo, descripcion) {
+  const secret = import.meta.env.VITE_TRICOACH_SECRET || ''
+  const response = await fetch('/.netlify/functions/adjust-plan', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-tricoach-secret': secret
+    },
+    body: JSON.stringify({ userId, planId, motivo, descripcion })
+  })
+  return response.json()
+}
+
+export function analizarPlan(plan) {
+  if (!plan?.sesiones) return null
+
+  const sesiones = plan.sesiones
+  const completadas = sesiones.filter(s => s.completada)
+  const saltadas = sesiones.filter(s => !s.completada && s.tipo?.toLowerCase() !== 'descanso')
+
+  const getRpe = s => s.rpe ?? s.rpe_usuario
+  const rpesValidos = completadas.filter(s => getRpe(s) != null)
+  const rpeMedia = rpesValidos.length > 0
+    ? Math.round(rpesValidos.reduce((acc, s) => acc + getRpe(s), 0) / rpesValidos.length * 10) / 10
+    : null
+
+  return {
+    sesionesCompletadas: completadas.length,
+    sesionesTotales: sesiones.length,
+    rpeMedia,
+    sesionesSaltadas: saltadas.map(s => ({ dia: s.dia, tipo: s.tipo }))
+  }
 }
