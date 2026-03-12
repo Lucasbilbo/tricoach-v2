@@ -46,6 +46,7 @@ export async function generatePlan(userId, planAnterior = null) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
       'x-tricoach-secret': secret
     },
     body: JSON.stringify({ userId, planAnterior })
@@ -80,6 +81,7 @@ export async function adjustPlan(userId, planId, motivo, descripcion) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
       'x-tricoach-secret': secret
     },
     body: JSON.stringify({ userId, planId, motivo, descripcion })

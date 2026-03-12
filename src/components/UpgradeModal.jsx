@@ -24,11 +24,7 @@ export default function UpgradeModal({ userId, onClose }) {
   const [loading, setLoading] = useState(null)
 
   async function handleUpgrade(priceId, planId) {
-    console.log('handleUpgrade called', { priceId, planId, userId })
-    if (!priceId) {
-      console.error('priceId is undefined - check VITE_STRIPE_PRICE_MONTHLY env var')
-      return
-    }
+    if (!priceId) return
     setLoading(planId)
     try {
       const res = await fetch('/.netlify/functions/create-checkout', {

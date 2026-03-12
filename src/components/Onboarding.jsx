@@ -275,22 +275,23 @@ export default function Onboarding({ userId, onComplete }) {
   }
 
   const handleSubmit = async () => {
-    const { data: { session } } = await supabase.auth.getSession()
-    console.log('Sesión en onboarding:', session)
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          ...form,
+          nombre_coach: form.nombre_coach || 'Coach',
+          lesiones: sinLesiones ? 'Sin lesiones actuales' : form.lesiones,
+          disponibilidad: disponibilidadSlots.join(', '),
+          carreras,
+        })
+        .eq('id', userId)
 
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        ...form,
-        nombre_coach: form.nombre_coach || 'Coach',
-        lesiones: sinLesiones ? 'Sin lesiones actuales' : form.lesiones,
-        disponibilidad: disponibilidadSlots.join(', '),
-        carreras,
-      })
-      .eq('id', userId)
-
-    console.log('Error al actualizar:', error)
-    if (!error) onComplete()
+      if (error) console.error('Error en handleSubmit:', error)
+    } catch (e) {
+      console.error('Exception en handleSubmit:', e)
+    }
+    onComplete()
   }
 
   const heading = (text) => (
@@ -414,7 +415,9 @@ export default function Onboarding({ userId, onComplete }) {
                     <div>
                       <span style={{ fontWeight: 600, fontSize: 13 }}>{c.nombre}</span>
                       <span style={{ color: 'var(--primary)', fontSize: 12, marginLeft: 8 }}>{c.tipo}</span>
-                      {c.fecha && <span style={{ color: 'var(--muted-foreground)', fontSize: 12, marginLeft: 8 }}>{c.fecha}</span>}
+                      {c.fecha && <span style={{ color: 'var(--muted-foreground)', fontSize: 12, marginLeft: 8 }}>
+                        {new Date(c.fecha + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </span>}
                     </div>
                     <button
                       onClick={() => setCarreras(prev => prev.filter((_, idx) => idx !== i))}

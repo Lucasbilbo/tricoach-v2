@@ -14,6 +14,7 @@ import UpgradeModal from './components/UpgradeModal'
 import Dashboard from './components/Dashboard'
 import Progress from './components/Progress'
 import SessionDetail from './components/SessionDetail'
+import ErrorBoundary from './components/ErrorBoundary'
 
 function App() {
   const [session, setSession] = useState(null)
@@ -111,32 +112,38 @@ function App() {
       )}
 
       {currentScreen === 'dashboard' && (
-        <Dashboard
-          userId={session.user.id}
-          plan={plan}
-          profile={profile}
-          onPlanUpdate={setPlan}
-          onNavigate={setCurrentScreen}
-        />
+        <ErrorBoundary fallbackMessage="No se pudo cargar el entrenamiento de hoy">
+          <Dashboard
+            userId={session.user.id}
+            plan={plan}
+            profile={profile}
+            onPlanUpdate={setPlan}
+            onNavigate={setCurrentScreen}
+          />
+        </ErrorBoundary>
       )}
 
       {currentScreen === 'coach' && (
-        <Chat
-          userId={session.user.id}
-          profile={profile}
-          personalidad={profile?.personalidad || 'cercano'}
-          onPersonalidadChange={handlePersonalidadChange}
-          onShowUpgrade={() => setShowUpgradeModal(true)}
-        />
+        <ErrorBoundary fallbackMessage="No se pudo cargar el chat con tu coach">
+          <Chat
+            userId={session.user.id}
+            profile={profile}
+            personalidad={profile?.personalidad || 'cercano'}
+            onPersonalidadChange={handlePersonalidadChange}
+            onShowUpgrade={() => setShowUpgradeModal(true)}
+          />
+        </ErrorBoundary>
       )}
 
       {currentScreen === 'plan' && (
-        <WeeklyPlan
-          userId={session.user.id}
-          plan={plan}
-          onPlanUpdate={setPlan}
-          onSessionDetail={setSelectedSession}
-        />
+        <ErrorBoundary fallbackMessage="No se pudo cargar el plan semanal">
+          <WeeklyPlan
+            userId={session.user.id}
+            plan={plan}
+            onPlanUpdate={setPlan}
+            onSessionDetail={setSelectedSession}
+          />
+        </ErrorBoundary>
       )}
 
       {currentScreen === 'progress' && (
