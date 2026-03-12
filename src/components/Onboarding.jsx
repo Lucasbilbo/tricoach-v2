@@ -46,7 +46,14 @@ const EQUIPAMIENTO_OPTIONS = [
   { value: 'pulsometro', label: '❤️ Monitor de frecuencia cardíaca' },
   { value: 'reloj_gps', label: '⌚ Reloj GPS' },
   { value: 'rodillo', label: '🔵 Rodillo / trainer' },
+  { value: 'otro', label: '✏️ Otro' },
 ]
+
+function formatFecha(fecha) {
+  if (!fecha) return ''
+  const d = new Date(fecha + 'T00:00:00')
+  return isNaN(d.getTime()) ? fecha : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+}
 
 const DIAS_SLOTS = [
   ['Lunes mañana', 'Lunes tarde'],
@@ -243,11 +250,13 @@ export default function Onboarding({ userId, onComplete }) {
   const [disponibilidadSlots, setDisponibilidadSlots] = useState([])
   const [sinLesiones, setSinLesiones] = useState(false)
   const [nuevaCarrera, setNuevaCarrera] = useState({ nombre: '', tipo: '', fecha: '' })
+  const [submitted, setSubmitted] = useState(false)
+  const [otroEquipamiento, setOtroEquipamiento] = useState('')
 
   // Si volvemos del OAuth de Strava, saltar al paso de integraciones
+  // Usar href.includes para compatibilidad con Safari móvil
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    if (params.get('state') === 'strava') {
+    if (window.location.href.includes('state=strava')) {
       setStep(8)
     }
   }, [])
@@ -275,11 +284,20 @@ export default function Onboarding({ userId, onComplete }) {
   }
 
   const handleSubmit = async () => {
+    if (submitted) {
+      onComplete()
+      return
+    }
+    const equipamientoFinal = form.equipamiento.includes('otro') && otroEquipamiento
+      ? [...form.equipamiento.filter(e => e !== 'otro'), otroEquipamiento]
+      : form.equipamiento.filter(e => e !== 'otro')
+
     try {
       const { error } = await supabase
         .from('profiles')
         .update({
           ...form,
+          equipamiento: equipamientoFinal,
           nombre_coach: form.nombre_coach || 'Coach',
           lesiones: sinLesiones ? 'Sin lesiones actuales' : form.lesiones,
           disponibilidad: disponibilidadSlots.join(', '),
@@ -291,6 +309,7 @@ export default function Onboarding({ userId, onComplete }) {
     } catch (e) {
       console.error('Exception en handleSubmit:', e)
     }
+    setSubmitted(true)
     onComplete()
   }
 
@@ -414,10 +433,12 @@ export default function Onboarding({ userId, onComplete }) {
                   }}>
                     <div>
                       <span style={{ fontWeight: 600, fontSize: 13 }}>{c.nombre}</span>
-                      <span style={{ color: 'var(--primary)', fontSize: 12, marginLeft: 8 }}>{c.tipo}</span>
-                      {c.fecha && <span style={{ color: 'var(--muted-foreground)', fontSize: 12, marginLeft: 8 }}>
-                        {new Date(c.fecha + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </span>}
+                      <span style={{ color: 'var(--muted-foreground)', opacity: 0.8, fontSize: 12, marginLeft: 8 }}>{c.tipo}</span>
+                      {c.fecha && (
+                        <span style={{ color: 'var(--muted-foreground)', fontSize: 12, marginLeft: 8 }}>
+                          {formatFecha(c.fecha)}
+                        </span>
+                      )}
                     </div>
                     <button
                       onClick={() => setCarreras(prev => prev.filter((_, idx) => idx !== i))}
@@ -569,6 +590,14 @@ export default function Onboarding({ userId, onComplete }) {
                   />
                 ))}
               </div>
+              {form.equipamiento.includes('otro') && (
+                <input
+                  placeholder="Especifica qué tienes..."
+                  value={otroEquipamiento}
+                  onChange={e => setOtroEquipamiento(e.target.value)}
+                  style={{ ...INPUT_STYLE, marginTop: 10 }}
+                />
+              )}
             </div>
 
             <button onClick={() => setStep(6)} style={PRIMARY_BTN}>Siguiente</button>
