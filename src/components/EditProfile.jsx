@@ -1,6 +1,28 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 
+const inputStyle = {
+  display: 'block',
+  width: '100%',
+  background: 'var(--input)',
+  border: '1px solid var(--border)',
+  borderRadius: 8,
+  color: 'var(--foreground)',
+  fontFamily: 'var(--font-sans)',
+  fontSize: 14,
+  padding: '9px 12px',
+  marginTop: 6,
+  marginBottom: 14,
+  outline: 'none',
+}
+
+const labelStyle = {
+  display: 'block',
+  fontSize: 13,
+  color: 'var(--muted-foreground)',
+  fontWeight: 500,
+}
+
 export default function EditProfile({ profile, onUpdate, onClose }) {
   const [nombre, setNombre] = useState(profile.nombre || '')
   const [deporte, setDeporte] = useState(profile.deporte || '')
@@ -45,80 +67,146 @@ export default function EditProfile({ profile, onUpdate, onClose }) {
   }
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100
-    }}>
-      <div style={{ background: 'white', borderRadius: 12, padding: 32, width: 400 }}>
-        <h3 style={{ marginBottom: 24 }}>Editar perfil</h3>
+    <div style={{ padding: '0 16px 16px' }}>
+      {/* Datos del perfil */}
+      <div style={{
+        background: 'var(--card)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius)',
+        padding: 16,
+        marginBottom: 12,
+      }}>
+        <p style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 14, fontWeight: 600 }}>Datos del perfil</p>
 
-        <label>Nombre</label>
-        <input style={{ display: 'block', width: '100%', marginBottom: 12, padding: 8 }}
-          value={nombre} onChange={e => setNombre(e.target.value)} />
+        <label style={labelStyle}>Nombre</label>
+        <input style={inputStyle} value={nombre} onChange={e => setNombre(e.target.value)} />
 
-        <label>Deporte</label>
-        <select style={{ display: 'block', width: '100%', marginBottom: 12, padding: 8 }}
-          value={deporte} onChange={e => setDeporte(e.target.value)}>
+        <label style={labelStyle}>Deporte</label>
+        <select style={inputStyle} value={deporte} onChange={e => setDeporte(e.target.value)}>
           <option value="triatlon">🏊 Triatlón</option>
           <option value="running">🏃 Running</option>
           <option value="hyrox">💪 Hyrox</option>
         </select>
 
-        <label>Nivel</label>
-        <select style={{ display: 'block', width: '100%', marginBottom: 12, padding: 8 }}
-          value={nivel} onChange={e => setNivel(e.target.value)}>
+        <label style={labelStyle}>Nivel</label>
+        <select style={inputStyle} value={nivel} onChange={e => setNivel(e.target.value)}>
           <option value="principiante">Principiante</option>
           <option value="intermedio">Intermedio</option>
           <option value="avanzado">Avanzado</option>
         </select>
 
-        <label>Objetivo</label>
-        <input style={{ display: 'block', width: '100%', marginBottom: 12, padding: 8 }}
-          value={objetivo} onChange={e => setObjetivo(e.target.value)} />
+        <label style={labelStyle}>Objetivo</label>
+        <input style={inputStyle} value={objetivo} onChange={e => setObjetivo(e.target.value)} />
 
-        <label>Fecha de carrera</label>
-        <input type="date" style={{ display: 'block', width: '100%', marginBottom: 24, padding: 8 }}
-          value={fechaCarrera} onChange={e => setFechaCarrera(e.target.value)} />
+        <label style={labelStyle}>Fecha de carrera</label>
+        <input type="date" style={{ ...inputStyle, marginBottom: 20 }} value={fechaCarrera} onChange={e => setFechaCarrera(e.target.value)} />
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button onClick={onClose} disabled={saving || deleting}>Cancelar</button>
-          <button onClick={handleSave} disabled={saving || deleting}
-            style={{ background: '#0070f3', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 6 }}>
+          <button
+            onClick={onClose}
+            disabled={saving || deleting}
+            style={{
+              background: 'var(--secondary)',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              color: 'var(--foreground)',
+              fontFamily: 'var(--font-sans)',
+              fontSize: 14,
+              padding: '8px 16px',
+              cursor: 'pointer',
+            }}
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving || deleting}
+            style={{
+              background: 'var(--primary)',
+              border: 'none',
+              borderRadius: 8,
+              color: 'var(--primary-foreground)',
+              fontFamily: 'var(--font-sans)',
+              fontSize: 14,
+              fontWeight: 600,
+              padding: '8px 20px',
+              cursor: saving ? 'not-allowed' : 'pointer',
+            }}
+          >
             {saving ? 'Guardando...' : 'Guardar'}
           </button>
         </div>
+      </div>
 
-        <hr style={{ margin: '24px 0' }} />
-
-        <div>
-          <p style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>
-            Zona de peligro — esta acción es irreversible.
-          </p>
-          {!confirmDelete ? (
-            <button
-              onClick={() => setConfirmDelete(true)}
-              style={{ background: 'none', border: '1px solid #ef4444', color: '#ef4444', padding: '8px 16px', borderRadius: 6, cursor: 'pointer' }}
-            >
-              Eliminar mi cuenta
-            </button>
-          ) : (
-            <div>
-              <p style={{ fontSize: 13, color: '#ef4444', marginBottom: 8 }}>
-                ¿Seguro? Se borrarán todos tus datos y conversaciones.
-              </p>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={() => setConfirmDelete(false)} disabled={deleting}>Cancelar</button>
-                <button
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  style={{ background: '#ef4444', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 6, cursor: 'pointer' }}
-                >
-                  {deleting ? 'Eliminando...' : 'Sí, eliminar cuenta'}
-                </button>
-              </div>
+      {/* Zona de peligro */}
+      <div style={{
+        background: 'var(--card)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius)',
+        padding: 16,
+        marginBottom: 12,
+      }}>
+        <p style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 12 }}>
+          Zona de peligro — esta acción es irreversible.
+        </p>
+        {!confirmDelete ? (
+          <button
+            onClick={() => setConfirmDelete(true)}
+            style={{
+              background: 'none',
+              border: '1px solid var(--destructive)',
+              borderRadius: 8,
+              color: 'var(--destructive)',
+              fontFamily: 'var(--font-sans)',
+              fontSize: 13,
+              padding: '7px 14px',
+              cursor: 'pointer',
+            }}
+          >
+            Eliminar mi cuenta
+          </button>
+        ) : (
+          <div>
+            <p style={{ fontSize: 13, color: 'var(--destructive)', marginBottom: 10 }}>
+              ¿Seguro? Se borrarán todos tus datos y conversaciones.
+            </p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => setConfirmDelete(false)}
+                disabled={deleting}
+                style={{
+                  background: 'var(--secondary)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                  color: 'var(--foreground)',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 13,
+                  padding: '7px 14px',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                style={{
+                  background: 'var(--destructive)',
+                  border: 'none',
+                  borderRadius: 8,
+                  color: 'var(--destructive-foreground)',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  padding: '7px 14px',
+                  cursor: deleting ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {deleting ? 'Eliminando...' : 'Sí, eliminar cuenta'}
+              </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )

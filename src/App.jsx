@@ -8,6 +8,7 @@ import Chat from './components/Chat'
 import WeeklyPlan from './components/WeeklyPlan'
 import EditProfile from './components/EditProfile'
 import StravaConnect from './components/StravaConnect'
+import BottomNav from './components/BottomNav'
 import CookieBanner from './components/CookieBanner'
 
 function App() {
@@ -15,7 +16,7 @@ function App() {
   const [profile, setProfile] = useState(null)
   const [plan, setPlan] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [editando, setEditando] = useState(false)
+  const [currentScreen, setCurrentScreen] = useState('coach')
 
   async function loadOrCreateProfile(user) {
     let profile = await getProfile(user.id)
@@ -50,8 +51,14 @@ function App() {
     })
   }, [])
 
-  if (loading) return <p>Cargando...</p>
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: 'var(--muted-foreground)' }}>
+      Cargando...
+    </div>
+  )
+
   if (!session) return <Login />
+
   if (!profile?.deporte) {
     return (
       <Onboarding
@@ -66,36 +73,102 @@ function App() {
   }
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 24px', borderBottom: '1px solid #eee' }}>
-        <h2>TriCoach AI</h2>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span>{profile?.nombre}</span>
-          <button onClick={() => setEditando(true)}>✏️ Perfil</button>
-          <button onClick={() => supabase.auth.signOut()}>Cerrar sesión</button>
-        </div>
-      </div>
-      <div style={{ padding: '8px 24px', borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <label>Estilo del coach:</label>
-        <select value={profile?.personalidad || 'cercano'} onChange={handlePersonalidadChange}>
-          <option value="cercano">😊 Cercano</option>
-          <option value="estricto">💪 Estricto</option>
-          <option value="gracioso">😄 Gracioso</option>
-          <option value="motivador">🔥 Motivador</option>
-        </select>
-      </div>
-      <div style={{ padding: '8px 24px', borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <StravaConnect userId={session.user.id} onConnected={() => loadOrCreateProfile(session.user)} />
-      </div>
-      <WeeklyPlan userId={session.user.id} plan={plan} onPlanUpdate={setPlan} />
-      <Chat userId={session.user.id} profile={profile} />
-      {editando && (
-        <EditProfile
+    <div style={{ background: 'var(--background)', minHeight: '100vh' }}>
+      {currentScreen === 'coach' && (
+        <Chat
+          userId={session.user.id}
           profile={profile}
-          onUpdate={(updated) => setProfile(updated)}
-          onClose={() => setEditando(false)}
+          personalidad={profile?.personalidad || 'cercano'}
+          onPersonalidadChange={handlePersonalidadChange}
         />
       )}
+
+      {currentScreen === 'plan' && (
+        <WeeklyPlan
+          userId={session.user.id}
+          plan={plan}
+          onPlanUpdate={setPlan}
+        />
+      )}
+
+      {currentScreen === 'profile' && (
+        <div style={{ paddingBottom: 60, minHeight: '100vh', overflowY: 'auto' }}>
+          <div style={{
+            background: 'var(--card)',
+            borderBottom: '1px solid var(--border)',
+            padding: '20px 16px 16px',
+          }}>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 22, fontWeight: 600 }}>Perfil</h2>
+          </div>
+
+          <div style={{ padding: '16px 16px 0' }}>
+            <div style={{
+              background: 'var(--card)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
+              padding: 16,
+              marginBottom: 12,
+            }}>
+              <p style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 8 }}>Estilo del coach</p>
+              <select
+                value={profile?.personalidad || 'cercano'}
+                onChange={handlePersonalidadChange}
+                style={{
+                  width: '100%',
+                  background: 'var(--input)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                  color: 'var(--foreground)',
+                  padding: '8px 12px',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 14,
+                }}
+              >
+                <option value="cercano">😊 Cercano</option>
+                <option value="estricto">💪 Estricto</option>
+                <option value="gracioso">😄 Gracioso</option>
+                <option value="motivador">🔥 Motivador</option>
+              </select>
+            </div>
+
+            <div style={{
+              background: 'var(--card)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
+              padding: 16,
+              marginBottom: 12,
+            }}>
+              <StravaConnect userId={session.user.id} onConnected={() => loadOrCreateProfile(session.user)} />
+            </div>
+          </div>
+
+          <EditProfile
+            profile={profile}
+            onUpdate={(updated) => setProfile(updated)}
+            onClose={() => setCurrentScreen('coach')}
+          />
+
+          <div style={{ padding: '0 16px 16px', textAlign: 'center' }}>
+            <button
+              onClick={() => supabase.auth.signOut()}
+              style={{
+                background: 'none',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                color: 'var(--muted-foreground)',
+                padding: '8px 20px',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-sans)',
+                fontSize: 14,
+              }}
+            >
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
+      )}
+
+      <BottomNav currentScreen={currentScreen} onNavigate={setCurrentScreen} />
       <CookieBanner />
     </div>
   )

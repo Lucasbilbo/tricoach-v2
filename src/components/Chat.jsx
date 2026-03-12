@@ -4,7 +4,13 @@ import { canSendMessage, incrementMessageCount } from '../lib/profiles'
 import { buildSystemPrompt } from '../prompts/buildSystemPrompt'
 import { updateContext } from '../lib/context'
 
-export default function Chat({ userId, profile }) {
+const DEPORTE_LABELS = {
+  triatlon: '🏊 Triatlón',
+  running: '🏃 Running',
+  hyrox: '💪 Hyrox',
+}
+
+export default function Chat({ userId, profile, personalidad, onPersonalidadChange }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -95,37 +101,161 @@ export default function Chat({ userId, profile }) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  const messagesHoy = profile?.messages_today || 0
+  const esFree = profile?.plan === 'free'
+
   return (
-    <div style={{ maxWidth: 600, margin: '0 auto', padding: 24 }}>
-      <div style={{ height: 400, overflowY: 'auto', border: '1px solid #ccc', padding: 16, marginBottom: 16 }}>
-        {messages.map((msg, i) => (
-          <div key={i} style={{ marginBottom: 12, textAlign: msg.role === 'user' ? 'right' : 'left' }}>
-            <span style={{
-              background: msg.role === 'user' ? '#0070f3' : '#f0f0f0',
-              color: msg.role === 'user' ? 'white' : 'black',
-              padding: '8px 12px',
-              borderRadius: 12,
-              display: 'inline-block',
-              maxWidth: '80%'
-            }}>
-              {msg.content}
-            </span>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: 'calc(100vh - 60px)',
+      background: 'var(--background)',
+    }}>
+      {/* Header */}
+      <div style={{
+        background: 'var(--card)',
+        borderBottom: '1px solid var(--border)',
+        padding: '12px 16px',
+        flexShrink: 0,
+      }}>
+        <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: 18, color: 'var(--foreground)' }}>
+              {profile?.nombre || 'Atleta'}
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--muted-foreground)', marginTop: 1 }}>
+              {DEPORTE_LABELS[profile?.deporte] || profile?.deporte || ''}
+            </div>
           </div>
-        ))}
-        {loading && <p style={{ color: '#999' }}>El coach está escribiendo...</p>}
-        <div ref={bottomRef} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {onPersonalidadChange && (
+              <select
+                value={personalidad || 'cercano'}
+                onChange={onPersonalidadChange}
+                style={{
+                  background: 'var(--input)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                  color: 'var(--foreground)',
+                  padding: '4px 8px',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 13,
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="cercano">😊 Cercano</option>
+                <option value="estricto">💪 Estricto</option>
+                <option value="gracioso">😄 Gracioso</option>
+                <option value="motivador">🔥 Motivador</option>
+              </select>
+            )}
+            {esFree && (
+              <span style={{ fontSize: 12, color: messagesHoy >= 8 ? 'var(--destructive)' : 'var(--muted-foreground)' }}>
+                {messagesHoy}/10
+              </span>
+            )}
+          </div>
+        </div>
       </div>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <input
-          style={{ flex: 1, padding: 8 }}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-          placeholder="Escribe un mensaje..."
-        />
-        <button onClick={sendMessage} disabled={loading}>
-          Enviar
-        </button>
+
+      {/* Messages */}
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        padding: '16px',
+      }}>
+        <div style={{ maxWidth: 640, margin: '0 auto' }}>
+          {messages.length === 0 && (
+            <div style={{ textAlign: 'center', color: 'var(--muted-foreground)', marginTop: 48 }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>💬</div>
+              <p style={{ fontSize: 15 }}>Cuéntame cómo va el entrenamiento</p>
+            </div>
+          )}
+          {messages.map((msg, i) => (
+            <div key={i} style={{
+              marginBottom: 12,
+              display: 'flex',
+              justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
+            }}>
+              <span style={{
+                background: msg.role === 'user' ? 'var(--primary)' : 'var(--secondary)',
+                color: msg.role === 'user' ? 'var(--primary-foreground)' : 'var(--foreground)',
+                border: msg.role === 'user' ? 'none' : '1px solid var(--border)',
+                padding: '10px 14px',
+                borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                display: 'inline-block',
+                maxWidth: '80%',
+                fontSize: 15,
+                lineHeight: 1.5,
+                whiteSpace: 'pre-wrap',
+              }}>
+                {msg.content}
+              </span>
+            </div>
+          ))}
+          {loading && (
+            <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 12 }}>
+              <span style={{
+                background: 'var(--secondary)',
+                border: '1px solid var(--border)',
+                color: 'var(--muted-foreground)',
+                padding: '10px 14px',
+                borderRadius: '18px 18px 18px 4px',
+                fontSize: 14,
+              }}>
+                ···
+              </span>
+            </div>
+          )}
+          <div ref={bottomRef} />
+        </div>
+      </div>
+
+      {/* Input */}
+      <div style={{
+        background: 'var(--card)',
+        borderTop: '1px solid var(--border)',
+        padding: '12px 16px',
+        flexShrink: 0,
+      }}>
+        <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', gap: 8 }}>
+          <input
+            style={{
+              flex: 1,
+              background: 'var(--input)',
+              border: '1px solid var(--border)',
+              borderRadius: 24,
+              color: 'var(--foreground)',
+              fontFamily: 'var(--font-sans)',
+              fontSize: 15,
+              padding: '10px 16px',
+              outline: 'none',
+            }}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+            placeholder="Escribe un mensaje..."
+          />
+          <button
+            onClick={sendMessage}
+            disabled={loading}
+            style={{
+              background: loading ? 'var(--muted)' : 'var(--primary)',
+              color: 'var(--primary-foreground)',
+              border: 'none',
+              borderRadius: 24,
+              padding: '10px 20px',
+              fontFamily: 'var(--font-sans)',
+              fontSize: 15,
+              fontWeight: 600,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              transition: 'background 0.2s',
+              flexShrink: 0,
+            }}
+          >
+            Enviar
+          </button>
+        </div>
       </div>
     </div>
   )
