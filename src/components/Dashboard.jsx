@@ -32,13 +32,22 @@ function getFechaHoy() {
   return new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
 }
 
+const RUTINA_MOVILIDAD = [
+  { nombre: 'Movilidad de cadera', duracion: '2 min' },
+  { nombre: 'Estiramiento isquiotibiales', duracion: '2 min' },
+  { nombre: 'Foam roller piernas', duracion: '2 min' },
+  { nombre: 'Respiración y relajación', duracion: '4 min' },
+]
+
 export default function Dashboard({ userId, plan, profile, onPlanUpdate, onNavigate }) {
   const [generando, setGenerando] = useState(false)
   const [completando, setCompletando] = useState(false)
   const [rpe, setRpe] = useState(6)
+  const [showMovilidad, setShowMovilidad] = useState(false)
 
   const today = DIAS_SEMANA[new Date().getDay()]
   const sesionHoy = plan?.sesiones?.find(s => s.dia === today) || null
+  const esDescanso = sesionHoy?.tipo?.toLowerCase() === 'descanso' || sesionHoy?.tipo?.toLowerCase() === 'rest'
 
   const todayIdx = DIAS_ORDEN.indexOf(today)
   const siguiente = plan?.sesiones?.find(s => {
@@ -152,27 +161,63 @@ export default function Dashboard({ userId, plan, profile, onPlanUpdate, onNavig
               <div style={{ fontSize: 64, marginBottom: 16 }}>
                 {ICONOS[sesionHoy.tipo] || '🏋️'}
               </div>
-              <h2 style={{
-                fontFamily: 'var(--font-serif)',
-                fontSize: 28,
-                fontWeight: 700,
-                marginBottom: 8,
-                color: sesionHoy.completada ? 'var(--success)' : 'var(--foreground)',
-              }}>
-                {sesionHoy.tipo === 'Descanso' ? 'Día de descanso' : sesionHoy.tipo}
-              </h2>
-              {sesionHoy.duracion_min > 0 && (
-                <p style={{ color: 'var(--muted-foreground)', fontSize: 15, marginBottom: 4 }}>
-                  {sesionHoy.duracion_min} min · {sesionHoy.intensidad}
-                </p>
-              )}
-              <p style={{ color: 'var(--muted-foreground)', fontSize: 14, lineHeight: 1.5, marginBottom: 24, padding: '0 8px', maxWidth: 340 }}>
-                {sesionHoy.tipo === 'Descanso'
-                  ? MENSAJES_DESCANSO[new Date().getDay() % MENSAJES_DESCANSO.length]
-                  : sesionHoy.descripcion}
-              </p>
 
-              {sesionHoy.completada ? (
+              {esDescanso && (
+                <>
+                  <h2 style={{
+                    fontFamily: 'var(--font-serif)',
+                    fontSize: 28,
+                    fontWeight: 700,
+                    marginBottom: 8,
+                    color: 'var(--foreground)',
+                  }}>
+                    Hoy descansas
+                  </h2>
+                  <p style={{ color: 'var(--muted-foreground)', fontSize: 14, lineHeight: 1.5, marginBottom: 24, padding: '0 8px', maxWidth: 340 }}>
+                    El descanso es parte del entrenamiento
+                  </p>
+                  <button
+                    onClick={() => setShowMovilidad(true)}
+                    style={{
+                      background: 'var(--secondary)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 24,
+                      color: 'var(--foreground)',
+                      fontFamily: 'var(--font-sans)',
+                      fontSize: 14,
+                      fontWeight: 500,
+                      padding: '12px 24px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Ver rutina de movilidad 10min
+                  </button>
+                </>
+              )}
+
+              {!esDescanso && (
+                <>
+                  <h2 style={{
+                    fontFamily: 'var(--font-serif)',
+                    fontSize: 28,
+                    fontWeight: 700,
+                    marginBottom: 8,
+                    color: sesionHoy.completada ? 'var(--success)' : 'var(--foreground)',
+                  }}>
+                    {sesionHoy.tipo}
+                  </h2>
+                  {sesionHoy.duracion_min > 0 && (
+                    <p style={{ color: 'var(--muted-foreground)', fontSize: 15, marginBottom: 4 }}>
+                      {sesionHoy.duracion_min} min · {sesionHoy.intensidad}
+                    </p>
+                  )}
+                  <p style={{ color: 'var(--muted-foreground)', fontSize: 14, lineHeight: 1.5, marginBottom: 24, padding: '0 8px', maxWidth: 340 }}>
+                    {sesionHoy.descripcion}
+                  </p>
+                </>
+              )}
+
+              {sesionHoy.completada && (
                 <div>
                   <div style={{ fontSize: 20, color: 'var(--success)', fontWeight: 700, marginBottom: 8 }}>
                     ✓ Completada{sesionHoy.rpe ? ` · RPE ${sesionHoy.rpe}` : ''}
@@ -183,7 +228,9 @@ export default function Dashboard({ userId, plan, profile, onPlanUpdate, onNavig
                     </p>
                   )}
                 </div>
-              ) : sesionHoy.tipo !== 'Descanso' && (
+              )}
+
+              {!sesionHoy.completada && !esDescanso && (
                 completando ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
                     <p style={{ fontSize: 14, color: 'var(--muted-foreground)' }}>¿Cómo fue el esfuerzo? (RPE 1-10)</p>
@@ -295,6 +342,61 @@ export default function Dashboard({ userId, plan, profile, onPlanUpdate, onNavig
         )}
 
       </div>
+
+      {/* Mobility modal */}
+      {showMovilidad && (
+        <div
+          onClick={() => setShowMovilidad(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'oklch(0 0 0 / 0.6)',
+            zIndex: 100,
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: 'var(--card)',
+              borderRadius: '16px 16px 0 0',
+              padding: '24px 20px 40px',
+              width: '100%',
+              maxWidth: 480,
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 700 }}>
+                Rutina de movilidad
+              </h3>
+              <button
+                onClick={() => setShowMovilidad(false)}
+                style={{ background: 'none', border: 'none', color: 'var(--muted-foreground)', fontSize: 20, cursor: 'pointer', padding: 4 }}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {RUTINA_MOVILIDAD.map((ejercicio, i) => (
+                <div key={i} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  background: 'var(--secondary)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius)',
+                  padding: '12px 16px',
+                }}>
+                  <span style={{ fontSize: 14, fontWeight: 500 }}>{i + 1}. {ejercicio.nombre}</span>
+                  <span style={{ fontSize: 13, color: 'var(--primary)', fontWeight: 600 }}>{ejercicio.duracion}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

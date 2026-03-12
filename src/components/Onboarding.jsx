@@ -58,7 +58,7 @@ const DIAS_SLOTS = [
   ['Domingo mañana', 'Domingo tarde'],
 ]
 
-const TOTAL_STEPS = 7
+const TOTAL_STEPS = 8
 
 // ─── Subcomponentes ──────────────────────────────────────────────────────────
 
@@ -234,6 +234,7 @@ export default function Onboarding({ userId, onComplete }) {
     deporte: '',
     nivel: '',
     personalidad: 'cercano',
+    nombre_coach: '',
     historial_deportivo: '',
     lesiones: '',
     equipamiento: [],
@@ -247,7 +248,7 @@ export default function Onboarding({ userId, onComplete }) {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('state') === 'strava') {
-      setStep(7)
+      setStep(8)
     }
   }, [])
 
@@ -281,6 +282,7 @@ export default function Onboarding({ userId, onComplete }) {
       .from('profiles')
       .update({
         ...form,
+        nombre_coach: form.nombre_coach || 'Coach',
         lesiones: sinLesiones ? 'Sin lesiones actuales' : form.lesiones,
         disponibilidad: disponibilidadSlots.join(', '),
         carreras,
@@ -595,8 +597,50 @@ export default function Onboarding({ userId, onComplete }) {
           </div>
         )}
 
-        {/* ── Paso 7: Integraciones ──────────────────────────────────────── */}
+        {/* ── Paso 7: Nombre del coach ───────────────────────────────────── */}
         {step === 7 && (
+          <div>
+            {heading('¿Cómo quieres llamar a tu coach?')}
+            {subheading('Dale personalidad a tu entrenador')}
+
+            {/* Chips de nombres sugeridos */}
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 20 }}>
+              {['Javi', 'Alex', 'Sara', 'Marcos'].map(name => (
+                <button
+                  key={name}
+                  onClick={() => handleSelect('nombre_coach', form.nombre_coach === name ? '' : name)}
+                  style={{
+                    background: form.nombre_coach === name ? 'oklch(0.7 0.18 45 / 0.12)' : 'var(--card)',
+                    border: `2px solid ${form.nombre_coach === name ? 'var(--primary)' : 'var(--border)'}`,
+                    borderRadius: 24,
+                    padding: '10px 24px',
+                    fontFamily: 'var(--font-sans)',
+                    fontSize: 15,
+                    fontWeight: 600,
+                    color: form.nombre_coach === name ? 'var(--primary)' : 'var(--foreground)',
+                    cursor: 'pointer',
+                    transition: 'all 0.12s',
+                  }}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+
+            <input
+              placeholder="O escribe un nombre..."
+              value={form.nombre_coach}
+              onChange={e => handleSelect('nombre_coach', e.target.value)}
+              style={{ ...INPUT_STYLE, marginBottom: 24 }}
+            />
+
+            <button onClick={() => setStep(8)} style={PRIMARY_BTN}>Siguiente</button>
+            <button onClick={() => setStep(6)} style={BACK_BTN}>← Atrás</button>
+          </div>
+        )}
+
+        {/* ── Paso 8: Integraciones ──────────────────────────────────────── */}
+        {step === 8 && (
           <div>
             {heading('Conecta tus apps')}
             {subheading('Para que el coach conozca tus entrenamientos reales')}
@@ -659,7 +703,7 @@ export default function Onboarding({ userId, onComplete }) {
             <p style={{ fontSize: 12, color: 'var(--muted-foreground)', textAlign: 'center', marginTop: 12, lineHeight: 1.5 }}>
               Puedes conectar estas apps en cualquier momento desde tu perfil
             </p>
-            <button onClick={() => setStep(6)} style={BACK_BTN}>← Atrás</button>
+            <button onClick={() => setStep(7)} style={BACK_BTN}>← Atrás</button>
           </div>
         )}
 

@@ -104,6 +104,10 @@ export default function Chat({ userId, profile, personalidad, onPersonalidadChan
   const messagesHoy = profile?.messages_today || 0
   const esFree = !profile?.plan || profile?.plan === 'free'
   const limitAlcanzado = esFree && messagesHoy >= 10
+  const nombreCoach = profile?.nombre_coach || 'Coach'
+
+  const remaining = esFree ? (10 - messagesHoy) : (100 - messagesHoy)
+  const showCounter = !limitAlcanzado && (esFree ? remaining < 5 : remaining < 20)
 
   return (
     <div style={{
@@ -122,40 +126,33 @@ export default function Chat({ userId, profile, personalidad, onPersonalidadChan
         <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: 18, color: 'var(--foreground)' }}>
-              {profile?.nombre || 'Atleta'}
+              {nombreCoach}
             </div>
             <div style={{ fontSize: 13, color: 'var(--muted-foreground)', marginTop: 1 }}>
               {DEPORTE_LABELS[profile?.deporte] || profile?.deporte || ''}
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {onPersonalidadChange && (
-              <select
-                value={personalidad || 'cercano'}
-                onChange={onPersonalidadChange}
-                style={{
-                  background: 'var(--input)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 8,
-                  color: 'var(--foreground)',
-                  padding: '4px 8px',
-                  fontFamily: 'var(--font-sans)',
-                  fontSize: 13,
-                  cursor: 'pointer',
-                }}
-              >
-                <option value="cercano">😊 Cercano</option>
-                <option value="estricto">💪 Estricto</option>
-                <option value="gracioso">😄 Gracioso</option>
-                <option value="motivador">🔥 Motivador</option>
-              </select>
-            )}
-            {esFree && (
-              <span style={{ fontSize: 12, color: messagesHoy >= 8 ? 'var(--destructive)' : 'var(--muted-foreground)' }}>
-                {messagesHoy}/10
-              </span>
-            )}
-          </div>
+          {onPersonalidadChange && (
+            <select
+              value={personalidad || 'cercano'}
+              onChange={onPersonalidadChange}
+              style={{
+                background: 'var(--input)',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                color: 'var(--foreground)',
+                padding: '4px 8px',
+                fontFamily: 'var(--font-sans)',
+                fontSize: 13,
+                cursor: 'pointer',
+              }}
+            >
+              <option value="cercano">😊 Cercano</option>
+              <option value="estricto">💪 Estricto</option>
+              <option value="gracioso">😄 Gracioso</option>
+              <option value="motivador">🔥 Motivador</option>
+            </select>
+          )}
         </div>
       </div>
 
@@ -178,20 +175,26 @@ export default function Chat({ userId, profile, personalidad, onPersonalidadChan
               display: 'flex',
               justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
             }}>
-              <span style={{
-                background: msg.role === 'user' ? 'var(--primary)' : 'var(--secondary)',
-                color: msg.role === 'user' ? 'var(--primary-foreground)' : 'var(--foreground)',
-                border: msg.role === 'user' ? 'none' : '1px solid var(--border)',
-                padding: '10px 14px',
-                borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                display: 'inline-block',
-                maxWidth: '80%',
-                fontSize: 15,
-                lineHeight: 1.5,
-                whiteSpace: 'pre-wrap',
-              }}>
-                {msg.content}
-              </span>
+              <div style={{ maxWidth: '80%' }}>
+                {msg.role === 'assistant' && (
+                  <div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginBottom: 3, marginLeft: 4 }}>
+                    {nombreCoach}
+                  </div>
+                )}
+                <span style={{
+                  background: msg.role === 'user' ? 'var(--primary)' : 'var(--secondary)',
+                  color: msg.role === 'user' ? 'var(--primary-foreground)' : 'var(--foreground)',
+                  border: msg.role === 'user' ? 'none' : '1px solid var(--border)',
+                  padding: '10px 14px',
+                  borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                  display: 'inline-block',
+                  fontSize: 15,
+                  lineHeight: 1.5,
+                  whiteSpace: 'pre-wrap',
+                }}>
+                  {msg.content}
+                </span>
+              </div>
             </div>
           ))}
           {loading && (
@@ -240,10 +243,25 @@ export default function Chat({ userId, profile, personalidad, onPersonalidadChan
         </div>
       )}
 
+      {/* Message counter */}
+      {showCounter && (
+        <div style={{
+          textAlign: 'center',
+          color: 'var(--muted-foreground)',
+          fontSize: 12,
+          padding: '6px 16px',
+          background: 'var(--card)',
+          borderTop: '1px solid var(--border)',
+          flexShrink: 0,
+        }}>
+          {remaining} mensajes restantes hoy
+        </div>
+      )}
+
       {/* Input */}
       <div style={{
         background: 'var(--card)',
-        borderTop: '1px solid var(--border)',
+        borderTop: showCounter ? 'none' : '1px solid var(--border)',
         padding: '12px 16px',
         flexShrink: 0,
       }}>

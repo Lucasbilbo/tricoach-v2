@@ -19,6 +19,7 @@ export function buildSystemPrompt(profile, personalidad = 'cercano', actividades
   const nivel = profile.nivel || 'principiante'
   const objetivo = profile.objetivo || 'mejorar mi forma física'
   const nombre = profile.nombre || 'atleta'
+  const nombreCoach = profile.nombre_coach || 'Coach'
   const fechaCarrera = profile.fecha_carrera
     ? `El próximo evento es el ${profile.fecha_carrera}.`
     : ''
@@ -45,6 +46,7 @@ export function buildSystemPrompt(profile, personalidad = 'cercano', actividades
     : ''
 
   return `Eres un coach deportivo personal experto en ${deporteInfo[deporte] || deporte}.
+Tu nombre es ${nombreCoach}. El usuario te llama así.
 Tu atleta se llama ${nombre}, tiene nivel ${nivel} y su objetivo es: ${objetivo}.
 ${fechaCarrera}
 ${contexto}
