@@ -47,7 +47,7 @@ describe('Fase 10: Monetización Stripe', () => {
   })
 
   // ─── Test 4: Chat muestra botón upgrade cuando el usuario Free llega al límite
-  it('Chat muestra botón upgrade cuando messages_today >= 10', async () => {
+  it('Chat muestra botón upgrade cuando messages_today >= 25', async () => {
     global.fetch.mockResolvedValue({
       ok: true,
       json: async () => ({ sinStrava: true }),
@@ -74,7 +74,7 @@ describe('Fase 10: Monetización Stripe', () => {
       nombre: 'Lucas',
       deporte: 'triatlon',
       plan: 'free',
-      messages_today: 10,
+      messages_today: 25,
       last_message_date: new Date().toISOString().split('T')[0],
     }
     const onShowUpgrade = vi.fn()

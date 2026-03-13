@@ -41,7 +41,7 @@ export async function canSendMessage(profile) {
   const lastDate = profile.last_message_date
 
   if (lastDate !== today) return true
-  return profile.messages_today < 10
+  return profile.messages_today < 25
 }
 
 export async function incrementMessageCount(userId, profile) {

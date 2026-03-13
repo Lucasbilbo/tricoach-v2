@@ -22,7 +22,7 @@ export default function Chat({ userId, profile, personalidad, onPersonalidadChan
 
     const canSend = await canSendMessage(profile)
     if (!canSend) {
-      setMessages((prev) => [...prev, { role: 'assistant', content: '⚠️ Has alcanzado el límite de 10 mensajes diarios del plan Free. Actualiza a Pro para mensajes ilimitados.' }])
+      setMessages((prev) => [...prev, { role: 'assistant', content: '⚠️ Has alcanzado el límite de 25 mensajes diarios del plan Free. Actualiza a Pro para mensajes ilimitados.' }])
       return
     }
 
@@ -117,11 +117,11 @@ export default function Chat({ userId, profile, personalidad, onPersonalidadChan
 
   const messagesHoy = profile?.messages_today || 0
   const esFree = !profile?.plan || profile?.plan === 'free'
-  const limitAlcanzado = esFree && messagesHoy >= 10
+  const limitAlcanzado = esFree && messagesHoy >= 25
   const nombreCoach = profile?.nombre_coach || 'Coach'
 
-  const remaining = esFree ? (10 - messagesHoy) : (100 - messagesHoy)
-  const showCounter = !limitAlcanzado && (esFree ? remaining < 5 : remaining < 20)
+  const remaining = esFree ? (25 - messagesHoy) : (150 - messagesHoy)
+  const showCounter = !limitAlcanzado && (esFree ? remaining < 8 : remaining < 20)
 
   return (
     <div style={{
@@ -241,16 +241,16 @@ export default function Chat({ userId, profile, personalidad, onPersonalidadChan
           ))}
           {loading && (
             <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 12 }}>
-              <span style={{
-                background: 'var(--secondary)',
-                border: '1px solid var(--border)',
-                color: 'var(--muted-foreground)',
-                padding: '10px 14px',
-                borderRadius: '18px 18px 18px 4px',
-                fontSize: 14,
-              }}>
-                ···
-              </span>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginBottom: 3, marginLeft: 4 }}>
+                  {nombreCoach}
+                </div>
+                <div className="typing-indicator">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
             </div>
           )}
           <div ref={bottomRef} />

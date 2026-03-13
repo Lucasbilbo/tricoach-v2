@@ -6,7 +6,7 @@ const FUNCTION_SECRET = process.env.TRICOACH_SECRET;
 const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
 const CLAUDE_MAX_TOKENS = 1000;
 
-const DAILY_LIMIT = { free: 10, pro: 150 };
+const DAILY_LIMIT = { free: 25, pro: 150 };
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',

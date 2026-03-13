@@ -206,3 +206,22 @@ Validación Free/Pro siempre en **backend** (claude.js, generate-plan.js) — nu
 - onboarding.test.jsx (3), netlify-functions.test.js (3)
 - profiles.test.js (2), supabase.test.js (2), auth.test.jsx (2), example.test.jsx (1)
 - E2E: auth.spec.js (4)
+
+## Workflow
+- Para tareas de 3+ pasos: escribe un plan breve antes de ejecutar
+- Si algo falla: para, replantea, no sigas empujando en la misma dirección
+- Nunca marques una tarea como completa sin demostrar que funciona
+
+## Bugs
+- Cuando hay un bug: busca la causa raíz, no parches temporales
+- Apunta a logs y tests fallando, luego resuélvelos
+- No pidas confirmación del usuario durante la ejecución
+
+## Calidad
+- Para cambios no triviales: pregúntate "¿hay una forma más elegante?"
+- Si un fix parece un hack: reimplementa desde la causa raíz
+- Cada cambio debe poder ser aprobado por un senior engineer
+
+## Lecciones aprendidas
+- Después de cualquier corrección del usuario: actualizar tasks/lessons.md con el patrón del error
+- Revisar tasks/lessons.md al inicio de cada sesión
