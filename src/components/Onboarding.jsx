@@ -251,7 +251,8 @@ export default function Onboarding({ userId, onComplete }) {
   const [carreras, setCarreras] = useState([])
   const [disponibilidadSlots, setDisponibilidadSlots] = useState([])
   const [sinLesiones, setSinLesiones] = useState(false)
-  const [nuevaCarrera, setNuevaCarrera] = useState({ nombre: '', tipo: '', fecha: '' })
+  const [nuevaCarrera, setNuevaCarrera] = useState({ nombre: '', tipo: '', dia: '', mes: '', anio: '' })
+  const [mostrarFormCarrera, setMostrarFormCarrera] = useState(true)
   const [submitted, setSubmitted] = useState(false)
   const [otroEquipamiento, setOtroEquipamiento] = useState('')
   const [sinCarrera, setSinCarrera] = useState(false)
@@ -293,14 +294,16 @@ export default function Onboarding({ userId, onComplete }) {
     const errors = { nombre: '', tipo: '', fecha: '' }
     if (!nuevaCarrera.nombre.trim()) errors.nombre = 'El nombre es obligatorio'
     if (!nuevaCarrera.tipo) errors.tipo = 'Selecciona un tipo'
-    if (!nuevaCarrera.fecha) errors.fecha = 'La fecha es obligatoria'
+    if (!nuevaCarrera.dia || !nuevaCarrera.mes || !nuevaCarrera.anio) errors.fecha = 'Selecciona día, mes y año'
     if (errors.nombre || errors.tipo || errors.fecha) {
       setErroresCarrera(errors)
       return
     }
+    const fechaStr = `${nuevaCarrera.dia} ${nuevaCarrera.mes} ${nuevaCarrera.anio}`
     setErroresCarrera({ nombre: '', tipo: '', fecha: '' })
-    setCarreras(prev => [...prev, { ...nuevaCarrera }])
-    setNuevaCarrera({ nombre: '', tipo: '', fecha: '' })
+    setCarreras(prev => [...prev, { nombre: nuevaCarrera.nombre, tipo: nuevaCarrera.tipo, fecha: fechaStr }])
+    setNuevaCarrera({ nombre: '', tipo: '', dia: '', mes: '', anio: '' })
+    setMostrarFormCarrera(false)
   }
 
   const handleSubmit = async () => {
@@ -467,7 +470,7 @@ export default function Onboarding({ userId, onComplete }) {
             {heading('¿Cuáles son tus próximas carreras?')}
             {subheading('Puedes añadir varias — adaptaremos el plan a cada objetivo')}
 
-            {/* Lista de carreras añadidas */}
+            {/* Lista de carreras confirmadas */}
             {carreras.length > 0 && (
               <div style={{ marginBottom: 16 }}>
                 {carreras.map((c, i) => (
@@ -484,7 +487,7 @@ export default function Onboarding({ userId, onComplete }) {
                     <div>
                       <div style={{ fontWeight: 600, fontSize: 14 }}>{c.nombre}</div>
                       <div style={{ color: 'var(--muted-foreground)', fontSize: 12, marginTop: 2 }}>
-                        {c.tipo}{c.fecha ? ` · ${c.fecha.includes('-') ? formatFecha(c.fecha) : c.fecha}` : ''}
+                        {c.tipo}{c.fecha ? ` · ${c.fecha}` : ''}
                       </div>
                     </div>
                     <button
@@ -499,66 +502,103 @@ export default function Onboarding({ userId, onComplete }) {
             )}
 
             {/* Formulario añadir carrera */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16, opacity: sinCarrera ? 0.4 : 1, pointerEvents: sinCarrera ? 'none' : 'auto' }}>
-              <div>
-                <input
-                  placeholder="Nombre de la carrera (ej: Media Maratón Valencia)"
-                  value={nuevaCarrera.nombre}
-                  onChange={e => { setNuevaCarrera({ ...nuevaCarrera, nombre: e.target.value }); setErroresCarrera(prev => ({ ...prev, nombre: '' })) }}
-                  style={{ ...INPUT_STYLE, borderColor: erroresCarrera.nombre ? 'var(--destructive)' : 'var(--border)' }}
-                />
-                {erroresCarrera.nombre && <p style={{ color: 'var(--destructive)', fontSize: 12, marginTop: 4 }}>{erroresCarrera.nombre}</p>}
+            {mostrarFormCarrera && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16, opacity: sinCarrera ? 0.4 : 1, pointerEvents: sinCarrera ? 'none' : 'auto' }}>
+                <div>
+                  <input
+                    placeholder="Nombre de la carrera (ej: Media Maratón Valencia)"
+                    value={nuevaCarrera.nombre}
+                    onChange={e => { setNuevaCarrera({ ...nuevaCarrera, nombre: e.target.value }); setErroresCarrera(prev => ({ ...prev, nombre: '' })) }}
+                    style={{ ...INPUT_STYLE, borderColor: erroresCarrera.nombre ? 'var(--destructive)' : 'var(--border)' }}
+                  />
+                  {erroresCarrera.nombre && <p style={{ color: 'var(--destructive)', fontSize: 12, marginTop: 4 }}>{erroresCarrera.nombre}</p>}
+                </div>
+                <div>
+                  <select
+                    value={nuevaCarrera.tipo}
+                    onChange={e => { setNuevaCarrera({ ...nuevaCarrera, tipo: e.target.value }); setErroresCarrera(prev => ({ ...prev, tipo: '' })) }}
+                    style={{ ...INPUT_STYLE, colorScheme: 'dark', borderColor: erroresCarrera.tipo ? 'var(--destructive)' : 'var(--border)' }}
+                  >
+                    <option value="">Tipo de carrera...</option>
+                    {getTipos(form.deporte).map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                  {erroresCarrera.tipo && <p style={{ color: 'var(--destructive)', fontSize: 12, marginTop: 4 }}>{erroresCarrera.tipo}</p>}
+                </div>
+                <div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: 6 }}>
+                    <select
+                      value={nuevaCarrera.dia}
+                      onChange={e => { setNuevaCarrera({ ...nuevaCarrera, dia: e.target.value }); setErroresCarrera(prev => ({ ...prev, fecha: '' })) }}
+                      style={{ ...INPUT_STYLE, colorScheme: 'dark', padding: '12px 8px', borderColor: erroresCarrera.fecha ? 'var(--destructive)' : 'var(--border)' }}
+                    >
+                      <option value="">Día</option>
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={nuevaCarrera.mes}
+                      onChange={e => { setNuevaCarrera({ ...nuevaCarrera, mes: e.target.value }); setErroresCarrera(prev => ({ ...prev, fecha: '' })) }}
+                      style={{ ...INPUT_STYLE, colorScheme: 'dark', padding: '12px 8px', borderColor: erroresCarrera.fecha ? 'var(--destructive)' : 'var(--border)' }}
+                    >
+                      <option value="">Mes</option>
+                      {['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'].map(m => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={nuevaCarrera.anio}
+                      onChange={e => { setNuevaCarrera({ ...nuevaCarrera, anio: e.target.value }); setErroresCarrera(prev => ({ ...prev, fecha: '' })) }}
+                      style={{ ...INPUT_STYLE, colorScheme: 'dark', padding: '12px 8px', borderColor: erroresCarrera.fecha ? 'var(--destructive)' : 'var(--border)' }}
+                    >
+                      <option value="">Año</option>
+                      {[2025, 2026, 2027, 2028, 2029].map(a => (
+                        <option key={a} value={a}>{a}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {erroresCarrera.fecha && <p style={{ color: 'var(--destructive)', fontSize: 12, marginTop: 4 }}>{erroresCarrera.fecha}</p>}
+                </div>
+                <button onClick={addCarrera} style={{ ...PRIMARY_BTN, marginTop: 0 }}>
+                  ✓ Confirmar carrera
+                </button>
               </div>
-              <div>
-                <select
-                  value={nuevaCarrera.tipo}
-                  onChange={e => { setNuevaCarrera({ ...nuevaCarrera, tipo: e.target.value }); setErroresCarrera(prev => ({ ...prev, tipo: '' })) }}
-                  style={{ ...INPUT_STYLE, colorScheme: 'dark', borderColor: erroresCarrera.tipo ? 'var(--destructive)' : 'var(--border)' }}
-                >
-                  <option value="">Tipo de carrera...</option>
-                  {getTipos(form.deporte).map(t => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
-                {erroresCarrera.tipo && <p style={{ color: 'var(--destructive)', fontSize: 12, marginTop: 4 }}>{erroresCarrera.tipo}</p>}
-              </div>
-              <div>
-                <input
-                  type="date"
-                  value={nuevaCarrera.fecha}
-                  onChange={e => {
-                    console.log('fecha guardada:', e.target.value)
-                    setNuevaCarrera({ ...nuevaCarrera, fecha: e.target.value })
-                    setErroresCarrera(prev => ({ ...prev, fecha: '' }))
-                  }}
-                  style={{ ...INPUT_STYLE, colorScheme: 'dark', width: '100%', boxSizing: 'border-box', borderColor: erroresCarrera.fecha ? 'var(--destructive)' : 'var(--border)' }}
-                />
-                {erroresCarrera.fecha && <p style={{ color: 'var(--destructive)', fontSize: 12, marginTop: 4 }}>{erroresCarrera.fecha}</p>}
-              </div>
+            )}
+
+            {/* Botón añadir otra carrera */}
+            {!mostrarFormCarrera && !sinCarrera && (
               <button
-                onClick={addCarrera}
+                onClick={() => setMostrarFormCarrera(true)}
                 style={{
-                  background: 'var(--secondary)',
+                  width: '100%',
+                  background: 'transparent',
                   border: '1px solid var(--border)',
                   borderRadius: 'var(--radius)',
                   color: 'var(--foreground)',
                   fontFamily: 'var(--font-sans)',
                   fontSize: 14,
                   fontWeight: 600,
-                  padding: '10px',
+                  padding: '12px',
                   cursor: 'pointer',
+                  marginBottom: 16,
                 }}
               >
-                + Añadir carrera
+                + Añadir otra carrera
               </button>
-            </div>
+            )}
 
             {/* Checkbox sin carrera */}
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, cursor: 'pointer' }}>
               <input
                 type="checkbox"
                 checked={sinCarrera}
-                onChange={e => { setSinCarrera(e.target.checked); setErrores(prev => ({ ...prev, carreras: '' })) }}
+                onChange={e => {
+                  setSinCarrera(e.target.checked)
+                  setErrores(prev => ({ ...prev, carreras: '' }))
+                  if (e.target.checked) setMostrarFormCarrera(false)
+                }}
                 style={{ width: 16, height: 16, accentColor: 'var(--primary)' }}
               />
               <span style={{ fontSize: 13, color: 'var(--muted-foreground)' }}>No tengo carrera todavía</span>
