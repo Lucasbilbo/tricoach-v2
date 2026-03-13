@@ -1,6 +1,59 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 
+function StravaDisconnect({ userId, onDisconnected }) {
+  const [disconnecting, setDisconnecting] = useState(false)
+  const [done, setDone] = useState(false)
+
+  async function handleDisconnect() {
+    setDisconnecting(true)
+    const { error } = await supabase
+      .from('profiles')
+      .update({ strava_token: null, strava_refresh_token: null, strava_token_expires_at: null })
+      .eq('id', userId)
+    setDisconnecting(false)
+    if (!error) {
+      setDone(true)
+      if (onDisconnected) onDisconnected()
+    }
+  }
+
+  return (
+    <div style={{
+      background: 'var(--card)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--radius)',
+      padding: 16,
+      marginBottom: 12,
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    }}>
+      <span style={{ fontSize: 14, color: done ? 'var(--muted-foreground)' : '#fc4c02', fontWeight: 600 }}>
+        {done ? 'Strava desconectado' : '✓ Strava conectado'}
+      </span>
+      {!done && (
+        <button
+          onClick={handleDisconnect}
+          disabled={disconnecting}
+          style={{
+            background: 'none',
+            border: '1px solid var(--border)',
+            borderRadius: 6,
+            color: 'var(--muted-foreground)',
+            fontFamily: 'var(--font-sans)',
+            fontSize: 13,
+            padding: '6px 14px',
+            cursor: disconnecting ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {disconnecting ? '...' : 'Desconectar Strava'}
+        </button>
+      )}
+    </div>
+  )
+}
+
 const inputStyle = {
   display: 'block',
   width: '100%',
@@ -280,6 +333,11 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
           </button>
         </div>
       </div>
+
+      {/* Strava disconnect */}
+      {profile.strava_token && (
+        <StravaDisconnect userId={profile.id} onDisconnected={() => {}} />
+      )}
 
       {/* Zona de peligro */}
       <div style={{

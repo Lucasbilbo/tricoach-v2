@@ -7,8 +7,28 @@ const REDIRECT_URI = import.meta.env.VITE_STRAVA_REDIRECT_URI || `${window.locat
 export default function StravaConnect({ userId, plan, onConnected, onShowUpgrade }) {
   const [connecting, setConnecting] = useState(false)
   const [connected, setConnected] = useState(false)
+  const [disconnecting, setDisconnecting] = useState(false)
+  const [toast, setToast] = useState(null)
 
   const esFree = !plan || plan === 'free'
+
+  function showToast(msg) {
+    setToast(msg)
+    setTimeout(() => setToast(null), 3000)
+  }
+
+  async function handleDisconnect() {
+    setDisconnecting(true)
+    const { error } = await supabase
+      .from('profiles')
+      .update({ strava_token: null, strava_refresh_token: null, strava_token_expires_at: null })
+      .eq('id', userId)
+    setDisconnecting(false)
+    if (!error) {
+      setConnected(false)
+      showToast('Strava desconectado')
+    }
+  }
 
   useEffect(() => {
     supabase
@@ -71,12 +91,41 @@ export default function StravaConnect({ userId, plan, onConnected, onShowUpgrade
       if (onShowUpgrade) onShowUpgrade()
       return
     }
-    const url = `https://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=${REDIRECT_URI}&approval_prompt=auto&scope=read,activity:read&state=strava`
+    const url = `https://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=${REDIRECT_URI}&approval_prompt=force&scope=read,activity:read&state=strava`
     window.location.href = url
   }
 
   if (connected) {
-    return <span style={{ color: '#fc4c02', fontWeight: 600 }}>✓ Strava conectado</span>
+    return (
+      <div>
+        {toast && (
+          <div style={{
+            fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 8, fontWeight: 500,
+          }}>
+            {toast}
+          </div>
+        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ color: '#fc4c02', fontWeight: 600, fontSize: 14 }}>✓ Strava conectado</span>
+          <button
+            onClick={handleDisconnect}
+            disabled={disconnecting}
+            style={{
+              background: 'none',
+              border: '1px solid var(--border)',
+              borderRadius: 6,
+              color: 'var(--muted-foreground)',
+              fontFamily: 'var(--font-sans)',
+              fontSize: 12,
+              padding: '4px 10px',
+              cursor: disconnecting ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {disconnecting ? '...' : 'Desconectar'}
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
