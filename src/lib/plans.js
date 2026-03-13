@@ -36,7 +36,7 @@ export async function getLastWeekPlan(userId) {
     .select('*')
     .eq('user_id', userId)
     .eq('semana', semana)
-    .single()
+    .maybeSingle()
   return data
 }
 

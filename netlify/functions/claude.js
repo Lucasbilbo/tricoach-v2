@@ -1,40 +1,53 @@
 const https = require('https');
-const { createClient } = require('@supabase/supabase-js');
-
-const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-const RATE_LIMIT_MAX = 10;
-const rateLimitMap = new Map();
-
-function isRateLimited(ip) {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip) || { count: 0, windowStart: now };
-  if (now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
-    entry.count = 1;
-    entry.windowStart = now;
-  } else {
-    entry.count++;
-  }
-  rateLimitMap.set(ip, entry);
-  if (rateLimitMap.size > 500) {
-    for (const [key, val] of rateLimitMap) {
-      if (now - val.windowStart > RATE_LIMIT_WINDOW_MS) rateLimitMap.delete(key);
-    }
-  }
-  return entry.count > RATE_LIMIT_MAX;
-}
 
 const MAX_BODY_BYTES = 64 * 1024;
 const FUNCTION_SECRET = process.env.TRICOACH_SECRET;
 
-// ── Modelo fijo en backend — nunca viene del frontend ──
 const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
 const CLAUDE_MAX_TOKENS = 1000;
+
+const DAILY_LIMIT = { free: 10, pro: 150 };
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'Content-Type, x-tricoach-secret',
   'Access-Control-Allow-Methods': 'POST, OPTIONS'
 };
+
+function supabaseGet(hostname, path, key) {
+  return new Promise((resolve) => {
+    const req = https.request({
+      hostname, path, method: 'GET',
+      headers: { 'apikey': key, 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' }
+    }, (r) => {
+      let d = '';
+      r.on('data', chunk => d += chunk);
+      r.on('end', () => { try { resolve(JSON.parse(d)[0]); } catch { resolve(null); } });
+    });
+    req.on('error', () => resolve(null));
+    req.end();
+  });
+}
+
+function supabasePatch(hostname, path, key, body) {
+  const bodyStr = JSON.stringify(body);
+  return new Promise((resolve) => {
+    const req = https.request({
+      hostname, path, method: 'PATCH',
+      headers: {
+        'apikey': key, 'Authorization': `Bearer ${key}`,
+        'Content-Type': 'application/json', 'Prefer': 'return=minimal',
+        'Content-Length': Buffer.byteLength(bodyStr)
+      }
+    }, (r) => {
+      r.on('data', () => {});
+      r.on('end', () => resolve(r.statusCode));
+    });
+    req.on('error', () => resolve(500));
+    req.write(bodyStr);
+    req.end();
+  });
+}
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' };
@@ -43,11 +56,6 @@ exports.handler = async (event) => {
   const secret = event.headers['x-tricoach-secret'];
   if (FUNCTION_SECRET && secret !== FUNCTION_SECRET) {
     return { statusCode: 401, headers: CORS, body: JSON.stringify({ error: 'Unauthorized' }) };
-  }
-
-  const ip = event.headers['x-forwarded-for']?.split(',')[0]?.trim() || 'unknown';
-  if (isRateLimited(ip)) {
-    return { statusCode: 429, headers: CORS, body: JSON.stringify({ error: 'Too many requests' }) };
   }
 
   const rawBody = event.body || '';
@@ -70,44 +78,42 @@ exports.handler = async (event) => {
     parsed.messages = parsed.messages.slice(-60);
   }
 
-  // ── Validar límite Free en backend ──
+  // ── Rate limiting via Supabase ──
   const { userId } = parsed;
   if (userId) {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+    const hostname = new URL(supabaseUrl).hostname;
 
-    const profileData = await new Promise((res) => {
-      const path = `/rest/v1/profiles?id=eq.${userId}&select=plan,messages_today,last_message_date`;
-      const options = {
-        hostname: new URL(supabaseUrl).hostname,
-        path,
-        method: 'GET',
-        headers: {
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`,
-          'Content-Type': 'application/json'
-        }
-      };
-      const req = https.request(options, (r) => {
-        let d = '';
-        r.on('data', chunk => d += chunk);
-        r.on('end', () => {
-          try { res(JSON.parse(d)[0]); } catch { res(null); }
-        });
-      });
-      req.on('error', () => res(null));
-      req.end();
-    });
+    const profile = await supabaseGet(
+      hostname,
+      `/rest/v1/profiles?id=eq.${userId}&select=plan,messages_today,last_message_date`,
+      supabaseKey
+    );
 
-    if (profileData && profileData.plan === 'free') {
-      const today = new Date().toISOString().split('T')[0];
-      if (profileData.last_message_date === today && profileData.messages_today >= 10) {
+    if (profile) {
+      const today = new Date().toISOString().split('T')[0]; // UTC date
+      const plan = profile.plan || 'free';
+      const limit = DAILY_LIMIT[plan] ?? DAILY_LIMIT.free;
+
+      // Reset counter if date has changed
+      const currentCount = profile.last_message_date === today ? (profile.messages_today || 0) : 0;
+
+      if (currentCount >= limit) {
         return {
           statusCode: 429,
           headers: CORS,
-          body: JSON.stringify({ error: 'Límite diario alcanzado. Actualiza a Pro.' })
+          body: JSON.stringify({ error: 'Has alcanzado el límite de mensajes de hoy' })
         };
       }
+
+      // Increment counter in Supabase BEFORE calling Claude
+      await supabasePatch(
+        hostname,
+        `/rest/v1/profiles?id=eq.${userId}`,
+        supabaseKey,
+        { messages_today: currentCount + 1, last_message_date: today }
+      );
     }
   }
 
@@ -116,7 +122,6 @@ exports.handler = async (event) => {
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'API key not configured' }) };
   }
 
-  // Eliminar userId, model y max_tokens del body — los ponemos nosotros, no el frontend
   const { userId: _u, model: _m, max_tokens: _mt, ...parsedClean } = parsed;
   const body = JSON.stringify({
     ...parsedClean,

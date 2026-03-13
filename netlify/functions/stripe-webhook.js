@@ -73,11 +73,23 @@ function supabaseGet(hostname, path, key) {
 }
 
 function sendWelcomeEmail(resendKey, to, nombre) {
+  const nombreDisplay = nombre || 'atleta';
   const bodyStr = JSON.stringify({
     from: 'TriCoach <onboarding@resend.dev>',
     to: [to],
-    subject: '¡Bienvenido a TriCoach Pro! 🏆',
-    html: `<h2>¡Hola${nombre ? ` ${nombre}` : ''}!</h2><p>Tu cuenta TriCoach Pro ya está activa. Ahora tienes mensajes ilimitados con tu coach AI, análisis de Strava y planes adaptados cada semana.</p><p>¡A entrenar!</p>`
+    subject: '¡Ya eres Pro en TriCoach AI! 🎉',
+    html: `
+      <h2>¡Hola, ${nombreDisplay}!</h2>
+      <p>Tu cuenta <strong>TriCoach AI Pro</strong> ya está activa. 🎉</p>
+      <p>A partir de ahora tienes:</p>
+      <ul>
+        <li>✅ Mensajes ilimitados con tu coach IA</li>
+        <li>✅ Planes adaptativos semanales</li>
+        <li>✅ Análisis de actividades de Strava</li>
+      </ul>
+      <p><a href="https://tricoach-v2.netlify.app" style="background:#e8a838;color:#1a1209;padding:12px 24px;border-radius:24px;text-decoration:none;font-weight:bold;display:inline-block;margin-top:8px;">Ir a TriCoach AI →</a></p>
+      <p style="color:#888;font-size:13px;margin-top:24px;">¡A entrenar!</p>
+    `
   });
   return new Promise((resolve) => {
     const options = {
@@ -93,9 +105,9 @@ function sendWelcomeEmail(resendKey, to, nombre) {
     const req = https.request(options, (r) => {
       let d = '';
       r.on('data', chunk => d += chunk);
-      r.on('end', () => resolve(d));
+      r.on('end', () => resolve({ status: r.statusCode, body: d }));
     });
-    req.on('error', () => resolve(null));
+    req.on('error', (e) => resolve({ status: 500, body: e.message }));
     req.write(bodyStr);
     req.end();
   });
@@ -139,13 +151,27 @@ exports.handler = async (event) => {
 
       const RESEND_KEY = process.env.RESEND_API_KEY;
       if (RESEND_KEY && customerEmail) {
-        const profiles = await supabaseGet(
-          hostname,
-          `/rest/v1/profiles?id=eq.${userId}&select=nombre`,
-          supabaseKey
-        );
-        const nombre = Array.isArray(profiles) ? profiles[0]?.nombre : null;
-        await sendWelcomeEmail(RESEND_KEY, customerEmail, nombre);
+        try {
+          const profiles = await supabaseGet(
+            hostname,
+            `/rest/v1/profiles?id=eq.${userId}&select=nombre`,
+            supabaseKey
+          );
+          const nombre = Array.isArray(profiles) ? profiles[0]?.nombre : null;
+
+          console.log('[stripe-webhook] Enviando email de bienvenida Pro a:', customerEmail, '| nombre:', nombre);
+          const emailResult = await sendWelcomeEmail(RESEND_KEY, customerEmail, nombre);
+          console.log('[stripe-webhook] Resultado email Resend:', JSON.stringify(emailResult));
+
+          if (emailResult.status >= 300) {
+            console.error('[stripe-webhook] Email fallido — status:', emailResult.status, '| body:', emailResult.body);
+          }
+        } catch (emailErr) {
+          console.error('[stripe-webhook] Excepción al enviar email:', emailErr.message);
+          // El error de email NO bloquea la activación Pro
+        }
+      } else {
+        console.warn('[stripe-webhook] Email omitido — RESEND_KEY:', !!RESEND_KEY, '| customerEmail:', customerEmail);
       }
     }
   }

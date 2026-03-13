@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { getMessages, saveMessage } from '../lib/messages'
-import { canSendMessage, incrementMessageCount } from '../lib/profiles'
+import { canSendMessage } from '../lib/profiles'
 import { buildSystemPrompt } from '../prompts/buildSystemPrompt'
 import { updateContext } from '../lib/context'
 
@@ -63,8 +63,7 @@ export default function Chat({ userId, profile, personalidad, onPersonalidadChan
       const data = await response.json()
       const assistantMessage = data.content?.[0]?.text || 'Error al responder'
 
-      // ── Incrementar contador solo si la llamada tuvo éxito ──
-      await incrementMessageCount(userId, profile)
+      // El contador se incrementa en el backend (claude.js) antes de llamar a Claude
       await saveMessage(userId, 'assistant', assistantMessage)
 
       const finalMessages = [...updatedMessages, { role: 'assistant', content: assistantMessage }]
