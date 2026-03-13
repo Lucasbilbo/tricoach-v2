@@ -13,6 +13,16 @@ function getTodayDate() {
   return new Date().toISOString().split('T')[0];
 }
 
+function getDiasSemana(fechaInicio) {
+  const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  const start = new Date(fechaInicio + 'T12:00:00');
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    return DIAS[d.getDay()];
+  });
+}
+
 function supabaseGet(hostname, path, key) {
   return new Promise((resolve) => {
     const options = {
@@ -118,48 +128,49 @@ function fetchStravaActivities(accessToken) {
   });
 }
 
-function buildDiagnosticoUserMessage(profile, weekStart, deporteInfo) {
+function buildDiagnosticoUserMessage(profile, weekStart, deporteInfo, dias) {
   const deporte = profile.deporte;
 
   const testsInfo = {
-    running: `TESTS:
-- Lunes: Descanso.
-- Martes: Cooper Test. Cal 10min trote suave + 12min carrera a máximo esfuerzo sostenido en llano + 10min vuelta calma. Medir distancia recorrida en 12min. RPE 9-10.
-- Miércoles: Rodaje suave Z2 (35min al 65-70% FCmax). RPE 5-6.
-- Jueves: 5K Time Trial. Cal 10min + 5km a máximo esfuerzo sin parar + 10min vuelta calma. Anotar tiempo total y ritmo medio. RPE 9.
-- Viernes: Descanso.
-- Sábado: Rodaje suave Z2 (40min). RPE 5-6.
-- Domingo: Descanso.`,
-
-    triatlon: `TESTS:
-- Lunes: Descanso.
-- Martes: Natación Velocidad Crítica. Cal 200m suave + 400m crol a máximo esfuerzo + descanso 15min + 200m crol a máximo esfuerzo. Anotar tiempos de 400m y 200m por separado. RPE 9-10.
-- Miércoles: Bici 20min TT. Cal 15min suave + 20min a máximo esfuerzo sostenido en rodillo o carretera llana + 10min vuelta calma. Anotar vatios medios o FC media. RPE 9.
-- Jueves: Natación técnica suave 30min Z2.
-- Viernes: Running 5K Time Trial. Cal 10min + 5km a máximo esfuerzo + 10min vuelta calma. Anotar tiempo total y ritmo. RPE 9.
-- Sábado: Descanso.
-- Domingo: Rodaje suave Z2 (30min). RPE 5.`,
-
-    hyrox: `TESTS:
-- Lunes: Descanso.
-- Martes: 5K Threshold Run. Cal 10min trote + 5km a máximo esfuerzo sostenido + 5min vuelta calma. Anotar tiempo y ritmo medio. RPE 9.
-- Miércoles: Descanso o movilidad 20min.
-- Jueves: Strength Circuit. 3 series progresivas en press banca para estimar 3RM, descanso 3min entre series. Luego máximo pull-ups en 2min (anotar número). Luego 100m lunges con 15-20kg (anotar tiempo). RPE 8-9.
-- Viernes: Descanso.
-- Sábado: Rodaje suave 30min Z2. RPE 5.
-- Domingo: Descanso.`,
-
-    natacion: `TESTS:
-- Lunes: Descanso.
-- Martes: Velocidad Crítica. Cal 200m suave + 400m crol a máximo esfuerzo + descanso 15min + 200m crol a máximo esfuerzo. Anotar tiempos de 400m y 200m. RPE 9-10.
-- Miércoles: Técnica suave 30min. Drills: patada tabla, pull con paletas, dedos en agua. RPE 4.
-- Jueves: 400m Endurance. Cal 200m suave + 400m continuo a ritmo fuerte + 200m vuelta calma. Anotar tiempo de los 400m. RPE 7-8.
-- Viernes: Descanso.
-- Sábado: Técnica suave 30min. RPE 4.
-- Domingo: Descanso.`,
+    running: [
+      `${dias[0]}: Descanso.`,
+      `${dias[1]}: Cooper Test. Cal 10min trote suave + 12min carrera a máximo esfuerzo sostenido en llano + 10min vuelta calma. Medir distancia recorrida en 12min. RPE 9-10.`,
+      `${dias[2]}: Rodaje suave Z2 (35min al 65-70% FCmax). RPE 5-6.`,
+      `${dias[3]}: 5K Time Trial. Cal 10min + 5km a máximo esfuerzo sin parar + 10min vuelta calma. Anotar tiempo total y ritmo medio. RPE 9.`,
+      `${dias[4]}: Descanso.`,
+      `${dias[5]}: Rodaje suave Z2 (40min). RPE 5-6.`,
+      `${dias[6]}: Descanso.`,
+    ],
+    triatlon: [
+      `${dias[0]}: Descanso.`,
+      `${dias[1]}: Natación Velocidad Crítica. Cal 200m suave + 400m crol a máximo esfuerzo + descanso 15min + 200m crol a máximo esfuerzo. Anotar tiempos de 400m y 200m por separado. RPE 9-10.`,
+      `${dias[2]}: Bici 20min TT. Cal 15min suave + 20min a máximo esfuerzo sostenido en rodillo o carretera llana + 10min vuelta calma. Anotar vatios medios o FC media. RPE 9.`,
+      `${dias[3]}: Natación técnica suave 30min Z2.`,
+      `${dias[4]}: Running 5K Time Trial. Cal 10min + 5km a máximo esfuerzo + 10min vuelta calma. Anotar tiempo total y ritmo. RPE 9.`,
+      `${dias[5]}: Descanso.`,
+      `${dias[6]}: Rodaje suave Z2 (30min). RPE 5.`,
+    ],
+    hyrox: [
+      `${dias[0]}: Descanso.`,
+      `${dias[1]}: 5K Threshold Run. Cal 10min trote + 5km a máximo esfuerzo sostenido + 5min vuelta calma. Anotar tiempo y ritmo medio. RPE 9.`,
+      `${dias[2]}: Descanso o movilidad 20min.`,
+      `${dias[3]}: Strength Circuit. 3 series progresivas en press banca para estimar 3RM, descanso 3min entre series. Luego máximo pull-ups en 2min (anotar número). Luego 100m lunges con 15-20kg (anotar tiempo). RPE 8-9.`,
+      `${dias[4]}: Descanso.`,
+      `${dias[5]}: Rodaje suave 30min Z2. RPE 5.`,
+      `${dias[6]}: Descanso.`,
+    ],
+    natacion: [
+      `${dias[0]}: Descanso.`,
+      `${dias[1]}: Velocidad Crítica. Cal 200m suave + 400m crol a máximo esfuerzo + descanso 15min + 200m crol a máximo esfuerzo. Anotar tiempos de 400m y 200m. RPE 9-10.`,
+      `${dias[2]}: Técnica suave 30min. Drills: patada tabla, pull con paletas, dedos en agua. RPE 4.`,
+      `${dias[3]}: 400m Endurance. Cal 200m suave + 400m continuo a ritmo fuerte + 200m vuelta calma. Anotar tiempo de los 400m. RPE 7-8.`,
+      `${dias[4]}: Descanso.`,
+      `${dias[5]}: Técnica suave 30min. RPE 4.`,
+      `${dias[6]}: Descanso.`,
+    ],
   };
 
-  const sesionesInfo = testsInfo[deporte] || testsInfo.running;
+  const sesionesInfo = (testsInfo[deporte] || testsInfo.running).join('\n- ');
 
   return `Este atleta acaba de registrarse. Genera una SEMANA DE DIAGNÓSTICO para evaluar su nivel real.
 
@@ -168,14 +179,17 @@ Deporte: ${deporteInfo[deporte] || deporte}
 Nivel declarado: ${profile.nivel || 'desconocido'}
 Objetivo: ${profile.objetivo || 'mejorar forma física'}
 
-${sesionesInfo}
+El plan empieza el ${weekStart}. Los días en orden son: ${dias.join(', ')}.
 
-El JSON debe tener esta estructura exacta:
+TESTS (en el orden exacto de los días del plan):
+- ${sesionesInfo}
+
+El JSON debe tener esta estructura exacta con los días en el orden indicado:
 {
   "semana": "${weekStart}",
   "sesiones": [
-    { "dia": "Lunes", "tipo": "Descanso", "descripcion": "...", "duracion_min": 0, "intensidad": "descanso" },
-    { "dia": "Martes", "tipo": "Correr", "descripcion": "...", "duracion_min": 35, "intensidad": "fuerte" }
+    { "dia": "${dias[0]}", "tipo": "Descanso", "descripcion": "...", "duracion_min": 0, "intensidad": "descanso" },
+    { "dia": "${dias[1]}", "tipo": "Correr", "descripcion": "...", "duracion_min": 35, "intensidad": "fuerte" }
   ]
 }
 
@@ -185,11 +199,11 @@ Para cada sesión de test (no descanso), la descripción debe:
 3. Indicar QUÉ debe medir o anotar el atleta
 4. Indicar RPE objetivo del bloque principal
 
-En la descripción del Domingo (o última sesión) añade: "Cuando termines cada test, cuéntame el resultado en el chat y lo usaré para calibrar tu plan personalizado de la próxima semana."
+En la descripción del ${dias[6]} (última sesión) añade: "Cuando termines cada test, cuéntame el resultado en el chat y lo usaré para calibrar tu plan personalizado de la próxima semana."
 
 tipos posibles: "Correr", "Bici", "Nadar", "Fuerza", "Brick", "Descanso"
 intensidades posibles: "suave", "moderada", "fuerte", "descanso"
-Devuelve exactamente 7 sesiones, una por día (Lunes a Domingo).`;
+Devuelve exactamente 7 sesiones en el orden: ${dias.join(', ')}.`;
 }
 
 function buildAnalisisSemanaAnterior(planAnterior, stravaText) {
@@ -286,6 +300,7 @@ exports.handler = async (event) => {
   const necesitaDiagnostico = esPrimerPlan && actividadesCount < 3;
 
   const weekStart = fechaInicio || getTodayDate();
+  const dias = getDiasSemana(weekStart);
 
   const deporteInfo = {
     triatlon: 'triatlón olímpico (natación 1.5km, ciclismo 40km, running 10km)',
@@ -299,7 +314,7 @@ Instrucción: devuelve SOLO un JSON válido, sin texto adicional, sin markdown, 
 
   let userMessage;
   if (necesitaDiagnostico) {
-    userMessage = buildDiagnosticoUserMessage(profile, weekStart, deporteInfo);
+    userMessage = buildDiagnosticoUserMessage(profile, weekStart, deporteInfo, dias);
   } else {
     const analisisSection = (isPro && planAnterior)
       ? '\n\n' + buildAnalisisSemanaAnterior(planAnterior, stravaText)
@@ -312,23 +327,25 @@ Objetivo: ${profile.objetivo || 'mejorar forma física'}
 ${profile.fecha_carrera ? `Próximo evento: ${profile.fecha_carrera}` : ''}
 ${profile.contexto ? `Contexto del atleta: ${profile.contexto}` : ''}${analisisSection}
 
-El JSON debe tener esta estructura exacta:
+El plan empieza el ${weekStart}. Los días en orden son: ${dias.join(', ')}.
+
+El JSON debe tener esta estructura exacta con los días en el orden indicado:
 {
   "semana": "${weekStart}",
   "sesiones": [
-    { "dia": "Lunes", "tipo": "Correr", "descripcion": "Rodaje suave 45min zona 2", "duracion_min": 45, "intensidad": "suave" },
-    { "dia": "Martes", "tipo": "Descanso", "descripcion": "Recuperación activa o descanso completo", "duracion_min": 0, "intensidad": "descanso" },
-    { "dia": "Miércoles", "tipo": "Correr", "descripcion": "...", "duracion_min": 50, "intensidad": "moderada" },
-    { "dia": "Jueves", "tipo": "Descanso", "descripcion": "...", "duracion_min": 0, "intensidad": "descanso" },
-    { "dia": "Viernes", "tipo": "Correr", "descripcion": "...", "duracion_min": 45, "intensidad": "suave" },
-    { "dia": "Sábado", "tipo": "Correr", "descripcion": "...", "duracion_min": 75, "intensidad": "moderada" },
-    { "dia": "Domingo", "tipo": "Descanso", "descripcion": "...", "duracion_min": 0, "intensidad": "descanso" }
+    { "dia": "${dias[0]}", "tipo": "Correr", "descripcion": "Rodaje suave 45min zona 2", "duracion_min": 45, "intensidad": "suave" },
+    { "dia": "${dias[1]}", "tipo": "Descanso", "descripcion": "Recuperación activa o descanso completo", "duracion_min": 0, "intensidad": "descanso" },
+    { "dia": "${dias[2]}", "tipo": "Correr", "descripcion": "...", "duracion_min": 50, "intensidad": "moderada" },
+    { "dia": "${dias[3]}", "tipo": "Descanso", "descripcion": "...", "duracion_min": 0, "intensidad": "descanso" },
+    { "dia": "${dias[4]}", "tipo": "Correr", "descripcion": "...", "duracion_min": 45, "intensidad": "suave" },
+    { "dia": "${dias[5]}", "tipo": "Correr", "descripcion": "...", "duracion_min": 75, "intensidad": "moderada" },
+    { "dia": "${dias[6]}", "tipo": "Descanso", "descripcion": "...", "duracion_min": 0, "intensidad": "descanso" }
   ]
 }
 
 tipos posibles: "Correr", "Bici", "Nadar", "Fuerza", "Brick", "Descanso"
 intensidades posibles: "suave", "moderada", "fuerte", "descanso"
-Devuelve exactamente 7 sesiones, una por día de la semana (Lunes a Domingo).
+Devuelve exactamente 7 sesiones en el orden: ${dias.join(', ')}.
 
 Para la descripción de cada sesión activa incluye en una sola línea:
 - Calentamiento específico (10-15% del tiempo): qué hacer exactamente

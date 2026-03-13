@@ -142,6 +142,7 @@ function App() {
         <ErrorBoundary fallbackMessage="No se pudo cargar el plan semanal">
           <WeeklyPlan
             userId={session.user.id}
+            profile={profile}
             plan={plan}
             onPlanUpdate={setPlan}
             onSessionDetail={setSelectedSession}

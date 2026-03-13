@@ -1,6 +1,13 @@
 import { useState } from 'react'
 import { generatePlan, markSessionComplete, adjustPlan, analizarPlan } from '../lib/plans'
 
+const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+
+function fechaSeleccionadaToISO(dia, mes, anio) {
+  const mesIdx = MESES.indexOf(mes) + 1
+  return `${anio}-${String(mesIdx).padStart(2, '0')}-${String(dia).padStart(2, '0')}`
+}
+
 const ICONOS = {
   Correr: '🏃',
   Bici: '🚴',
@@ -16,26 +23,22 @@ function getTodayStr() {
   return new Date().toISOString().split('T')[0]
 }
 
-function getNextMonday() {
-  const now = new Date()
-  const day = now.getDay()
-  const daysUntilNextMonday = day === 0 ? 1 : 8 - day
-  const nextMon = new Date(now)
-  nextMon.setDate(now.getDate() + daysUntilNextMonday)
-  return nextMon.toISOString().split('T')[0]
-}
-
 function formatDateLong(dateStr) {
   return new Date(dateStr + 'T12:00:00').toLocaleDateString('es-ES', {
     weekday: 'long', day: 'numeric', month: 'long'
   })
 }
 
-export default function WeeklyPlan({ userId, plan, onPlanUpdate, onSessionDetail, onNavigate }) {
+export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSessionDetail, onNavigate }) {
+  const _todayDate = new Date()
   const [generando, setGenerando] = useState(false)
   const [completando, setCompletando] = useState(null)
   const [rpe, setRpe] = useState(5)
   const [ajustando, setAjustando] = useState(false)
+  const [diaInicio, setDiaInicio] = useState(String(_todayDate.getDate()))
+  const [mesInicio, setMesInicio] = useState(MESES[_todayDate.getMonth()])
+  const [anioInicio, setAnioInicio] = useState(String(_todayDate.getFullYear()))
+  const [coachIntro, setCoachIntro] = useState(null)
 
   const today = DIAS_SEMANA[new Date().getDay()]
   const todayStr = getTodayStr()
@@ -49,11 +52,52 @@ export default function WeeklyPlan({ userId, plan, onPlanUpdate, onSessionDetail
 
   const hayPendientes = plan?.sesiones?.some(s => !s.completada && s.tipo?.toLowerCase() !== 'descanso')
 
+  async function fetchCoachIntro(nuevoPlan) {
+    if (!profile) return
+    try {
+      const esDiagnostico = nuevoPlan?.sesiones?.[0]?.tipo_semana === 'diagnostico'
+      const sesionesTest = esDiagnostico
+        ? nuevoPlan.sesiones
+            .filter(s => s.tipo !== 'Descanso')
+            .map(s => ({ dia: s.dia, tipo: s.tipo, descripcion: s.descripcion }))
+        : []
+      const secret = import.meta.env.VITE_TRICOACH_SECRET || ''
+      const res = await fetch('/.netlify/functions/coach-intro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-tricoach-secret': secret },
+        body: JSON.stringify({
+          userId,
+          perfil: {
+            nombre: profile.nombre,
+            deporte: profile.deporte,
+            nivel: profile.nivel,
+            objetivo: profile.objetivo,
+            carreras: profile.carreras,
+            historial: profile.historial,
+          },
+          tieneDatos: !esDiagnostico,
+          actividadesResumen: null,
+          esDiagnostico,
+          sesionesTest,
+        })
+      })
+      const data = await res.json()
+      if (data.mensaje) {
+        setCoachIntro({ mensaje: data.mensaje, nombreCoach: profile.nombre_coach || 'Coach' })
+      }
+    } catch (e) {
+      console.error('Error en coach-intro:', e)
+    }
+  }
+
   async function handleGenerarPlan(planAnteriorParaAnalisis = null, fechaInicio = null) {
     setGenerando(true)
     try {
       const nuevoPlan = await generatePlan(userId, planAnteriorParaAnalisis, fechaInicio)
       onPlanUpdate(nuevoPlan)
+      if (nuevoPlan && !nuevoPlan.error && planAnteriorParaAnalisis === null) {
+        fetchCoachIntro(nuevoPlan)
+      }
     } catch (e) {
       console.error('Error al generar plan:', e)
     } finally {
@@ -84,6 +128,18 @@ export default function WeeklyPlan({ userId, plan, onPlanUpdate, onSessionDetail
     }
   }
 
+  const selectStyle = {
+    background: 'var(--input)',
+    border: '1px solid var(--border)',
+    borderRadius: 8,
+    color: 'var(--foreground)',
+    fontFamily: 'var(--font-sans)',
+    fontSize: 16,
+    padding: '10px 8px',
+    width: '100%',
+    appearance: 'none',
+  }
+
   if (!plan) {
     return (
       <div style={{
@@ -100,12 +156,32 @@ export default function WeeklyPlan({ userId, plan, onPlanUpdate, onSessionDetail
         <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 24, fontWeight: 700, marginBottom: 10 }}>
           Aún no tienes un plan
         </h3>
-        <p style={{ color: 'var(--muted-foreground)', marginBottom: 32, fontSize: 15, maxWidth: 300, lineHeight: 1.5 }}>
+        <p style={{ color: 'var(--muted-foreground)', marginBottom: 28, fontSize: 15, maxWidth: 300, lineHeight: 1.5 }}>
           Genera tu primer plan y el coach lo adaptará a tu nivel
         </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: 320 }}>
+
+        <div style={{ width: '100%', maxWidth: 320 }}>
+          <p style={{ fontSize: 14, color: 'var(--muted-foreground)', marginBottom: 10 }}>
+            ¿Cuándo quieres empezar?
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: 8, marginBottom: 16 }}>
+            <select value={diaInicio} onChange={e => setDiaInicio(e.target.value)} style={selectStyle}>
+              {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+            <select value={mesInicio} onChange={e => setMesInicio(e.target.value)} style={selectStyle}>
+              {MESES.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+            <select value={anioInicio} onChange={e => setAnioInicio(e.target.value)} style={selectStyle}>
+              {[String(new Date().getFullYear()), String(new Date().getFullYear() + 1)].map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
+
           <button
-            onClick={() => handleGenerarPlan(null, getTodayStr())}
+            onClick={() => handleGenerarPlan(null, fechaSeleccionadaToISO(diaInicio, mesInicio, anioInicio))}
             disabled={generando}
             style={{
               background: generando ? 'var(--muted)' : 'var(--primary)',
@@ -120,25 +196,7 @@ export default function WeeklyPlan({ userId, plan, onPlanUpdate, onSessionDetail
               cursor: generando ? 'not-allowed' : 'pointer',
             }}
           >
-            {generando ? 'Generando...' : 'Empezar hoy'}
-          </button>
-          <button
-            onClick={() => handleGenerarPlan(null, getNextMonday())}
-            disabled={generando}
-            style={{
-              background: 'var(--secondary)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius)',
-              height: 52,
-              width: '100%',
-              color: 'var(--foreground)',
-              fontFamily: 'var(--font-sans)',
-              fontSize: 15,
-              fontWeight: 500,
-              cursor: generando ? 'not-allowed' : 'pointer',
-            }}
-          >
-            Empezar el próximo lunes
+            {generando ? 'Generando...' : 'Generar mi plan'}
           </button>
         </div>
       </div>
@@ -308,6 +366,66 @@ export default function WeeklyPlan({ userId, plan, onPlanUpdate, onSessionDetail
                   💬 Hablar con el coach
                 </button>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Coach intro card */}
+        {coachIntro && (
+          <div style={{
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+            borderLeft: '3px solid var(--primary)',
+            borderRadius: 'var(--radius)',
+            padding: '16px',
+            marginBottom: 16,
+            position: 'relative',
+          }}>
+            <button
+              onClick={() => setCoachIntro(null)}
+              style={{
+                position: 'absolute', top: 8, right: 8,
+                background: 'none', border: 'none',
+                color: 'var(--muted-foreground)', cursor: 'pointer',
+                fontSize: 16, padding: 4, lineHeight: 1,
+              }}
+            >✕</button>
+
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+              <div style={{
+                width: 40, height: 40, borderRadius: '50%',
+                background: 'var(--primary)', color: 'var(--primary-foreground)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontWeight: 700, fontSize: 18, flexShrink: 0,
+              }}>
+                {(coachIntro.nombreCoach[0] || 'C').toUpperCase()}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ color: 'var(--primary)', fontWeight: 600, fontSize: 14, marginBottom: 6 }}>
+                  {coachIntro.nombreCoach}
+                </p>
+                <p style={{ color: 'var(--foreground)', fontSize: 14, lineHeight: 1.55 }}>
+                  {coachIntro.mensaje}
+                </p>
+                {onNavigate && (
+                  <button
+                    onClick={() => onNavigate('coach')}
+                    style={{
+                      marginTop: 10,
+                      background: 'none',
+                      border: '1px solid var(--border)',
+                      borderRadius: 8,
+                      padding: '5px 12px',
+                      color: 'var(--muted-foreground)',
+                      fontFamily: 'var(--font-sans)',
+                      fontSize: 12,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    💬 Responder al coach
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )}
