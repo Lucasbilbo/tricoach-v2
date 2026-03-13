@@ -255,7 +255,7 @@ export default function Onboarding({ userId, onComplete }) {
   const [submitted, setSubmitted] = useState(false)
   const [otroEquipamiento, setOtroEquipamiento] = useState('')
   const [sinCarrera, setSinCarrera] = useState(false)
-  const [errores, setErrores] = useState({ nivel: '', carreras: '', historial: '', disponibilidad: '', equipamiento: '' })
+  const [errores, setErrores] = useState({ nombre: '', deporte: '', nivel: '', carreras: '', historial: '', disponibilidad: '', equipamiento: '' })
   const [erroresCarrera, setErroresCarrera] = useState({ nombre: '', tipo: '', fecha: '' })
 
   // Si volvemos del OAuth de Strava, saltar al paso de integraciones
@@ -377,11 +377,21 @@ export default function Onboarding({ userId, onComplete }) {
               name="nombre"
               placeholder="Tu nombre"
               value={form.nombre}
-              onChange={handleChange}
+              onChange={e => { handleChange(e); setErrores(prev => ({ ...prev, nombre: '' })) }}
               style={INPUT_STYLE}
               autoFocus
             />
-            <button onClick={() => setStep(2)} style={{ ...PRIMARY_BTN, marginTop: 24 }}>
+            {errores.nombre && (
+              <p style={{ color: 'var(--destructive)', fontSize: 13, marginTop: 6, textAlign: 'center' }}>{errores.nombre}</p>
+            )}
+            <button onClick={() => {
+              if (!form.nombre.trim()) {
+                setErrores(prev => ({ ...prev, nombre: 'Tu nombre es obligatorio' }))
+                return
+              }
+              setErrores(prev => ({ ...prev, nombre: '' }))
+              setStep(2)
+            }} style={{ ...PRIMARY_BTN, marginTop: 24 }}>
               Siguiente
             </button>
           </div>
@@ -392,19 +402,29 @@ export default function Onboarding({ userId, onComplete }) {
           <div>
             {heading('¿Qué deporte practicas?')}
             {subheading('Tu coach se especializará en tu disciplina')}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
               {DEPORTES.map(d => (
                 <OptionCard
                   key={d.value}
                   selected={form.deporte === d.value}
-                  onClick={() => handleSelect('deporte', d.value)}
+                  onClick={() => { handleSelect('deporte', d.value); setErrores(prev => ({ ...prev, deporte: '' })) }}
                   emoji={d.emoji}
                   label={d.label}
                   desc={d.desc}
                 />
               ))}
             </div>
-            <button onClick={() => setStep(3)} style={PRIMARY_BTN}>Siguiente</button>
+            {errores.deporte && (
+              <p style={{ color: 'var(--destructive)', fontSize: 13, marginBottom: 8, textAlign: 'center' }}>{errores.deporte}</p>
+            )}
+            <button onClick={() => {
+              if (!form.deporte) {
+                setErrores(prev => ({ ...prev, deporte: 'Selecciona tu deporte para continuar' }))
+                return
+              }
+              setErrores(prev => ({ ...prev, deporte: '' }))
+              setStep(3)
+            }} style={PRIMARY_BTN}>Siguiente</button>
             <button onClick={() => setStep(1)} style={BACK_BTN}>← Atrás</button>
           </div>
         )}
@@ -464,7 +484,7 @@ export default function Onboarding({ userId, onComplete }) {
                     <div>
                       <div style={{ fontWeight: 600, fontSize: 14 }}>{c.nombre}</div>
                       <div style={{ color: 'var(--muted-foreground)', fontSize: 12, marginTop: 2 }}>
-                        {c.tipo}{c.fecha ? ` · ${formatFecha(c.fecha)}` : ''}
+                        {c.tipo}{c.fecha ? ` · ${c.fecha.includes('-') ? formatFecha(c.fecha) : c.fecha}` : ''}
                       </div>
                     </div>
                     <button
@@ -506,8 +526,12 @@ export default function Onboarding({ userId, onComplete }) {
                 <input
                   type="date"
                   value={nuevaCarrera.fecha}
-                  onChange={e => { setNuevaCarrera({ ...nuevaCarrera, fecha: e.target.value }); setErroresCarrera(prev => ({ ...prev, fecha: '' })) }}
-                  style={{ ...INPUT_STYLE, colorScheme: 'dark', borderColor: erroresCarrera.fecha ? 'var(--destructive)' : 'var(--border)' }}
+                  onChange={e => {
+                    console.log('fecha guardada:', e.target.value)
+                    setNuevaCarrera({ ...nuevaCarrera, fecha: e.target.value })
+                    setErroresCarrera(prev => ({ ...prev, fecha: '' }))
+                  }}
+                  style={{ ...INPUT_STYLE, colorScheme: 'dark', width: '100%', boxSizing: 'border-box', borderColor: erroresCarrera.fecha ? 'var(--destructive)' : 'var(--border)' }}
                 />
                 {erroresCarrera.fecha && <p style={{ color: 'var(--destructive)', fontSize: 12, marginTop: 4 }}>{erroresCarrera.fecha}</p>}
               </div>

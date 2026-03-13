@@ -22,15 +22,18 @@ describe('Onboarding', () => {
     expect(screen.getByPlaceholderText('Tu nombre')).toBeDefined()
   })
 
-  it('avanza al paso 2 al pulsar Siguiente', () => {
+  it('avanza al paso 2 al pulsar Siguiente con nombre relleno', () => {
     render(<Onboarding userId="123" onComplete={vi.fn()} />)
+    fireEvent.change(screen.getByPlaceholderText('Tu nombre'), { target: { value: 'Lucas' } })
     fireEvent.click(screen.getByText('Siguiente'))
     expect(screen.getByText('¿Qué deporte practicas?')).toBeDefined()
   })
 
-  it('avanza al paso 3 al pulsar Siguiente', () => {
+  it('avanza al paso 3 al pulsar Siguiente con deporte seleccionado', () => {
     render(<Onboarding userId="123" onComplete={vi.fn()} />)
+    fireEvent.change(screen.getByPlaceholderText('Tu nombre'), { target: { value: 'Lucas' } })
     fireEvent.click(screen.getByText('Siguiente'))
+    fireEvent.click(screen.getByText('Running'))
     fireEvent.click(screen.getByText('Siguiente'))
     expect(screen.getByText('¿Cuál es tu nivel?')).toBeDefined()
   })
