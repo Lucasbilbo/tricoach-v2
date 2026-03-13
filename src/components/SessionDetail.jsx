@@ -1,5 +1,37 @@
 import { useState } from 'react'
 
+function generarTCX(sesion) {
+  const ahora = new Date().toISOString()
+  const duracionSeg = (sesion.duracion_min || 30) * 60
+  const tipoTCX = sesion.tipo === 'Correr' ? 'Running' : sesion.tipo === 'Bici' ? 'Biking' : 'Other'
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<TrainingCenterDatabase xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2">
+  <Workouts>
+    <Workout Sport="${tipoTCX}">
+      <Name>${sesion.tipo} - ${sesion.dia}</Name>
+      <Step xsi:type="Step_t" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <StepId>1</StepId>
+        <Name>${sesion.descripcion || sesion.tipo}</Name>
+        <Duration xsi:type="Time_t">
+          <Seconds>${duracionSeg}</Seconds>
+        </Duration>
+        <Intensity>Active</Intensity>
+        <Target xsi:type="None_t"/>
+      </Step>
+      <ScheduledOn>${ahora.split('T')[0]}</ScheduledOn>
+      <Notes>${sesion.descripcion || ''} | Intensidad: ${sesion.intensidad || ''}</Notes>
+    </Workout>
+  </Workouts>
+</TrainingCenterDatabase>`
+  const blob = new Blob([xml], { type: 'application/tcx+xml' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `tricoach_${sesion.tipo}_${sesion.dia}.tcx`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 function highlightNumbers(text) {
   if (!text) return text
   const parts = text.split(/(\d+(?:[.,]\d+)?(?:\s*(?:km|m|min|seg|s|kg|rep|x|rpm|bpm))?(?:\/(?:km|min|h))?)/gi)
@@ -161,6 +193,28 @@ export default function SessionDetail({ sesion, profile, onClose, onComplete, on
             }}
           >
             💬 Preguntar al coach sobre esta sesión
+          </button>
+        )}
+
+        {/* TCX download */}
+        {sesion.tipo !== 'Descanso' && (
+          <button
+            onClick={() => generarTCX(sesion)}
+            style={{
+              width: '100%',
+              background: 'var(--secondary)',
+              border: '1px solid var(--border)',
+              borderRadius: 24,
+              color: 'var(--foreground)',
+              padding: '12px',
+              fontFamily: 'var(--font-sans)',
+              fontSize: 14,
+              fontWeight: 500,
+              cursor: 'pointer',
+              marginBottom: 10,
+            }}
+          >
+            ⬇ Descargar para el reloj (.TCX)
           </button>
         )}
 

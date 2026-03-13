@@ -1,5 +1,37 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { markSessionComplete } from '../lib/plans'
+
+function generarTCX(sesion) {
+  const ahora = new Date().toISOString()
+  const duracionSeg = (sesion.duracion_min || 30) * 60
+  const tipoTCX = sesion.tipo === 'Correr' ? 'Running' : sesion.tipo === 'Bici' ? 'Biking' : 'Other'
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<TrainingCenterDatabase xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2">
+  <Workouts>
+    <Workout Sport="${tipoTCX}">
+      <Name>${sesion.tipo} - ${sesion.dia}</Name>
+      <Step xsi:type="Step_t" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <StepId>1</StepId>
+        <Name>${sesion.descripcion || sesion.tipo}</Name>
+        <Duration xsi:type="Time_t">
+          <Seconds>${duracionSeg}</Seconds>
+        </Duration>
+        <Intensity>Active</Intensity>
+        <Target xsi:type="None_t"/>
+      </Step>
+      <ScheduledOn>${ahora.split('T')[0]}</ScheduledOn>
+      <Notes>${sesion.descripcion || ''} | Intensidad: ${sesion.intensidad || ''}</Notes>
+    </Workout>
+  </Workouts>
+</TrainingCenterDatabase>`
+  const blob = new Blob([xml], { type: 'application/tcx+xml' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `tricoach_${sesion.tipo}_${sesion.dia}.tcx`
+  a.click()
+  URL.revokeObjectURL(url)
+}
 
 const ICONOS = {
   Correr: '🏃',
@@ -43,6 +75,31 @@ export default function Dashboard({ userId, plan, profile, onPlanUpdate, onNavig
   const [completando, setCompletando] = useState(false)
   const [rpe, setRpe] = useState(6)
   const [showMovilidad, setShowMovilidad] = useState(false)
+  const [syncToast, setSyncToast] = useState(null)
+  const syncedRef = useRef(false)
+
+  useEffect(() => {
+    if (!userId || !plan || !profile?.strava_token || syncedRef.current) return
+    syncedRef.current = true
+
+    fetch('/.netlify/functions/strava-sync', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-tricoach-secret': import.meta.env.VITE_TRICOACH_SECRET || ''
+      },
+      body: JSON.stringify({ userId })
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.sincronizadas > 0 && data.sesiones) {
+          onPlanUpdate({ ...plan, sesiones: data.sesiones })
+          setSyncToast(`✓ ${data.sincronizadas} sesión${data.sincronizadas > 1 ? 'es' : ''} sincronizada${data.sincronizadas > 1 ? 's' : ''} con Strava`)
+          setTimeout(() => setSyncToast(null), 4000)
+        }
+      })
+      .catch(() => {})
+  }, [userId, plan, profile])
 
   const today = DIAS_SEMANA[new Date().getDay()]
   const sesionHoy = plan?.sesiones?.find(s => s.dia === today) || null
@@ -73,6 +130,28 @@ export default function Dashboard({ userId, plan, profile, onPlanUpdate, onNavig
       overflowY: 'auto',
       background: 'var(--background)',
     }}>
+      {/* Strava sync toast */}
+      {syncToast && (
+        <div style={{
+          position: 'fixed',
+          top: 16,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'oklch(0.45 0.2 140)',
+          color: '#fff',
+          borderRadius: 'var(--radius)',
+          padding: '10px 20px',
+          fontWeight: 600,
+          fontSize: 14,
+          zIndex: 200,
+          fontFamily: 'var(--font-sans)',
+          boxShadow: '0 4px 20px oklch(0 0 0 / 0.3)',
+          whiteSpace: 'nowrap',
+        }}>
+          {syncToast}
+        </div>
+      )}
+
       {/* Header */}
       <div style={{
         background: 'var(--background)',
@@ -316,6 +395,28 @@ export default function Dashboard({ userId, plan, profile, onPlanUpdate, onNavig
                 )
               )}
             </div>
+
+            {/* TCX download button */}
+            {!esDescanso && (
+              <button
+                onClick={() => generarTCX(sesionHoy)}
+                style={{
+                  width: '100%',
+                  background: 'var(--secondary)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 24,
+                  color: 'var(--foreground)',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 14,
+                  fontWeight: 500,
+                  padding: '11px',
+                  cursor: 'pointer',
+                  marginBottom: 8,
+                }}
+              >
+                ⬇ Descargar para el reloj (.TCX)
+              </button>
+            )}
 
             {/* Coach button */}
             <button

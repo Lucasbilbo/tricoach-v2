@@ -25,10 +25,16 @@ function formatActivities(raw) {
 
   const actividades = rawToUse.map(a => ({
     tipo: a.type,
+    tipo_deporte: a.sport_type || a.type,
     distancia_km: Math.round((a.distance / 1000) * 10) / 10,
     duracion_min: Math.round(a.moving_time / 60),
     fecha: a.start_date_local ? a.start_date_local.split('T')[0] : null,
-    ritmo_min_km: formatPace(a.distance, a.moving_time)
+    ritmo_min_km: formatPace(a.distance, a.moving_time),
+    fc_media: a.average_heartrate || null,
+    fc_maxima: a.max_heartrate || null,
+    potencia_media: a.average_watts || null,
+    cadencia_media: a.average_cadence || null,
+    desnivel: Math.round(a.total_elevation_gain) || null,
   }));
 
   const total_km = actividades.reduce((sum, a) => sum + a.distancia_km, 0);
@@ -49,6 +55,21 @@ function formatActivities(raw) {
     resumenParts = [`Últimas actividades: ${n} salidas, ${Math.round(total_km * 10) / 10}km totales`];
   }
   if (ritmoMedio) resumenParts.push(`ritmo medio ${ritmoMedio}/km`);
+
+  const fcMediaGlobal = actividades.filter(a => a.fc_media).map(a => a.fc_media);
+  if (fcMediaGlobal.length > 0) {
+    const fc = Math.round(fcMediaGlobal.reduce((s, v) => s + v, 0) / fcMediaGlobal.length);
+    resumenParts.push(`FC media ${fc} bpm`);
+  }
+
+  const desnivel = actividades.reduce((s, a) => s + (a.desnivel || 0), 0);
+  if (desnivel > 0) resumenParts.push(`${desnivel}m desnivel`);
+
+  const potencias = actividades.filter(a => a.potencia_media).map(a => a.potencia_media);
+  if (potencias.length > 0) {
+    const potMedia = Math.round(potencias.reduce((s, v) => s + v, 0) / potencias.length);
+    resumenParts.push(`potencia media ${potMedia}W`);
+  }
 
   return {
     resumen: resumenParts.join(', '),
