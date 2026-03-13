@@ -125,6 +125,14 @@ exports.handler = async (event) => {
     req.end();
   });
 
+  console.log('STRAVA_DEBUG', JSON.stringify({
+    tieneToken: !!profileData?.strava_token,
+    tokenInicio: profileData?.strava_token?.substring(0, 8),
+    expiresAt: profileData?.strava_token_expires_at,
+    now: Math.floor(Date.now() / 1000),
+    estaExpirado: profileData?.strava_token_expires_at < Math.floor(Date.now() / 1000)
+  }));
+
   if (!profileData || !profileData.strava_token) {
     return {
       statusCode: 200,

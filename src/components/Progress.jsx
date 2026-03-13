@@ -70,13 +70,51 @@ function BarraProgreso({ valor, label, sublabel }) {
   )
 }
 
+const ICONOS_STRAVA = {
+  Run: '🏃', VirtualRun: '🏃', TrailRun: '🏃',
+  Ride: '🚴', VirtualRide: '🚴', MountainBikeRide: '🚴',
+  Swim: '🏊', OpenWaterSwim: '🏊',
+  WeightTraining: '💪', Workout: '💪', Crossfit: '💪',
+}
+
+function formatFecha(fechaStr) {
+  if (!fechaStr) return ''
+  const d = new Date(fechaStr + 'T00:00:00')
+  return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+}
+
 export default function Progress({ userId, profile, onNavigate }) {
   const [planes, setPlanes] = useState(null)
+  const [actividades, setActividades] = useState(null) // null=no cargado, []= vacío, [...]= datos
+  const [loadingActividades, setLoadingActividades] = useState(false)
 
   useEffect(() => {
     if (!userId) return
     getRecentPlans(userId, 4).then(setPlanes).catch(() => setPlanes([]))
   }, [userId])
+
+  useEffect(() => {
+    if (!userId || !profile?.strava_token) return
+    setLoadingActividades(true)
+    fetch('/.netlify/functions/strava-activities', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-tricoach-secret': import.meta.env.VITE_TRICOACH_SECRET || ''
+      },
+      body: JSON.stringify({ userId })
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.sinStrava || !data.actividades) {
+          setActividades([])
+        } else {
+          setActividades(data.actividades)
+        }
+      })
+      .catch(() => setActividades([]))
+      .finally(() => setLoadingActividades(false))
+  }, [userId, profile?.strava_token])
 
   const dias = diasRestantes(profile?.fecha_carrera)
   const consistencia = planes ? calcularConsistencia(planes) : null
@@ -241,10 +279,87 @@ export default function Progress({ userId, profile, onNavigate }) {
             border: '1px solid oklch(0.7 0.18 45 / 0.3)',
             borderRadius: 'var(--radius)',
             padding: '14px 16px',
+            marginBottom: 16,
           }}>
             <p style={{ fontSize: 14, color: 'var(--foreground)', lineHeight: 1.5 }}>
               💬 <em>{mensaje}</em>
             </p>
+          </div>
+        )}
+
+        {/* Mis actividades Strava */}
+        {profile?.strava_token && (
+          <div style={{
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius)',
+            padding: '16px',
+          }}>
+            <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--foreground)', marginBottom: 12 }}>
+              Mis actividades
+            </p>
+
+            {loadingActividades && (
+              <p style={{ fontSize: 13, color: 'var(--muted-foreground)' }}>Cargando actividades...</p>
+            )}
+
+            {!loadingActividades && actividades !== null && actividades.length === 0 && (
+              <p style={{ fontSize: 13, color: 'var(--muted-foreground)' }}>
+                No hay actividades recientes en Strava
+              </p>
+            )}
+
+            {!loadingActividades && actividades && actividades.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {actividades.map((act, i) => (
+                  <div key={i} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    background: 'var(--secondary)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius)',
+                    padding: '10px 12px',
+                  }}>
+                    <span style={{ fontSize: 22, flexShrink: 0 }}>
+                      {ICONOS_STRAVA[act.tipo_deporte || act.tipo] || '🎾'}
+                    </span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--foreground)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {act.tipo_deporte || act.tipo}
+                        </span>
+                        <span style={{ fontSize: 12, color: 'var(--muted-foreground)', flexShrink: 0, marginLeft: 8 }}>
+                          {formatFecha(act.fecha)}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                        {act.distancia_km > 0 && (
+                          <span style={{ fontSize: 12, color: 'var(--primary)', fontWeight: 600 }}>
+                            {act.distancia_km} km
+                          </span>
+                        )}
+                        {act.duracion_min > 0 && (
+                          <span style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>
+                            {act.duracion_min} min
+                          </span>
+                        )}
+                        {act.fc_media && (
+                          <span style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>
+                            ♥ {act.fc_media} bpm
+                          </span>
+                        )}
+                        {act.desnivel > 0 && (
+                          <span style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>
+                            ↑ {act.desnivel}m
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
