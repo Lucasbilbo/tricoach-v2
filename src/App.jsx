@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
-import { getProfile, createProfile } from './lib/profiles'
+import { getProfile, createProfile, updateProfile } from './lib/profiles'
 import { getPlan, generatePlan, markSessionComplete } from './lib/plans'
 import Login from './components/Login'
 import Onboarding from './components/Onboarding'
@@ -15,6 +15,7 @@ import Dashboard from './components/Dashboard'
 import Progress from './components/Progress'
 import SessionDetail from './components/SessionDetail'
 import ErrorBoundary from './components/ErrorBoundary'
+import WelcomeGuide from './components/WelcomeGuide'
 
 function App() {
   const [session, setSession] = useState(null)
@@ -233,6 +234,15 @@ function App() {
             </button>
           </div>
         </div>
+      )}
+
+      {profile && !profile.onboarding_visto && (
+        <WelcomeGuide
+          onComplete={async () => {
+            await updateProfile(session.user.id, { onboarding_visto: true })
+            setProfile(prev => ({ ...prev, onboarding_visto: true }))
+          }}
+        />
       )}
 
       <BottomNav currentScreen={currentScreen} onNavigate={setCurrentScreen} />

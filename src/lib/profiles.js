@@ -22,6 +22,18 @@ export async function createProfile(user) {
   return data
 }
 
+export async function updateProfile(userId, updates) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(updates)
+    .eq('id', userId)
+    .select()
+    .single()
+
+  if (error) return null
+  return data
+}
+
 export async function canSendMessage(profile) {
   if (profile.plan !== 'free') return true
 
