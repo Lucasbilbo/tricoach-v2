@@ -187,6 +187,16 @@ Validación Free/Pro siempre en **backend** (claude.js, generate-plan.js) — nu
 3. `git add . && git commit -m "..." && git push`
 4. Netlify despliega automáticamente
 
+## Eficiencia
+- Ejecuta directamente sin preámbulos ni explicaciones de lo que vas a hacer
+- Al terminar: resumen breve de cambios realizados (no de lo que ibas a hacer)
+- npm test && npm run build siempre al final en un solo comando
+- No leas archivos que no sean necesarios para la tarea
+- No hagas búsquedas globales en el proyecto si sabes el archivo exacto
+- Si el prompt especifica el archivo, ve directo a él
+- No ejecutes npm test en medio de la tarea, solo al final
+- No confirmes con el usuario durante la ejecución, completa todo el prompt de una vez
+
 ## Configuración del entorno
 - PATH de Claude Code: `export PATH="$HOME/.local/bin:$PATH"` — ya añadido permanentemente en `~/.zshrc`
 

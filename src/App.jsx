@@ -36,6 +36,11 @@ function App() {
     setProfile(profile)
   }
 
+  function handleNavigate(screen) {
+    window.scrollTo(0, 0)
+    setCurrentScreen(screen)
+  }
+
   async function handlePersonalidadChange(e) {
     const nueva = e.target.value
     await supabase.from('profiles').update({ personalidad: nueva }).eq('id', session.user.id)
@@ -120,7 +125,7 @@ function App() {
             plan={plan}
             profile={profile}
             onPlanUpdate={setPlan}
-            onNavigate={setCurrentScreen}
+            onNavigate={handleNavigate}
           />
         </ErrorBoundary>
       )}
@@ -146,7 +151,7 @@ function App() {
             plan={plan}
             onPlanUpdate={setPlan}
             onSessionDetail={setSelectedSession}
-            onNavigate={setCurrentScreen}
+            onNavigate={handleNavigate}
           />
         </ErrorBoundary>
       )}
@@ -156,7 +161,7 @@ function App() {
           userId={session.user.id}
           profile={profile}
           plan={plan}
-          onNavigate={setCurrentScreen}
+          onNavigate={handleNavigate}
         />
       )}
 
@@ -224,7 +229,7 @@ function App() {
           <EditProfile
             profile={profile}
             onUpdate={(updated) => setProfile(updated)}
-            onClose={() => setCurrentScreen('coach')}
+            onClose={() => handleNavigate('coach')}
             onShowUpgrade={() => setShowUpgradeModal(true)}
           />
 
@@ -257,7 +262,7 @@ function App() {
         />
       )}
 
-      <BottomNav currentScreen={currentScreen} onNavigate={setCurrentScreen} />
+      <BottomNav currentScreen={currentScreen} onNavigate={handleNavigate} />
       <CookieBanner />
 
       {selectedSession && (
@@ -268,7 +273,7 @@ function App() {
           onAskCoach={(text) => {
             setSelectedSession(null)
             setChatPrefill(text)
-            setCurrentScreen('coach')
+            handleNavigate('coach')
           }}
           onComplete={async (rpe) => {
             if (plan?.id) {

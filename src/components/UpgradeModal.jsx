@@ -22,9 +22,15 @@ const PRICES = [
 
 export default function UpgradeModal({ userId, onClose }) {
   const [loading, setLoading] = useState(null)
+  const [errorToast, setErrorToast] = useState(false)
 
   async function handleUpgrade(priceId, planId) {
-    if (!priceId) return
+    if (!priceId) {
+      console.error(`[UpgradeModal] priceId no definido para plan ${planId}. Revisa VITE_STRIPE_PRICE_MONTHLY y VITE_STRIPE_PRICE_ANNUAL.`)
+      setErrorToast(true)
+      setTimeout(() => setErrorToast(false), 4000)
+      return
+    }
     setLoading(planId)
     try {
       const res = await fetch('/.netlify/functions/create-checkout', {
@@ -41,6 +47,8 @@ export default function UpgradeModal({ userId, onClose }) {
       }
     } catch (e) {
       console.error('Error al crear checkout:', e)
+      setErrorToast(true)
+      setTimeout(() => setErrorToast(false), 4000)
     } finally {
       setLoading(null)
     }
@@ -72,6 +80,21 @@ export default function UpgradeModal({ userId, onClose }) {
           margin: '0 16px',
         }}
       >
+        {errorToast && (
+          <div style={{
+            background: 'var(--destructive)',
+            color: '#fff',
+            borderRadius: 'var(--radius)',
+            padding: '10px 14px',
+            fontSize: 13,
+            fontFamily: 'var(--font-sans)',
+            marginBottom: 16,
+            textAlign: 'center',
+          }}>
+            Error al iniciar el pago, contacta con soporte
+          </div>
+        )}
+
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <div style={{ fontSize: 36, marginBottom: 8 }}>🏆</div>
           <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 22, fontWeight: 600, marginBottom: 6 }}>
