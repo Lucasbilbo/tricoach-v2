@@ -295,6 +295,14 @@ export default function Onboarding({ userId, onComplete }) {
     if (!nuevaCarrera.nombre.trim()) errors.nombre = 'El nombre es obligatorio'
     if (!nuevaCarrera.tipo) errors.tipo = 'Selecciona un tipo'
     if (!nuevaCarrera.dia || !nuevaCarrera.mes || !nuevaCarrera.anio) errors.fecha = 'Selecciona día, mes y año'
+    if (!errors.nombre && !errors.tipo && !errors.fecha) {
+      const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+      const mesIdx = meses.indexOf(nuevaCarrera.mes)
+      const fechaCarrera = new Date(Number(nuevaCarrera.anio), mesIdx, Number(nuevaCarrera.dia))
+      const hoy = new Date()
+      hoy.setHours(0, 0, 0, 0)
+      if (fechaCarrera <= hoy) errors.fecha = 'La fecha de la carrera debe ser futura'
+    }
     if (errors.nombre || errors.tipo || errors.fecha) {
       setErroresCarrera(errors)
       return
@@ -554,7 +562,7 @@ export default function Onboarding({ userId, onComplete }) {
                       style={{ ...INPUT_STYLE, colorScheme: 'dark', padding: '12px 8px', borderColor: erroresCarrera.fecha ? 'var(--destructive)' : 'var(--border)' }}
                     >
                       <option value="">Año</option>
-                      {[2025, 2026, 2027, 2028, 2029].map(a => (
+                      {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() + i).map(a => (
                         <option key={a} value={a}>{a}</option>
                       ))}
                     </select>
