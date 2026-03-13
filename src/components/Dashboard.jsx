@@ -71,7 +71,7 @@ const RUTINA_MOVILIDAD = [
   { nombre: 'Respiración y relajación', duracion: '4 min' },
 ]
 
-export default function Dashboard({ userId, plan, profile, onPlanUpdate, onNavigate }) {
+export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate, onNavigate }) {
   const [completando, setCompletando] = useState(false)
   const [rpe, setRpe] = useState(6)
   const [showMovilidad, setShowMovilidad] = useState(false)
@@ -175,8 +175,34 @@ export default function Dashboard({ userId, plan, profile, onPlanUpdate, onNavig
 
       <div style={{ maxWidth: 640, margin: '0 auto', padding: 16, paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 16px))' }}>
 
+        {/* Skeleton loader */}
+        {loading && (
+          <>
+            <div style={{
+              background: 'var(--card)',
+              borderRadius: 'var(--radius)',
+              height: 200,
+              marginBottom: 12,
+              animation: 'pulse 1.5s ease-in-out infinite',
+            }} />
+            <div style={{
+              background: 'var(--card)',
+              borderRadius: 'var(--radius)',
+              height: 48,
+              marginBottom: 8,
+              animation: 'pulse 1.5s ease-in-out infinite',
+            }} />
+            <div style={{
+              background: 'var(--card)',
+              borderRadius: 'var(--radius)',
+              height: 48,
+              animation: 'pulse 1.5s ease-in-out infinite',
+            }} />
+          </>
+        )}
+
         {/* No plan */}
-        {!plan && (
+        {!loading && !plan && (
           <div style={{
             background: 'var(--card)',
             border: '1px solid var(--border)',
@@ -212,7 +238,7 @@ export default function Dashboard({ userId, plan, profile, onPlanUpdate, onNavig
         )}
 
         {/* Today's session */}
-        {sesionHoy && (
+        {!loading && sesionHoy && (
           <>
             <div style={{
               background: 'var(--card)',
@@ -440,7 +466,7 @@ export default function Dashboard({ userId, plan, profile, onPlanUpdate, onNavig
         )}
 
         {/* Plan exists but no session for today */}
-        {plan && !sesionHoy && (
+        {!loading && plan && !sesionHoy && (
           <div style={{
             background: 'var(--card)',
             border: '1px solid var(--border)',

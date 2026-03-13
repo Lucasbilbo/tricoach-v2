@@ -211,7 +211,7 @@ export default function Chat({ userId, profile, personalidad, onPersonalidadChan
             </div>
           )}
           {messages.map((msg, i) => (
-            <div key={i} style={{
+            <div key={i} className="message-enter" style={{
               marginBottom: 12,
               display: 'flex',
               justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',

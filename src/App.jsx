@@ -21,6 +21,7 @@ function App() {
   const [session, setSession] = useState(null)
   const [profile, setProfile] = useState(null)
   const [plan, setPlan] = useState(null)
+  const [planLoading, setPlanLoading] = useState(true)
   const [loading, setLoading] = useState(true)
   const [currentScreen, setCurrentScreen] = useState('dashboard')
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
@@ -61,7 +62,9 @@ function App() {
       setSession(session)
       if (session) {
         loadOrCreateProfile(session.user)
-        getPlan(session.user.id).then(setPlan).catch(() => {})
+        getPlan(session.user.id).then(p => { setPlan(p); setPlanLoading(false) }).catch(() => setPlanLoading(false))
+      } else {
+        setPlanLoading(false)
       }
       setLoading(false)
     })
@@ -124,6 +127,7 @@ function App() {
             userId={session.user.id}
             plan={plan}
             profile={profile}
+            loading={planLoading}
             onPlanUpdate={setPlan}
             onNavigate={handleNavigate}
           />

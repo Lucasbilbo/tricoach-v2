@@ -70,6 +70,67 @@ function BarraProgreso({ valor, label, sublabel }) {
   )
 }
 
+const DIAS_LABEL = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
+const DIAS_NOMBRE = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+
+function GraficoSemana({ plan }) {
+  if (!plan?.sesiones) return null
+
+  const today = new Date()
+  const todayDiaIdx = (today.getDay() + 6) % 7 // 0=Lun, 6=Dom
+
+  const barras = DIAS_NOMBRE.map((dia, i) => {
+    const sesion = plan.sesiones.find(s => s.dia === dia)
+    if (!sesion || sesion.tipo?.toLowerCase() === 'descanso') return { label: DIAS_LABEL[i], pct: 0, isHoy: i === todayDiaIdx, completada: false }
+    const pct = sesion.completada ? 100 : 20
+    return { label: DIAS_LABEL[i], pct, isHoy: i === todayDiaIdx, completada: sesion.completada }
+  })
+
+  const maxH = 64 // max bar height in px
+
+  return (
+    <div style={{
+      background: 'var(--card)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--radius)',
+      padding: '16px',
+      marginBottom: 16,
+    }}>
+      <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--foreground)', marginBottom: 12 }}>
+        Esta semana
+      </p>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: maxH + 20 }}>
+        {barras.map((b, i) => (
+          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+            <div style={{ width: '100%', height: maxH, display: 'flex', alignItems: 'flex-end' }}>
+              <div style={{
+                width: '100%',
+                height: `${Math.max(b.pct, 0) * maxH / 100}px`,
+                background: b.pct > 20
+                  ? 'linear-gradient(180deg, var(--primary) 0%, transparent 100%)'
+                  : b.pct > 0
+                    ? 'var(--secondary)'
+                    : 'transparent',
+                borderRadius: '3px 3px 0 0',
+                border: b.isHoy ? '1px solid var(--primary)' : 'none',
+                minHeight: b.isHoy ? 3 : 0,
+                transition: 'height 0.4s ease',
+              }} />
+            </div>
+            <span style={{
+              fontSize: 11,
+              color: b.isHoy ? 'var(--primary)' : 'var(--muted-foreground)',
+              fontWeight: b.isHoy ? 700 : 400,
+            }}>
+              {b.label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 const ICONOS_STRAVA = {
   Run: '🏃', VirtualRun: '🏃', TrailRun: '🏃',
   Ride: '🚴', VirtualRide: '🚴', MountainBikeRide: '🚴',
@@ -271,6 +332,9 @@ export default function Progress({ userId, profile, onNavigate }) {
             )}
           </div>
         )}
+
+        {/* Weekly bar chart */}
+        {!vacio && planes !== null && <GraficoSemana plan={planes[0]} />}
 
         {/* Coach message */}
         {mensaje && (
