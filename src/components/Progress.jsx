@@ -70,7 +70,7 @@ function BarraProgreso({ valor, label, sublabel }) {
   )
 }
 
-export default function Progress({ userId, profile }) {
+export default function Progress({ userId, profile, onNavigate }) {
   const [planes, setPlanes] = useState(null)
 
   useEffect(() => {
@@ -112,6 +112,40 @@ export default function Progress({ userId, profile }) {
       </div>
 
       <div style={{ maxWidth: 640, margin: '0 auto', padding: 16 }}>
+
+        {/* Empty state */}
+        {vacio && (
+          <div style={{
+            textAlign: 'center',
+            padding: '48px 24px',
+          }}>
+            <div style={{ fontSize: 56, marginBottom: 16 }}>📅</div>
+            <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 22, fontWeight: 700, marginBottom: 10 }}>
+              Aún no tienes un plan
+            </h3>
+            <p style={{ color: 'var(--muted-foreground)', fontSize: 15, lineHeight: 1.5, marginBottom: 24, maxWidth: 280, margin: '0 auto 24px' }}>
+              Genera tu primer plan para empezar a ver tu progreso
+            </p>
+            {onNavigate && (
+              <button
+                onClick={() => onNavigate('plan')}
+                style={{
+                  background: 'var(--primary)',
+                  color: 'var(--primary-foreground)',
+                  border: 'none',
+                  borderRadius: 24,
+                  padding: '12px 28px',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 15,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Crear mi plan
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Countdown */}
         {dias !== null && (

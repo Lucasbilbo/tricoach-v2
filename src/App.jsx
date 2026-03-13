@@ -156,6 +156,7 @@ function App() {
           userId={session.user.id}
           profile={profile}
           plan={plan}
+          onNavigate={setCurrentScreen}
         />
       )}
 

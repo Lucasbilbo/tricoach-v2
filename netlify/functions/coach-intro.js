@@ -1,4 +1,5 @@
 const https = require('https');
+const { URL } = require('url');
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -8,6 +9,34 @@ const CORS = {
 
 const FUNCTION_SECRET = process.env.TRICOACH_SECRET;
 const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
+
+function supabasePost(hostname, path, key, body) {
+  const bodyStr = JSON.stringify(body);
+  return new Promise((resolve) => {
+    const options = {
+      hostname,
+      path,
+      method: 'POST',
+      headers: {
+        'apikey': key,
+        'Authorization': `Bearer ${key}`,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(bodyStr),
+        'Prefer': 'return=representation'
+      }
+    };
+    const req = https.request(options, (r) => {
+      let d = '';
+      r.on('data', chunk => d += chunk);
+      r.on('end', () => {
+        try { resolve(JSON.parse(d)); } catch { resolve(null); }
+      });
+    });
+    req.on('error', () => resolve(null));
+    req.write(bodyStr);
+    req.end();
+  });
+}
 
 function callClaude(apiKey, userMessage) {
   const body = JSON.stringify({
@@ -68,6 +97,10 @@ exports.handler = async (event) => {
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'API key not configured' }) };
   }
 
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+  const hostname = supabaseUrl ? new URL(supabaseUrl).hostname : null;
+
   const deporteLabels = {
     triatlon: 'triatlón',
     running: 'running',
@@ -116,6 +149,15 @@ Responde SOLO con el mensaje, sin comillas ni explicaciones.`;
   }
 
   const mensaje = claudeResponse.content[0].text.trim();
+
+  // Guardar como primer mensaje del coach en Supabase
+  if (hostname && supabaseKey) {
+    await supabasePost(hostname, '/rest/v1/messages', supabaseKey, {
+      user_id: userId,
+      role: 'assistant',
+      content: mensaje
+    });
+  }
 
   return {
     statusCode: 200,
