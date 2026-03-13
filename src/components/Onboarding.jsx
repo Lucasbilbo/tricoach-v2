@@ -256,6 +256,7 @@ export default function Onboarding({ userId, onComplete }) {
   const [otroEquipamiento, setOtroEquipamiento] = useState('')
   const [sinCarrera, setSinCarrera] = useState(false)
   const [errores, setErrores] = useState({ nivel: '', carreras: '', historial: '', disponibilidad: '', equipamiento: '' })
+  const [erroresCarrera, setErroresCarrera] = useState({ nombre: '', tipo: '', fecha: '' })
 
   // Si volvemos del OAuth de Strava, saltar al paso de integraciones
   // Usar href.includes para compatibilidad con Safari móvil
@@ -268,10 +269,15 @@ export default function Onboarding({ userId, onComplete }) {
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
   const handleSelect = (field, value) => setForm({ ...form, [field]: value })
 
-  const toggleSlot = (slot) =>
-    setDisponibilidadSlots(prev =>
-      prev.includes(slot) ? prev.filter(s => s !== slot) : [...prev, slot]
-    )
+  const toggleSlot = (slot) => {
+    const nuevaDisponibilidad = disponibilidadSlots.includes(slot)
+      ? disponibilidadSlots.filter(s => s !== slot)
+      : [...disponibilidadSlots, slot]
+    setDisponibilidadSlots(nuevaDisponibilidad)
+    if (nuevaDisponibilidad.length > 0) {
+      setErrores(prev => ({ ...prev, disponibilidad: '' }))
+    }
+  }
 
   const toggleEquip = (value) => {
     const nuevoEquipamiento = form.equipamiento.includes(value)
@@ -284,7 +290,15 @@ export default function Onboarding({ userId, onComplete }) {
   }
 
   const addCarrera = () => {
-    if (!nuevaCarrera.nombre || !nuevaCarrera.tipo) return
+    const errors = { nombre: '', tipo: '', fecha: '' }
+    if (!nuevaCarrera.nombre.trim()) errors.nombre = 'El nombre es obligatorio'
+    if (!nuevaCarrera.tipo) errors.tipo = 'Selecciona un tipo'
+    if (!nuevaCarrera.fecha) errors.fecha = 'La fecha es obligatoria'
+    if (errors.nombre || errors.tipo || errors.fecha) {
+      setErroresCarrera(errors)
+      return
+    }
+    setErroresCarrera({ nombre: '', tipo: '', fecha: '' })
     setCarreras(prev => [...prev, { ...nuevaCarrera }])
     setNuevaCarrera({ nombre: '', tipo: '', fecha: '' })
   }
@@ -448,13 +462,10 @@ export default function Onboarding({ userId, onComplete }) {
                     marginBottom: 6,
                   }}>
                     <div>
-                      <span style={{ fontWeight: 600, fontSize: 13 }}>{c.nombre}</span>
-                      <span style={{ color: 'var(--muted-foreground)', opacity: 0.8, fontSize: 12, marginLeft: 8 }}>{c.tipo}</span>
-                      {c.fecha && (
-                        <span style={{ color: 'var(--muted-foreground)', fontSize: 12, marginLeft: 8 }}>
-                          {formatFecha(c.fecha)}
-                        </span>
-                      )}
+                      <div style={{ fontWeight: 600, fontSize: 14 }}>{c.nombre}</div>
+                      <div style={{ color: 'var(--muted-foreground)', fontSize: 12, marginTop: 2 }}>
+                        {c.tipo}{c.fecha ? ` · ${formatFecha(c.fecha)}` : ''}
+                      </div>
                     </div>
                     <button
                       onClick={() => setCarreras(prev => prev.filter((_, idx) => idx !== i))}
@@ -469,28 +480,37 @@ export default function Onboarding({ userId, onComplete }) {
 
             {/* Formulario añadir carrera */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16, opacity: sinCarrera ? 0.4 : 1, pointerEvents: sinCarrera ? 'none' : 'auto' }}>
-              <input
-                placeholder="Nombre de la carrera (ej: Media Maratón Valencia)"
-                value={nuevaCarrera.nombre}
-                onChange={e => setNuevaCarrera({ ...nuevaCarrera, nombre: e.target.value })}
-                style={INPUT_STYLE}
-              />
-              <select
-                value={nuevaCarrera.tipo}
-                onChange={e => setNuevaCarrera({ ...nuevaCarrera, tipo: e.target.value })}
-                style={{ ...INPUT_STYLE, colorScheme: 'dark' }}
-              >
-                <option value="">Tipo de carrera...</option>
-                {getTipos(form.deporte).map(t => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-              <input
-                type="date"
-                value={nuevaCarrera.fecha}
-                onChange={e => setNuevaCarrera({ ...nuevaCarrera, fecha: e.target.value })}
-                style={{ ...INPUT_STYLE, colorScheme: 'dark' }}
-              />
+              <div>
+                <input
+                  placeholder="Nombre de la carrera (ej: Media Maratón Valencia)"
+                  value={nuevaCarrera.nombre}
+                  onChange={e => { setNuevaCarrera({ ...nuevaCarrera, nombre: e.target.value }); setErroresCarrera(prev => ({ ...prev, nombre: '' })) }}
+                  style={{ ...INPUT_STYLE, borderColor: erroresCarrera.nombre ? 'var(--destructive)' : 'var(--border)' }}
+                />
+                {erroresCarrera.nombre && <p style={{ color: 'var(--destructive)', fontSize: 12, marginTop: 4 }}>{erroresCarrera.nombre}</p>}
+              </div>
+              <div>
+                <select
+                  value={nuevaCarrera.tipo}
+                  onChange={e => { setNuevaCarrera({ ...nuevaCarrera, tipo: e.target.value }); setErroresCarrera(prev => ({ ...prev, tipo: '' })) }}
+                  style={{ ...INPUT_STYLE, colorScheme: 'dark', borderColor: erroresCarrera.tipo ? 'var(--destructive)' : 'var(--border)' }}
+                >
+                  <option value="">Tipo de carrera...</option>
+                  {getTipos(form.deporte).map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+                {erroresCarrera.tipo && <p style={{ color: 'var(--destructive)', fontSize: 12, marginTop: 4 }}>{erroresCarrera.tipo}</p>}
+              </div>
+              <div>
+                <input
+                  type="date"
+                  value={nuevaCarrera.fecha}
+                  onChange={e => { setNuevaCarrera({ ...nuevaCarrera, fecha: e.target.value }); setErroresCarrera(prev => ({ ...prev, fecha: '' })) }}
+                  style={{ ...INPUT_STYLE, colorScheme: 'dark', borderColor: erroresCarrera.fecha ? 'var(--destructive)' : 'var(--border)' }}
+                />
+                {erroresCarrera.fecha && <p style={{ color: 'var(--destructive)', fontSize: 12, marginTop: 4 }}>{erroresCarrera.fecha}</p>}
+              </div>
               <button
                 onClick={addCarrera}
                 style={{
