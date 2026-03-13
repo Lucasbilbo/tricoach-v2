@@ -207,7 +207,12 @@ function App() {
               padding: 16,
               marginBottom: 12,
             }}>
-              <StravaConnect userId={session.user.id} onConnected={() => loadOrCreateProfile(session.user)} />
+              <StravaConnect
+                userId={session.user.id}
+                plan={profile?.plan}
+                onConnected={() => loadOrCreateProfile(session.user)}
+                onShowUpgrade={() => setShowUpgradeModal(true)}
+              />
             </div>
           </div>
 

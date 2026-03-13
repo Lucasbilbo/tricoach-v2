@@ -1,4 +1,5 @@
 const https = require('https');
+const { URL } = require('url');
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -6,12 +7,58 @@ const CORS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS'
 };
 
+function supabaseGet(hostname, path, key) {
+  return new Promise((resolve) => {
+    const options = {
+      hostname,
+      path,
+      method: 'GET',
+      headers: {
+        'apikey': key,
+        'Authorization': `Bearer ${key}`,
+        'Content-Type': 'application/json'
+      }
+    };
+    const req = https.request(options, (r) => {
+      let d = '';
+      r.on('data', chunk => d += chunk);
+      r.on('end', () => {
+        try { resolve(JSON.parse(d)); } catch { resolve(null); }
+      });
+    });
+    req.on('error', () => resolve(null));
+    req.end();
+  });
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS, body: 'Method Not Allowed' };
 
-  const { code } = JSON.parse(event.body || '{}');
+  const { code, userId } = JSON.parse(event.body || '{}');
   if (!code) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'code requerido' }) };
+
+  // Validar que el usuario es Pro
+  if (userId) {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+    if (supabaseUrl && supabaseKey) {
+      const hostname = new URL(supabaseUrl).hostname;
+      const profiles = await supabaseGet(
+        hostname,
+        `/rest/v1/profiles?id=eq.${userId}&select=plan`,
+        supabaseKey
+      );
+      const profile = Array.isArray(profiles) ? profiles[0] : null;
+      if (profile && profile.plan !== 'pro') {
+        return {
+          statusCode: 403,
+          headers: CORS,
+          body: JSON.stringify({ error: 'Strava está disponible solo para usuarios Pro' })
+        };
+      }
+    }
+  }
 
   const CLIENT_ID = process.env.STRAVA_CLIENT_ID;
   const CLIENT_SECRET = process.env.STRAVA_CLIENT_SECRET;
