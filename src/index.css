@@ -45,9 +45,25 @@ a {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
+/* Prevenir zoom automático en Safari iOS — ya definido arriba */
+input::placeholder, textarea::placeholder {
+  color: var(--muted-foreground);
+  opacity: 0.6;
+}
+
+/* Botones primarios */
+button {
+  letter-spacing: 0.01em;
+}
+
 /* Onboarding step transition */
 @keyframes stepIn {
   from { opacity: 0; transform: translateX(20px); }
   to   { opacity: 1; transform: translateX(0); }
 }
 .step-animate { animation: stepIn 0.3s ease; }
+
+/* Loading spinner */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

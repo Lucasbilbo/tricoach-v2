@@ -147,7 +147,7 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        height: 'calc(100vh - 60px)',
+        height: 'calc(100vh - 64px)',
         background: 'var(--background)',
         padding: 24,
         textAlign: 'center',
@@ -184,7 +184,8 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
             onClick={() => handleGenerarPlan(null, fechaSeleccionadaToISO(diaInicio, mesInicio, anioInicio))}
             disabled={generando}
             style={{
-              background: generando ? 'var(--muted)' : 'var(--primary)',
+              background: 'var(--primary)',
+              opacity: generando ? 0.75 : 1,
               color: 'var(--primary-foreground)',
               border: 'none',
               borderRadius: 'var(--radius)',
@@ -194,9 +195,26 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
               fontSize: 16,
               fontWeight: 700,
               cursor: generando ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            {generando ? 'Generando...' : 'Generar mi plan'}
+            {generando ? (
+            <>
+              <span style={{
+                display: 'inline-block',
+                width: 16, height: 16,
+                border: '2px solid white',
+                borderTopColor: 'transparent',
+                borderRadius: '50%',
+                animation: 'spin 0.8s linear infinite',
+                marginRight: 8,
+                verticalAlign: 'middle',
+              }} />
+              Generando...
+            </>
+          ) : 'Generar mi plan'}
           </button>
         </div>
       </div>
@@ -208,18 +226,20 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
 
   return (
     <div style={{
-      height: 'calc(100vh - 60px)',
+      height: 'calc(100vh - 64px)',
       overflowY: 'auto',
       background: 'var(--background)',
     }}>
       {/* Header */}
       <div style={{
-        background: 'var(--card)',
+        background: 'var(--background)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
         borderBottom: '1px solid var(--border)',
-        padding: '12px 16px',
+        padding: '16px 20px',
         position: 'sticky',
         top: 0,
-        zIndex: 10,
+        zIndex: 50,
       }}>
         <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 600 }}>
@@ -246,7 +266,7 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
         </div>
       </div>
 
-      <div style={{ maxWidth: 640, margin: '0 auto', padding: '12px 16px' }}>
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: '12px 16px', paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 16px))' }}>
 
         {/* Banner semana pasada */}
         {esSemanaPasada && (

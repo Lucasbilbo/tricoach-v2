@@ -117,15 +117,20 @@ export default function Chat({ userId, profile, personalidad, onPersonalidadChan
     <div style={{
       display: 'flex',
       flexDirection: 'column',
-      height: 'calc(100vh - 60px)',
+      height: 'calc(100vh - 64px)',
       background: 'var(--background)',
     }}>
       {/* Header */}
       <div style={{
-        background: 'var(--card)',
+        background: 'var(--background)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
         borderBottom: '1px solid var(--border)',
-        padding: '12px 16px',
+        padding: '16px 20px',
         flexShrink: 0,
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
       }}>
         <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
@@ -186,6 +191,7 @@ export default function Chat({ userId, profile, personalidad, onPersonalidadChan
         flex: 1,
         overflowY: 'auto',
         padding: '16px',
+        paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
       }}>
         <div style={{ maxWidth: 640, margin: '0 auto' }}>
           {messages.length === 0 && (

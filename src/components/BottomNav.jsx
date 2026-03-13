@@ -1,9 +1,42 @@
+const HomeIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
+    <path d="M9 21V12h6v9"/>
+  </svg>
+)
+
+const CalendarIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="4" width="18" height="18" rx="2"/>
+    <path d="M16 2v4M8 2v4M3 10h18"/>
+  </svg>
+)
+
+const ChartIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 20h18M5 20V14m4 6V10m4 10V6m4 10V4"/>
+  </svg>
+)
+
+const ChatIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+  </svg>
+)
+
+const UserIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="8" r="4"/>
+    <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+  </svg>
+)
+
 const tabs = [
-  { id: 'dashboard', icon: '🏠', label: 'Hoy' },
-  { id: 'plan', icon: '📅', label: 'Plan' },
-  { id: 'progress', icon: '📈', label: 'Progreso' },
-  { id: 'coach', icon: '💬', label: 'Coach' },
-  { id: 'profile', icon: '👤', label: 'Perfil' },
+  { id: 'dashboard', Icon: HomeIcon, label: 'Hoy' },
+  { id: 'plan', Icon: CalendarIcon, label: 'Plan' },
+  { id: 'progress', Icon: ChartIcon, label: 'Progreso' },
+  { id: 'coach', Icon: ChatIcon, label: 'Coach' },
+  { id: 'profile', Icon: UserIcon, label: 'Perfil' },
 ]
 
 export default function BottomNav({ currentScreen, onNavigate }) {
@@ -13,40 +46,44 @@ export default function BottomNav({ currentScreen, onNavigate }) {
       bottom: 0,
       left: 0,
       right: 0,
-      height: 60,
-      background: 'var(--card)',
+      background: 'var(--background)',
       borderTop: '1px solid var(--border)',
       display: 'flex',
-      zIndex: 50,
+      zIndex: 100,
+      paddingBottom: 'env(safe-area-inset-bottom, 16px)',
     }}>
-      {tabs.map(tab => (
-        <button
-          key={tab.id}
-          onClick={() => onNavigate(tab.id)}
-          style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 2,
-            background: 'none',
-            border: 'none',
-            borderTop: `2px solid ${currentScreen === tab.id ? 'var(--primary)' : 'transparent'}`,
-            borderRadius: 0,
-            cursor: 'pointer',
-            color: currentScreen === tab.id ? 'var(--primary)' : 'var(--muted-foreground)',
-            fontFamily: 'var(--font-sans)',
-            fontSize: 9,
-            fontWeight: currentScreen === tab.id ? 600 : 400,
-            padding: 0,
-            transition: 'color 0.2s',
-          }}
-        >
-          <span style={{ fontSize: 18, lineHeight: 1 }}>{tab.icon}</span>
-          <span>{tab.label}</span>
-        </button>
-      ))}
+      {tabs.map(({ id, Icon, label }) => {
+        const active = currentScreen === id
+        return (
+          <button
+            key={id}
+            onClick={() => onNavigate(id)}
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 3,
+              height: 64,
+              background: 'none',
+              border: 'none',
+              borderTop: `2px solid ${active ? 'var(--primary)' : 'transparent'}`,
+              borderRadius: 0,
+              cursor: 'pointer',
+              color: active ? 'var(--primary)' : 'var(--muted-foreground)',
+              fontFamily: 'var(--font-sans)',
+              fontSize: active ? 10 : 9,
+              fontWeight: active ? 600 : 400,
+              padding: 0,
+              transition: 'color 0.2s ease',
+            }}
+          >
+            <Icon />
+            <span>{label}</span>
+          </button>
+        )
+      })}
     </nav>
   )
 }

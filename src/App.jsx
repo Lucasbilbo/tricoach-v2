@@ -161,11 +161,16 @@ function App() {
       )}
 
       {currentScreen === 'profile' && (
-        <div style={{ paddingBottom: 60, minHeight: '100vh', overflowY: 'auto' }}>
+        <div style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 16px))', minHeight: '100vh', overflowY: 'auto' }}>
           <div style={{
-            background: 'var(--card)',
+            background: 'var(--background)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
             borderBottom: '1px solid var(--border)',
-            padding: '20px 16px 16px',
+            padding: '16px 20px',
+            position: 'sticky',
+            top: 0,
+            zIndex: 50,
           }}>
             <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 22, fontWeight: 600 }}>Perfil</h2>
           </div>

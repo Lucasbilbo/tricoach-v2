@@ -31,7 +31,7 @@ export default function Login() {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '0 24px',
+      padding: 'env(safe-area-inset-top, 20px) 24px 0',
     }}>
       {/* Radial gradient decoration — top right */}
       <div style={{

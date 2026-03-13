@@ -89,15 +89,20 @@ export default function Progress({ userId, profile, onNavigate }) {
 
   return (
     <div style={{
-      height: 'calc(100vh - 60px)',
+      height: 'calc(100vh - 64px)',
       overflowY: 'auto',
       background: 'var(--background)',
     }}>
       {/* Header */}
       <div style={{
-        background: 'var(--card)',
+        background: 'var(--background)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
         borderBottom: '1px solid var(--border)',
-        padding: '16px 16px 12px',
+        padding: '16px 20px 12px',
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
       }}>
         <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
@@ -111,7 +116,7 @@ export default function Progress({ userId, profile, onNavigate }) {
         </div>
       </div>
 
-      <div style={{ maxWidth: 640, margin: '0 auto', padding: 16 }}>
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: 16, paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 16px))' }}>
 
         {/* Empty state */}
         {vacio && (
