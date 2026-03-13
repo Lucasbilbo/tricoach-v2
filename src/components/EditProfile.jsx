@@ -29,22 +29,56 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
   const [nivel, setNivel] = useState(profile.nivel || '')
   const [objetivo, setObjetivo] = useState(profile.objetivo || '')
   const [fechaCarrera, setFechaCarrera] = useState(profile.fecha_carrera || '')
+  const [nombreCoach, setNombreCoach] = useState(profile.nombre_coach || '')
+  const [historialDeportivo, setHistorialDeportivo] = useState(profile.historial_deportivo || '')
+  const [lesiones, setLesiones] = useState(profile.lesiones || '')
+  const [disponibilidad, setDisponibilidad] = useState(profile.disponibilidad || '')
+  const [personalidad, setPersonalidad] = useState(profile.personalidad || 'cercano')
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [toast, setToast] = useState(null) // { msg, type: 'success'|'error' }
+
+  function showToast(msg, type) {
+    setToast({ msg, type })
+    setTimeout(() => setToast(null), 3500)
+  }
 
   async function handleSave() {
     setSaving(true)
     const { data, error } = await supabase
       .from('profiles')
-      .update({ nombre, deporte, nivel, objetivo, fecha_carrera: fechaCarrera })
+      .update({
+        nombre,
+        deporte,
+        nivel,
+        objetivo,
+        fecha_carrera: fechaCarrera,
+        nombre_coach: nombreCoach,
+        historial_deportivo: historialDeportivo,
+        lesiones,
+        disponibilidad,
+        personalidad,
+        // pass-through jsonb fields unchanged
+        equipamiento: profile.equipamiento ?? null,
+        carreras: profile.carreras ?? null,
+        contexto: profile.contexto ?? null,
+      })
       .eq('id', profile.id)
       .select()
       .single()
 
-    if (!error) onUpdate(data)
     setSaving(false)
-    onClose()
+
+    if (error) {
+      console.error('[EditProfile] Error al guardar:', error)
+      showToast('Error al guardar. Inténtalo de nuevo.', 'error')
+      return
+    }
+
+    onUpdate(data)
+    showToast('Perfil actualizado', 'success')
+    setTimeout(() => onClose(), 1200)
   }
 
   async function handleDelete() {
@@ -70,6 +104,28 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
 
   return (
     <div style={{ padding: '0 16px 16px' }}>
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          top: 16,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: toast.type === 'success' ? 'oklch(0.45 0.2 140)' : 'var(--destructive)',
+          color: '#fff',
+          borderRadius: 'var(--radius)',
+          padding: '10px 20px',
+          fontWeight: 600,
+          fontSize: 14,
+          zIndex: 200,
+          fontFamily: 'var(--font-sans)',
+          boxShadow: '0 4px 20px oklch(0 0 0 / 0.3)',
+          whiteSpace: 'nowrap',
+        }}>
+          {toast.msg}
+        </div>
+      )}
+
       {/* Upgrade banner */}
       {esFree && onShowUpgrade && (
         <div style={{
@@ -151,7 +207,42 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
         <input style={inputStyle} value={objetivo} onChange={e => setObjetivo(e.target.value)} />
 
         <label style={labelStyle}>Fecha de carrera</label>
-        <input type="date" style={{ ...inputStyle, marginBottom: 20 }} value={fechaCarrera} onChange={e => setFechaCarrera(e.target.value)} />
+        <input type="date" style={inputStyle} value={fechaCarrera} onChange={e => setFechaCarrera(e.target.value)} />
+
+        <label style={labelStyle}>Nombre del coach</label>
+        <input style={inputStyle} value={nombreCoach} onChange={e => setNombreCoach(e.target.value)} placeholder="Ej: Alex" />
+
+        <label style={labelStyle}>Estilo del coach</label>
+        <select style={inputStyle} value={personalidad} onChange={e => setPersonalidad(e.target.value)}>
+          <option value="cercano">😊 Cercano</option>
+          <option value="estricto">💪 Estricto</option>
+          <option value="gracioso">😄 Gracioso</option>
+          <option value="motivador">🔥 Motivador</option>
+        </select>
+
+        <label style={labelStyle}>Historial deportivo</label>
+        <textarea
+          style={{ ...inputStyle, resize: 'vertical', minHeight: 72 }}
+          value={historialDeportivo}
+          onChange={e => setHistorialDeportivo(e.target.value)}
+          placeholder="Ej: 3 años corriendo, primer triatlón en 2023..."
+        />
+
+        <label style={labelStyle}>Lesiones o limitaciones</label>
+        <textarea
+          style={{ ...inputStyle, resize: 'vertical', minHeight: 56 }}
+          value={lesiones}
+          onChange={e => setLesiones(e.target.value)}
+          placeholder="Ej: Tendinitis rodilla derecha, evitar impactos altos"
+        />
+
+        <label style={labelStyle}>Disponibilidad semanal</label>
+        <input
+          style={{ ...inputStyle, marginBottom: 20 }}
+          value={disponibilidad}
+          onChange={e => setDisponibilidad(e.target.value)}
+          placeholder="Ej: 8 horas/semana, mañanas entre semana"
+        />
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button
