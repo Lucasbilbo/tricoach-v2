@@ -42,7 +42,7 @@ export function buildSystemPrompt(profile, personalidad = 'cercano', actividades
 
   const tieneActividades = actividades && actividades.resumen && actividades.resumen !== 'Sin actividades recientes'
   const actividadesSection = tieneActividades
-    ? `\nACTIVIDADES RECIENTES DE STRAVA:\n${actividades.resumen}\n\nUsa esta información para personalizar tus respuestas y hacer referencia a sus entrenamientos recientes.`
+    ? `\nDATOS REALES DE STRAVA (sincronizados automáticamente): ${actividades.resumen}\nEstos datos son reales y actualizados. Úsalos con confianza cuando el atleta pregunte por sus entrenamientos recientes.`
     : actividades
       ? '\nEl atleta tiene Strava conectado pero no hay actividades recientes.'
       : '\nEl atleta no tiene Strava conectado. Puedes sugerirle que lo conecte para darte más contexto.'
@@ -92,6 +92,7 @@ Tu rol es:
 
 Responde siempre en español, de forma clara y concisa.
 Usa datos concretos: distancias, tiempos, zonas de frecuencia cardíaca cuando sea relevante.
+Cuando tengas datos de Strava del atleta, úsalos activamente en tus respuestas. Son datos reales sincronizados de su cuenta Strava.
 ${actividadesSection}${planSection}
 ${interpretacionTests}`
 }
