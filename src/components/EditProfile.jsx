@@ -271,6 +271,7 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
           <option value="estricto">💪 Estricto</option>
           <option value="gracioso">😄 Gracioso</option>
           <option value="motivador">🔥 Motivador</option>
+          <option value="cientifico">🔬 Científico</option>
         </select>
 
         <label style={labelStyle}>Historial deportivo</label>

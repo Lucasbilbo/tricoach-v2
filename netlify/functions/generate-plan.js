@@ -289,6 +289,31 @@ exports.handler = async (event) => {
     }
   }
 
+  // Calcular método de entrenamiento según semanas hasta la carrera
+  function calcularMetodo(fechaCarrera, nivel) {
+    if (!fechaCarrera) return 'base';
+    const hoy = new Date();
+    const carrera = new Date(fechaCarrera);
+    const semanas = Math.round((carrera - hoy) / (7 * 24 * 60 * 60 * 1000));
+    if (semanas > 16) return 'base';
+    if (semanas > 8) return 'especifico';
+    if (semanas > 3) return 'pico';
+    return 'taper';
+  }
+
+  const metodoTextos = {
+    base: `FASE: BASE (>16 semanas para el evento)
+Prioridad: construir aeróbico, técnica y fuerza general. Volumen progresivo, intensidades bajas-medias (Z1-Z3). Sin series de alta intensidad. Al menos 2 días de descanso/recuperación.`,
+    especifico: `FASE: ESPECÍFICO (8-16 semanas para el evento)
+Prioridad: simular las demandas del evento. Introduce trabajo en Z4, ritmos de carrera, ladrillos (brick) para triatlón, y sesiones largas a ritmo objetivo. Volumen alto, intensidad moderada-alta.`,
+    pico: `FASE: PICO (3-8 semanas para el evento)
+Prioridad: maximizar forma. Sesiones de alta intensidad controlada (Z4-Z5), simulacros de carrera, volumen ligeramente reducido. El atleta debe llegar a cada sesión descansado.`,
+    taper: `FASE: TAPER (<3 semanas para el evento)
+Prioridad: llegar fresco al día de la carrera. Reduce volumen 30-50%, mantén alguna sesión corta de intensidad para no perder ritmo. Sin sesiones largas agotadoras. Descanso activo y recuperación.`,
+  };
+
+  const metodo = calcularMetodo(profile.fecha_carrera, profile.nivel);
+
   // Detectar si necesita semana de diagnóstico
   const planesExistentes = await supabaseGet(
     hostname,
@@ -328,6 +353,9 @@ ${profile.fecha_carrera ? `Próximo evento: ${profile.fecha_carrera}` : ''}
 ${profile.contexto ? `Contexto del atleta: ${profile.contexto}` : ''}${analisisSection}
 
 El plan empieza el ${weekStart}. Los días en orden son: ${dias.join(', ')}.
+
+${metodoTextos[metodo]}
+${profile.nivel === 'principiante' ? `RESTRICCIÓN NIVEL PRINCIPIANTE: Máximo 5 sesiones activas (2 deben ser descanso). Duración máxima de sesión: 60min. Sin series de alta intensidad. Todas las sesiones en Z1-Z2. Prioriza técnica y adaptación.` : ''}
 
 El JSON debe tener esta estructura exacta con los días en el orden indicado:
 {

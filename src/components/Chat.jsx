@@ -190,6 +190,7 @@ export default function Chat({ userId, profile, personalidad, onPersonalidadChan
                 <option value="estricto">💪 Estricto</option>
                 <option value="gracioso">😄 Gracioso</option>
                 <option value="motivador">🔥 Motivador</option>
+                <option value="cientifico">🔬 Científico</option>
               </select>
             )}
           </div>
