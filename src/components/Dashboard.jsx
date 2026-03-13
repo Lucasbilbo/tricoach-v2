@@ -373,9 +373,12 @@ export default function Dashboard({ userId, plan, profile, onPlanUpdate, onNavig
             style={{
               background: 'var(--card)',
               borderRadius: '16px 16px 0 0',
-              padding: '24px 20px 40px',
+              padding: '24px 20px 0',
+              paddingBottom: 'env(safe-area-inset-bottom, 20px)',
               width: '100%',
               maxWidth: 480,
+              maxHeight: '80vh',
+              overflowY: 'auto',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
@@ -389,7 +392,7 @@ export default function Dashboard({ userId, plan, profile, onPlanUpdate, onNavig
                 ✕
               </button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 24 }}>
               {RUTINA_MOVILIDAD.map((ejercicio, i) => (
                 <div key={i} style={{
                   display: 'flex',
