@@ -21,7 +21,7 @@ function getCurrentWeekStart() {
   return monday.toISOString().split('T')[0]
 }
 
-export default function WeeklyPlan({ userId, plan, onPlanUpdate, onSessionDetail }) {
+export default function WeeklyPlan({ userId, plan, onPlanUpdate, onSessionDetail, onNavigate }) {
   const [generando, setGenerando] = useState(false)
   const [completando, setCompletando] = useState(null)
   const [rpe, setRpe] = useState(5)
@@ -107,6 +107,7 @@ export default function WeeklyPlan({ userId, plan, onPlanUpdate, onSessionDetail
   }
 
   const analisis = analizarPlan(plan)
+  const esDiagnostico = plan?.sesiones?.[0]?.tipo_semana === 'diagnostico'
 
   return (
     <div style={{
@@ -192,6 +193,48 @@ export default function WeeklyPlan({ userId, plan, onPlanUpdate, onSessionDetail
           </div>
         )}
 
+        {/* Banner semana de diagnóstico */}
+        {esDiagnostico && (
+          <div style={{
+            background: 'oklch(0.7 0.18 45 / 0.1)',
+            border: '1px solid oklch(0.7 0.18 45 / 0.3)',
+            borderRadius: 'var(--radius)',
+            padding: '14px 16px',
+            marginBottom: 16,
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+              <div>
+                <p style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: 16, color: 'var(--primary)', marginBottom: 4 }}>
+                  📊 Semana de diagnóstico
+                </p>
+                <p style={{ fontSize: 13, color: 'var(--muted-foreground)', lineHeight: 1.4 }}>
+                  Estas sesiones nos ayudan a conocer tu nivel real para crear tu plan perfecto. Comparte los resultados con tu coach.
+                </p>
+              </div>
+              {onNavigate && (
+                <button
+                  onClick={() => onNavigate('coach')}
+                  style={{
+                    background: 'var(--primary)',
+                    color: 'var(--primary-foreground)',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '6px 12px',
+                    fontFamily: 'var(--font-sans)',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                  }}
+                >
+                  💬 Hablar con el coach
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Botones de ajuste rápido */}
         {!esSemanaPasada && hayPendientes && (
           <div style={{
@@ -259,6 +302,20 @@ export default function WeeklyPlan({ userId, plan, onPlanUpdate, onSessionDetail
                       }}>
                         {sesion.dia}
                       </span>
+                      {esDiagnostico && sesion.tipo !== 'Descanso' && (
+                        <span style={{
+                          marginLeft: 6,
+                          fontSize: 10,
+                          background: 'var(--primary)',
+                          color: 'var(--primary-foreground)',
+                          borderRadius: 4,
+                          padding: '1px 5px',
+                          fontWeight: 700,
+                          letterSpacing: '0.05em',
+                        }}>
+                          📊 TEST
+                        </span>
+                      )}
                       {esHoy && !sesion.completada && (
                         <span style={{
                           marginLeft: 6,

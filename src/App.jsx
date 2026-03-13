@@ -144,6 +144,7 @@ function App() {
             plan={plan}
             onPlanUpdate={setPlan}
             onSessionDetail={setSelectedSession}
+            onNavigate={setCurrentScreen}
           />
         </ErrorBoundary>
       )}

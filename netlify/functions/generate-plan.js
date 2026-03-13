@@ -73,7 +73,7 @@ function supabasePost(hostname, path, key, body) {
 function callClaude(apiKey, systemPrompt, userMessage) {
   const body = JSON.stringify({
     model: CLAUDE_MODEL,
-    max_tokens: 1500,
+    max_tokens: 2000,
     system: systemPrompt,
     messages: [{ role: 'user', content: userMessage }]
   });
@@ -121,6 +121,80 @@ function fetchStravaActivities(accessToken) {
     req.on('error', () => resolve(null));
     req.end();
   });
+}
+
+function buildDiagnosticoUserMessage(profile, weekStart, deporteInfo) {
+  const deporte = profile.deporte;
+
+  const testsInfo = {
+    running: `TESTS:
+- Lunes: Descanso.
+- Martes: Cooper Test. Cal 10min trote suave + 12min carrera a máximo esfuerzo sostenido en llano + 10min vuelta calma. Medir distancia recorrida en 12min. RPE 9-10.
+- Miércoles: Rodaje suave Z2 (35min al 65-70% FCmax). RPE 5-6.
+- Jueves: 5K Time Trial. Cal 10min + 5km a máximo esfuerzo sin parar + 10min vuelta calma. Anotar tiempo total y ritmo medio. RPE 9.
+- Viernes: Descanso.
+- Sábado: Rodaje suave Z2 (40min). RPE 5-6.
+- Domingo: Descanso.`,
+
+    triatlon: `TESTS:
+- Lunes: Descanso.
+- Martes: Natación Velocidad Crítica. Cal 200m suave + 400m crol a máximo esfuerzo + descanso 15min + 200m crol a máximo esfuerzo. Anotar tiempos de 400m y 200m por separado. RPE 9-10.
+- Miércoles: Bici 20min TT. Cal 15min suave + 20min a máximo esfuerzo sostenido en rodillo o carretera llana + 10min vuelta calma. Anotar vatios medios o FC media. RPE 9.
+- Jueves: Natación técnica suave 30min Z2.
+- Viernes: Running 5K Time Trial. Cal 10min + 5km a máximo esfuerzo + 10min vuelta calma. Anotar tiempo total y ritmo. RPE 9.
+- Sábado: Descanso.
+- Domingo: Rodaje suave Z2 (30min). RPE 5.`,
+
+    hyrox: `TESTS:
+- Lunes: Descanso.
+- Martes: 5K Threshold Run. Cal 10min trote + 5km a máximo esfuerzo sostenido + 5min vuelta calma. Anotar tiempo y ritmo medio. RPE 9.
+- Miércoles: Descanso o movilidad 20min.
+- Jueves: Strength Circuit. 3 series progresivas en press banca para estimar 3RM, descanso 3min entre series. Luego máximo pull-ups en 2min (anotar número). Luego 100m lunges con 15-20kg (anotar tiempo). RPE 8-9.
+- Viernes: Descanso.
+- Sábado: Rodaje suave 30min Z2. RPE 5.
+- Domingo: Descanso.`,
+
+    natacion: `TESTS:
+- Lunes: Descanso.
+- Martes: Velocidad Crítica. Cal 200m suave + 400m crol a máximo esfuerzo + descanso 15min + 200m crol a máximo esfuerzo. Anotar tiempos de 400m y 200m. RPE 9-10.
+- Miércoles: Técnica suave 30min. Drills: patada tabla, pull con paletas, dedos en agua. RPE 4.
+- Jueves: 400m Endurance. Cal 200m suave + 400m continuo a ritmo fuerte + 200m vuelta calma. Anotar tiempo de los 400m. RPE 7-8.
+- Viernes: Descanso.
+- Sábado: Técnica suave 30min. RPE 4.
+- Domingo: Descanso.`,
+  };
+
+  const sesionesInfo = testsInfo[deporte] || testsInfo.running;
+
+  return `Este atleta acaba de registrarse. Genera una SEMANA DE DIAGNÓSTICO para evaluar su nivel real.
+
+PERFIL:
+Deporte: ${deporteInfo[deporte] || deporte}
+Nivel declarado: ${profile.nivel || 'desconocido'}
+Objetivo: ${profile.objetivo || 'mejorar forma física'}
+
+${sesionesInfo}
+
+El JSON debe tener esta estructura exacta:
+{
+  "semana": "${weekStart}",
+  "sesiones": [
+    { "dia": "Lunes", "tipo": "Descanso", "descripcion": "...", "duracion_min": 0, "intensidad": "descanso" },
+    { "dia": "Martes", "tipo": "Correr", "descripcion": "...", "duracion_min": 35, "intensidad": "fuerte" }
+  ]
+}
+
+Para cada sesión de test (no descanso), la descripción debe:
+1. Explicar en una frase POR QUÉ se hace ese test
+2. Dar instrucciones exactas (calentamiento, bloque test, vuelta calma)
+3. Indicar QUÉ debe medir o anotar el atleta
+4. Indicar RPE objetivo del bloque principal
+
+En la descripción del Domingo (o última sesión) añade: "Cuando termines cada test, cuéntame el resultado en el chat y lo usaré para calibrar tu plan personalizado de la próxima semana."
+
+tipos posibles: "Correr", "Bici", "Nadar", "Fuerza", "Brick", "Descanso"
+intensidades posibles: "suave", "moderada", "fuerte", "descanso"
+Devuelve exactamente 7 sesiones, una por día (Lunes a Domingo).`;
 }
 
 function buildAnalisisSemanaAnterior(planAnterior, stravaText) {
@@ -192,18 +266,29 @@ exports.handler = async (event) => {
 
   // Obtener actividades de Strava solo para usuarios Pro
   let stravaText = null;
+  let stravaActivities = null;
   if (isPro && profile.strava_token) {
     const now = Math.floor(Date.now() / 1000);
     const tokenOk = !profile.strava_token_expires_at || profile.strava_token_expires_at > now;
     if (tokenOk) {
-      const activities = await fetchStravaActivities(profile.strava_token);
-      if (Array.isArray(activities) && activities.length > 0) {
-        stravaText = activities.slice(0, 5)
+      stravaActivities = await fetchStravaActivities(profile.strava_token);
+      if (Array.isArray(stravaActivities) && stravaActivities.length > 0) {
+        stravaText = stravaActivities.slice(0, 5)
           .map(a => `${a.type} ${(a.distance / 1000).toFixed(1)}km en ${Math.round(a.moving_time / 60)}min`)
           .join(', ');
       }
     }
   }
+
+  // Detectar si necesita semana de diagnóstico
+  const planesExistentes = await supabaseGet(
+    hostname,
+    `/rest/v1/plans?user_id=eq.${userId}&select=id&limit=1`,
+    supabaseKey
+  );
+  const esPrimerPlan = !Array.isArray(planesExistentes) || planesExistentes.length === 0;
+  const actividadesCount = Array.isArray(stravaActivities) ? stravaActivities.length : 0;
+  const necesitaDiagnostico = esPrimerPlan && actividadesCount < 3;
 
   const weekStart = getWeekStart();
 
@@ -214,14 +299,17 @@ exports.handler = async (event) => {
     hyrox: 'Hyrox (carrera funcional con estaciones de fitness)',
   };
 
-  const analisisSection = (isPro && planAnterior)
-    ? '\n\n' + buildAnalisisSemanaAnterior(planAnterior, stravaText)
-    : '';
-
   const systemPrompt = `Eres un coach deportivo experto. Genera planes de entrenamiento personalizados en JSON.
 Instrucción: devuelve SOLO un JSON válido, sin texto adicional, sin markdown, sin bloques de código.`;
 
-  const userMessage = `Genera un plan de entrenamiento semanal para este atleta:
+  let userMessage;
+  if (necesitaDiagnostico) {
+    userMessage = buildDiagnosticoUserMessage(profile, weekStart, deporteInfo);
+  } else {
+    const analisisSection = (isPro && planAnterior)
+      ? '\n\n' + buildAnalisisSemanaAnterior(planAnterior, stravaText)
+      : '';
+    userMessage = `Genera un plan de entrenamiento semanal para este atleta:
 
 Deporte: ${deporteInfo[profile.deporte] || profile.deporte || 'deporte de resistencia'}
 Nivel: ${profile.nivel || 'principiante'}
@@ -257,6 +345,7 @@ Para la descripción de cada sesión activa incluye en una sola línea:
 - Vuelta a la calma (10% del tiempo): estiramientos o recuperación suave
 - RPE objetivo para el bloque principal (ej: "RPE 6-7")
 Ejemplo descripción running: "Cal 10min trote suave z1. Principal: 4x1000m a 5:10/km con 90seg recuperación. Vuelta 5min estiramientos. RPE 7-8"`;
+  }
 
 
   const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
@@ -281,6 +370,11 @@ Ejemplo descripción running: "Cal 10min trote suave z1. Principal: 4x1000m a 5:
 
   if (!planData.sesiones || planData.sesiones.length !== 7) {
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'El plan debe tener exactamente 7 sesiones' }) };
+  }
+
+  // Inyectar tipo_semana en cada sesión de diagnóstico
+  if (necesitaDiagnostico) {
+    planData.sesiones = planData.sesiones.map(s => ({ ...s, tipo_semana: 'diagnostico' }));
   }
 
   // Guardar en Supabase

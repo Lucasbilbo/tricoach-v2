@@ -48,6 +48,7 @@ export default function Dashboard({ userId, plan, profile, onPlanUpdate, onNavig
   const today = DIAS_SEMANA[new Date().getDay()]
   const sesionHoy = plan?.sesiones?.find(s => s.dia === today) || null
   const esDescanso = sesionHoy?.tipo?.toLowerCase() === 'descanso' || sesionHoy?.tipo?.toLowerCase() === 'rest'
+  const esSesionTest = sesionHoy?.tipo_semana === 'diagnostico' && !esDescanso
 
   const todayIdx = DIAS_ORDEN.indexOf(today)
   const siguiente = plan?.sesiones?.find(s => {
@@ -197,6 +198,20 @@ export default function Dashboard({ userId, plan, profile, onPlanUpdate, onNavig
 
               {!esDescanso && (
                 <>
+                  {esSesionTest && (
+                    <div style={{
+                      background: 'var(--primary)',
+                      color: 'var(--primary-foreground)',
+                      borderRadius: 6,
+                      padding: '3px 10px',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      marginBottom: 12,
+                      letterSpacing: '0.05em',
+                    }}>
+                      📊 TEST
+                    </div>
+                  )}
                   <h2 style={{
                     fontFamily: 'var(--font-serif)',
                     fontSize: 28,
@@ -211,9 +226,14 @@ export default function Dashboard({ userId, plan, profile, onPlanUpdate, onNavig
                       {sesionHoy.duracion_min} min · {sesionHoy.intensidad}
                     </p>
                   )}
-                  <p style={{ color: 'var(--muted-foreground)', fontSize: 14, lineHeight: 1.5, marginBottom: 24, padding: '0 8px', maxWidth: 340 }}>
+                  <p style={{ color: 'var(--muted-foreground)', fontSize: 14, lineHeight: 1.5, marginBottom: esSesionTest ? 8 : 24, padding: '0 8px', maxWidth: 340 }}>
                     {sesionHoy.descripcion}
                   </p>
+                  {esSesionTest && (
+                    <p style={{ color: 'var(--primary)', fontSize: 13, fontWeight: 600, marginBottom: 24, textAlign: 'center' }}>
+                      Anota tu resultado para compartirlo con el coach
+                    </p>
+                  )}
                 </>
               )}
 

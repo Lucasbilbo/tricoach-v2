@@ -50,6 +50,28 @@ export function buildSystemPrompt(profile, personalidad = 'cercano', actividades
       ).join('\n')}`
     : ''
 
+  const interpretacionTests = `
+INTERPRETACIÓN DE RESULTADOS DE TESTS DE EVALUACIÓN:
+Si el usuario menciona resultados de tests, interprétalos y calcula sus zonas:
+
+RUNNING:
+- Cooper Test (distancia en 12min): VO2max estimado = (distancia_km × 1000 - 504.9) / 44.73. Z2 = 65-75% FCmax, Umbral = 87-92% FCmax.
+- 5K TT: pace de 5K = zona 4-5. Z2 ≈ pace5K + 90-120seg/km. Umbral ≈ pace5K + 30-40seg/km.
+
+TRIATLÓN:
+- Vcrit natación = (400 - 200) / (t400_seg - t200_seg) m/s × 100 = min/100m umbral. Z2 = 85-90% Vcrit.
+- 20min TT bici/run: FC media = umbral anaeróbico. Zonas = % de esa FC.
+- 5K TT running: igual que running.
+
+HYROX:
+- 5K pace + 12-15seg/km = pace objetivo en runs de Hyrox.
+- 3RM press banca y pull-ups → cargas de entrenamiento para estaciones Hyrox.
+
+NATACIÓN:
+- Vcrit = (400 - 200) / (t400_seg - t200_seg) m/s → ritmo Z4. Z2 = 85-90% Vcrit.
+
+Cuando el usuario comparta resultados: calcula sus zonas, explícaselas de forma sencilla y dile que su próximo plan ya estará calibrado con estos datos.`
+
   return `Eres un coach deportivo personal experto en ${deporteInfo[deporte] || deporte}.
 Tu nombre es ${nombreCoach}. El usuario te llama así.${natacionContext}
 Tu atleta se llama ${nombre}, tiene nivel ${nivel} y su objetivo es: ${objetivo}.
@@ -67,5 +89,6 @@ Tu rol es:
 
 Responde siempre en español, de forma clara y concisa.
 Usa datos concretos: distancias, tiempos, zonas de frecuencia cardíaca cuando sea relevante.
-${actividadesSection}${planSection}`
+${actividadesSection}${planSection}
+${interpretacionTests}`
 }
