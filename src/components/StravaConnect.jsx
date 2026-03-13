@@ -66,16 +66,7 @@ export default function StravaConnect({ userId, plan, onConnected, onShowUpgrade
 
       const data = await response.json()
 
-      if (data.access_token) {
-        await supabase
-          .from('profiles')
-          .update({
-            strava_token: data.access_token,
-            strava_refresh_token: data.refresh_token,
-            strava_token_expires_at: data.expires_at
-          })
-          .eq('id', userId)
-
+      if (data.ok) {
         setConnected(true)
         if (onConnected) onConnected()
       }
