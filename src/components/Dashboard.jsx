@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { generatePlan, markSessionComplete } from '../lib/plans'
+import { markSessionComplete } from '../lib/plans'
 
 const ICONOS = {
   Correr: '🏃',
@@ -40,7 +40,6 @@ const RUTINA_MOVILIDAD = [
 ]
 
 export default function Dashboard({ userId, plan, profile, onPlanUpdate, onNavigate }) {
-  const [generando, setGenerando] = useState(false)
   const [completando, setCompletando] = useState(false)
   const [rpe, setRpe] = useState(6)
   const [showMovilidad, setShowMovilidad] = useState(false)
@@ -55,18 +54,6 @@ export default function Dashboard({ userId, plan, profile, onPlanUpdate, onNavig
     const idx = DIAS_ORDEN.indexOf(s.dia)
     return idx > todayIdx && s.tipo?.toLowerCase() !== 'descanso'
   }) || null
-
-  async function handleGenerar() {
-    setGenerando(true)
-    try {
-      const nuevo = await generatePlan(userId)
-      onPlanUpdate(nuevo)
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setGenerando(false)
-    }
-  }
 
   async function handleCompletar() {
     if (!plan?.id || !sesionHoy) return
@@ -122,10 +109,9 @@ export default function Dashboard({ userId, plan, profile, onPlanUpdate, onNavig
               Genera tu plan personalizado para empezar
             </p>
             <button
-              onClick={handleGenerar}
-              disabled={generando}
+              onClick={() => onNavigate('plan')}
               style={{
-                background: generando ? 'var(--muted)' : 'var(--primary)',
+                background: 'var(--primary)',
                 color: 'var(--primary-foreground)',
                 border: 'none',
                 borderRadius: 24,
@@ -133,10 +119,10 @@ export default function Dashboard({ userId, plan, profile, onPlanUpdate, onNavig
                 fontFamily: 'var(--font-sans)',
                 fontSize: 15,
                 fontWeight: 600,
-                cursor: generando ? 'not-allowed' : 'pointer',
+                cursor: 'pointer',
               }}
             >
-              {generando ? 'Generando...' : 'Generar mi plan'}
+              Generar mi plan
             </button>
           </div>
         )}

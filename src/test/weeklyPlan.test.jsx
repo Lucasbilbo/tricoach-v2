@@ -67,7 +67,7 @@ describe('WeeklyPlan', () => {
   it('WeeklyPlan muestra "Generar plan" cuando no hay plan activo', async () => {
     const WeeklyPlan = (await import('../components/WeeklyPlan')).default
     render(<WeeklyPlan userId="123" plan={null} onPlanUpdate={vi.fn()} />)
-    expect(screen.getByText(/Generar plan de esta semana/i)).toBeDefined()
+    expect(screen.getByText(/Aún no tienes un plan/i)).toBeDefined()
   })
 
   it('el system prompt incluye el plan cuando existe', () => {

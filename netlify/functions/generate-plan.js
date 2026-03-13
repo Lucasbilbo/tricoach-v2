@@ -9,13 +9,8 @@ const CORS = {
 const FUNCTION_SECRET = process.env.TRICOACH_SECRET;
 const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
 
-function getWeekStart() {
-  const now = new Date();
-  const day = now.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  const monday = new Date(now);
-  monday.setDate(now.getDate() + diff);
-  return monday.toISOString().split('T')[0];
+function getTodayDate() {
+  return new Date().toISOString().split('T')[0];
 }
 
 function supabaseGet(hostname, path, key) {
@@ -241,7 +236,7 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'JSON inválido' }) };
   }
 
-  const { userId, planAnterior } = parsed;
+  const { userId, planAnterior, fechaInicio } = parsed;
   if (!userId) {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId requerido' }) };
   }
@@ -290,7 +285,7 @@ exports.handler = async (event) => {
   const actividadesCount = Array.isArray(stravaActivities) ? stravaActivities.length : 0;
   const necesitaDiagnostico = esPrimerPlan && actividadesCount < 3;
 
-  const weekStart = getWeekStart();
+  const weekStart = fechaInicio || getTodayDate();
 
   const deporteInfo = {
     triatlon: 'triatlón olímpico (natación 1.5km, ciclismo 40km, running 10km)',

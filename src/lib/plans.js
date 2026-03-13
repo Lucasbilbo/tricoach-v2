@@ -19,13 +19,13 @@ function getLastWeekStart() {
 }
 
 export async function getPlan(userId) {
-  const semana = getWeekStart()
   const { data } = await supabase
     .from('plans')
     .select('*')
     .eq('user_id', userId)
-    .eq('semana', semana)
-    .single()
+    .order('semana', { ascending: false })
+    .limit(1)
+    .maybeSingle()
   return data
 }
 
@@ -40,7 +40,7 @@ export async function getLastWeekPlan(userId) {
   return data
 }
 
-export async function generatePlan(userId, planAnterior = null) {
+export async function generatePlan(userId, planAnterior = null, fechaInicio = null) {
   const secret = import.meta.env.VITE_TRICOACH_SECRET || ''
   const res = await fetch('/.netlify/functions/generate-plan', {
     method: 'POST',
@@ -49,7 +49,7 @@ export async function generatePlan(userId, planAnterior = null) {
       'Accept': 'application/json',
       'x-tricoach-secret': secret
     },
-    body: JSON.stringify({ userId, planAnterior })
+    body: JSON.stringify({ userId, planAnterior, fechaInicio })
   })
   return res.json()
 }

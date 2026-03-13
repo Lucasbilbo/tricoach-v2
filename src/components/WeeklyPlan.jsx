@@ -12,13 +12,23 @@ const ICONOS = {
 
 const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
-function getCurrentWeekStart() {
+function getTodayStr() {
+  return new Date().toISOString().split('T')[0]
+}
+
+function getNextMonday() {
   const now = new Date()
   const day = now.getDay()
-  const diff = day === 0 ? -6 : 1 - day
-  const monday = new Date(now)
-  monday.setDate(now.getDate() + diff)
-  return monday.toISOString().split('T')[0]
+  const daysUntilNextMonday = day === 0 ? 1 : 8 - day
+  const nextMon = new Date(now)
+  nextMon.setDate(now.getDate() + daysUntilNextMonday)
+  return nextMon.toISOString().split('T')[0]
+}
+
+function formatDateLong(dateStr) {
+  return new Date(dateStr + 'T12:00:00').toLocaleDateString('es-ES', {
+    weekday: 'long', day: 'numeric', month: 'long'
+  })
 }
 
 export default function WeeklyPlan({ userId, plan, onPlanUpdate, onSessionDetail, onNavigate }) {
@@ -28,15 +38,21 @@ export default function WeeklyPlan({ userId, plan, onPlanUpdate, onSessionDetail
   const [ajustando, setAjustando] = useState(false)
 
   const today = DIAS_SEMANA[new Date().getDay()]
-  const currentWeekStart = getCurrentWeekStart()
-  const esSemanaPasada = plan && plan.semana < currentWeekStart
+  const todayStr = getTodayStr()
+  const planEndStr = plan ? (() => {
+    const d = new Date(plan.semana + 'T12:00:00')
+    d.setDate(d.getDate() + 6)
+    return d.toISOString().split('T')[0]
+  })() : null
+  const esSemanaPasada = plan && planEndStr < todayStr
+  const esPlanFuturo = plan && plan.semana > todayStr
 
   const hayPendientes = plan?.sesiones?.some(s => !s.completada && s.tipo?.toLowerCase() !== 'descanso')
 
-  async function handleGenerarPlan(planAnteriorParaAnalisis = null) {
+  async function handleGenerarPlan(planAnteriorParaAnalisis = null, fechaInicio = null) {
     setGenerando(true)
     try {
-      const nuevoPlan = await generatePlan(userId, planAnteriorParaAnalisis)
+      const nuevoPlan = await generatePlan(userId, planAnteriorParaAnalisis, fechaInicio)
       onPlanUpdate(nuevoPlan)
     } catch (e) {
       console.error('Error al generar plan:', e)
@@ -80,28 +96,51 @@ export default function WeeklyPlan({ userId, plan, onPlanUpdate, onSessionDetail
         padding: 24,
         textAlign: 'center',
       }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>📅</div>
-        <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 22, marginBottom: 8 }}>Plan semanal</h3>
-        <p style={{ color: 'var(--muted-foreground)', marginBottom: 24, fontSize: 15 }}>
-          No tienes un plan para esta semana.
+        <div style={{ fontSize: 64, marginBottom: 20 }}>📅</div>
+        <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 24, fontWeight: 700, marginBottom: 10 }}>
+          Aún no tienes un plan
+        </h3>
+        <p style={{ color: 'var(--muted-foreground)', marginBottom: 32, fontSize: 15, maxWidth: 300, lineHeight: 1.5 }}>
+          Genera tu primer plan y el coach lo adaptará a tu nivel
         </p>
-        <button
-          onClick={() => handleGenerarPlan()}
-          disabled={generando}
-          style={{
-            background: generando ? 'var(--muted)' : 'var(--primary)',
-            color: 'var(--primary-foreground)',
-            border: 'none',
-            borderRadius: 24,
-            padding: '12px 28px',
-            fontFamily: 'var(--font-sans)',
-            fontSize: 15,
-            fontWeight: 600,
-            cursor: generando ? 'not-allowed' : 'pointer',
-          }}
-        >
-          {generando ? 'Generando...' : 'Generar plan de esta semana'}
-        </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: 320 }}>
+          <button
+            onClick={() => handleGenerarPlan(null, getTodayStr())}
+            disabled={generando}
+            style={{
+              background: generando ? 'var(--muted)' : 'var(--primary)',
+              color: 'var(--primary-foreground)',
+              border: 'none',
+              borderRadius: 'var(--radius)',
+              height: 52,
+              width: '100%',
+              fontFamily: 'var(--font-sans)',
+              fontSize: 16,
+              fontWeight: 700,
+              cursor: generando ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {generando ? 'Generando...' : 'Empezar hoy'}
+          </button>
+          <button
+            onClick={() => handleGenerarPlan(null, getNextMonday())}
+            disabled={generando}
+            style={{
+              background: 'var(--secondary)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
+              height: 52,
+              width: '100%',
+              color: 'var(--foreground)',
+              fontFamily: 'var(--font-sans)',
+              fontSize: 15,
+              fontWeight: 500,
+              cursor: generando ? 'not-allowed' : 'pointer',
+            }}
+          >
+            Empezar el próximo lunes
+          </button>
+        </div>
       </div>
     )
   }
@@ -193,6 +232,44 @@ export default function WeeklyPlan({ userId, plan, onPlanUpdate, onSessionDetail
           </div>
         )}
 
+        {/* Banner plan futuro */}
+        {esPlanFuturo && (
+          <div style={{
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius)',
+            padding: '20px 16px',
+            marginBottom: 16,
+            textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 36, marginBottom: 10 }}>⏳</div>
+            <p style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: 16, marginBottom: 6 }}>
+              Tu plan empieza el {formatDateLong(plan.semana)}
+            </p>
+            <p style={{ fontSize: 13, color: 'var(--muted-foreground)', lineHeight: 1.5, marginBottom: 16 }}>
+              Mientras tanto habla con tu coach si tienes dudas.
+            </p>
+            {onNavigate && (
+              <button
+                onClick={() => onNavigate('coach')}
+                style={{
+                  background: 'var(--primary)',
+                  color: 'var(--primary-foreground)',
+                  border: 'none',
+                  borderRadius: 'var(--radius)',
+                  padding: '10px 20px',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                💬 Hablar con el coach
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Banner semana de diagnóstico */}
         {esDiagnostico && (
           <div style={{
@@ -271,7 +348,7 @@ export default function WeeklyPlan({ userId, plan, onPlanUpdate, onSessionDetail
 
         {/* Sessions */}
         {plan.sesiones.map((sesion) => {
-          const esHoy = sesion.dia === today && !esSemanaPasada
+          const esHoy = sesion.dia === today && !esSemanaPasada && !esPlanFuturo
           return (
             <div
               key={sesion.dia}
