@@ -55,7 +55,7 @@ describe('strava-activities', () => {
     }
     const prompt = buildSystemPrompt(profile, 'cercano', actividades)
 
-    expect(prompt).toContain('ACTIVIDADES RECIENTES DEL ATLETA')
+    expect(prompt).toContain('ACTIVIDADES RECIENTES DE STRAVA')
     expect(prompt).toContain('Última semana: 3 salidas')
   })
 

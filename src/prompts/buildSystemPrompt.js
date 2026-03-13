@@ -40,9 +40,12 @@ export function buildSystemPrompt(profile, personalidad = 'cercano', actividades
 
   const estiloPersonalidad = personalidades[personalidad] || personalidades.cercano
 
-  const actividadesSection = actividades
-    ? `\nACTIVIDADES RECIENTES DEL ATLETA:\n${actividades.resumen}\n\nUsa esta información para personalizar tus respuestas.`
-    : '\nEl atleta no tiene Strava conectado. Puedes sugerirle que lo conecte para darte más contexto.'
+  const tieneActividades = actividades && actividades.resumen && actividades.resumen !== 'Sin actividades recientes'
+  const actividadesSection = tieneActividades
+    ? `\nACTIVIDADES RECIENTES DE STRAVA:\n${actividades.resumen}\n\nUsa esta información para personalizar tus respuestas y hacer referencia a sus entrenamientos recientes.`
+    : actividades
+      ? '\nEl atleta tiene Strava conectado pero no hay actividades recientes.'
+      : '\nEl atleta no tiene Strava conectado. Puedes sugerirle que lo conecte para darte más contexto.'
 
   const planSection = plan
     ? `\nPLAN DE ESTA SEMANA:\n${plan.sesiones.map(s =>

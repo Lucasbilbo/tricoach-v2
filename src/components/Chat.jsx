@@ -35,6 +35,9 @@ export default function Chat({ userId, profile, personalidad, onPersonalidadChan
       const updatedMessages = [...messages, { role: 'user', content: userMessage }]
       setMessages(updatedMessages)
 
+      const systemPrompt = buildSystemPrompt(profile, profile.personalidad || 'cercano', stravaData)
+      console.log('[Chat] System prompt (primeros 200 chars):', systemPrompt.substring(0, 200))
+
       const response = await fetch('/.netlify/functions/claude', {
         method: 'POST',
         headers: {
@@ -43,7 +46,7 @@ export default function Chat({ userId, profile, personalidad, onPersonalidadChan
         },
         body: JSON.stringify({
           userId,
-          system: buildSystemPrompt(profile, profile.personalidad || 'cercano', stravaData),
+          system: systemPrompt,
           messages: [
             ...messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
             { role: 'user', content: userMessage }
@@ -84,6 +87,7 @@ export default function Chat({ userId, profile, personalidad, onPersonalidadChan
 
   useEffect(() => {
     if (!userId) return
+    console.log('[Chat] Llamando strava-activities para userId:', userId)
     fetch('/.netlify/functions/strava-activities', {
       method: 'POST',
       headers: {
@@ -93,8 +97,15 @@ export default function Chat({ userId, profile, personalidad, onPersonalidadChan
       body: JSON.stringify({ userId })
     })
       .then(r => r.json())
-      .then(data => { if (!data.sinStrava) setStravaData(data) })
-      .catch(() => {})
+      .then(data => {
+        console.log('[Chat] Respuesta strava-activities:', {
+          sinStrava: data.sinStrava,
+          resumen: data.resumen,
+          numActividades: data.actividades?.length ?? 0,
+        })
+        if (!data.sinStrava) setStravaData(data)
+      })
+      .catch(err => console.error('[Chat] Error strava-activities:', err))
   }, [userId])
 
   useEffect(() => {
