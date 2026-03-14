@@ -8,7 +8,7 @@ import Terminos from './pages/Terminos.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename="/app">
       <Routes>
         <Route path="/" element={<App />} />
         <Route path="/privacidad" element={<Privacidad />} />
