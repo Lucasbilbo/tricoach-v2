@@ -29,7 +29,7 @@ function formatDateLong(dateStr) {
   })
 }
 
-export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSessionDetail, onNavigate, onPlanProximaSemanaUpdate, planActualizadoPorCoach }) {
+export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSessionDetail, onNavigate, onPlanProximaSemanaUpdate, planActualizadoPorCoach, planProximaSemana }) {
   const _todayDate = new Date()
   const [generando, setGenerando] = useState(false)
   const [viendoProxima, setViendoProxima] = useState(false)
@@ -59,6 +59,12 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
     const t = setTimeout(() => setShowCoachBadge(false), 5 * 60 * 1000)
     return () => clearTimeout(t)
   }, [planActualizadoPorCoach])
+
+  useEffect(() => {
+    if (!planProximaSemana) return
+    setPlanSiguiente(planProximaSemana)
+    setPlanSiguienteNoExiste(false)
+  }, [planProximaSemana])
 
   const today = DIAS_SEMANA[new Date().getDay()]
   const todayStr = getTodayStr()
@@ -165,6 +171,7 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
       onPlanUpdate(updated)
     } catch (e) {
       console.error('Error al ajustar plan:', e)
+      setErrorToast('No se pudo ajustar el plan. Inténtalo de nuevo.')
     } finally {
       setAjustando(false)
     }
@@ -797,7 +804,7 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
                       </div>
                     ) : (
                       <button
-                        onClick={() => setCompletando(sesion.dia)}
+                        onClick={() => { setRpe(5); setCompletando(sesion.dia) }}
                         style={{
                           background: 'var(--secondary)',
                           border: '1px solid var(--border)',

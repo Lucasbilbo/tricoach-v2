@@ -52,7 +52,7 @@ export function buildSystemPrompt(profile, personalidad = 'cercano', actividades
     ? `\nDATOS REALES DE STRAVA (sincronizados automáticamente): ${actividades.resumen}\nEstos datos son reales y actualizados. Úsalos con confianza cuando el atleta pregunte por sus entrenamientos recientes.`
     : actividades
       ? '\nEl atleta tiene Strava conectado pero no hay actividades recientes.'
-      : '\nEl atleta no tiene Strava conectado. Puedes sugerirle que lo conecte para darte más contexto.'
+      : ''
 
   const completadaLabel = (s) => {
     if (!s.completada) return ' (pendiente)'

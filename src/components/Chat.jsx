@@ -147,7 +147,7 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
           resumen: data.resumen,
           numActividades: data.actividades?.length ?? 0,
         })
-        if (!data.sinStrava) setStravaData(data)
+        if (!data.sinStrava && !data.error) setStravaData(data)
       })
       .catch(err => console.error('[Chat] Error strava-activities:', err))
   }, [userId])
@@ -397,11 +397,13 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
               fontSize: 15,
               padding: '10px 16px',
               outline: 'none',
+              opacity: loading ? 0.6 : 1,
             }}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+            onKeyDown={(e) => e.key === 'Enter' && !loading && sendMessage()}
             placeholder="Escribe un mensaje..."
+            disabled={loading}
           />
           <button
             onClick={sendMessage}

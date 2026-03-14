@@ -201,6 +201,7 @@ function App() {
             onNavigate={handleNavigate}
             onPlanProximaSemanaUpdate={setPlanProximaSemana}
             planActualizadoPorCoach={planActualizadoPorCoach}
+            planProximaSemana={planProximaSemana}
           />
         </ErrorBoundary>
       )}

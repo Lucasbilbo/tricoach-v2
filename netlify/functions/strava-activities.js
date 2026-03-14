@@ -175,6 +175,14 @@ exports.handler = async (event) => {
       req.end();
     });
 
+    if (!refreshResult || !refreshResult.access_token) {
+      return {
+        statusCode: 200,
+        headers: { ...CORS, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sinStrava: true })
+      };
+    }
+
     if (refreshResult && refreshResult.access_token) {
       accessToken = refreshResult.access_token;
 

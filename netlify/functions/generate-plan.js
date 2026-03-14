@@ -16,7 +16,7 @@ function getTodayDate() {
 function getMondayOfCurrentWeek() {
   const now = new Date();
   const day = now.getUTCDay(); // 0=Sun, 1=Mon, ..., 6=Sat
-  const diff = day === 0 ? -6 : 1 - day;
+  const diff = day === 0 ? 1 : 1 - day;
   const monday = new Date(now);
   monday.setUTCDate(now.getUTCDate() + diff);
   return monday.toISOString().split('T')[0];

@@ -59,10 +59,11 @@ describe('strava-activities', () => {
     expect(prompt).toContain('Última semana: 3 salidas')
   })
 
-  it('el system prompt incluye el mensaje de "sin Strava" cuando stravaData es null', () => {
+  it('el system prompt no incluye mención a Strava cuando stravaData es null', () => {
     const profile = { nombre: 'Lucas', deporte: 'running', nivel: 'intermedio', objetivo: 'bajar de 50min' }
     const prompt = buildSystemPrompt(profile, 'cercano', null)
 
-    expect(prompt).toContain('no tiene Strava conectado')
+    expect(prompt).not.toContain('Strava conectado')
+    expect(prompt).not.toContain('DATOS REALES DE STRAVA')
   })
 })
