@@ -12,7 +12,7 @@ Freemium: Free (10 msg/día, plan básico) / Pro (9,99€/mes, Strava + plan ada
 - Tests: Vitest (43 tests) + Playwright E2E (4 tests)
 - Deploy: Netlify (producción: https://tricoach-v2.netlify.app)
 - Pagos: Stripe (checkout + webhooks)
-- Email: Resend (onboarding@resend.dev)
+- Email: Resend (coach@getricoach.com)
 
 ## Reglas críticas — leer siempre antes de tocar código
 

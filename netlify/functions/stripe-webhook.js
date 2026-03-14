@@ -75,7 +75,7 @@ function supabaseGet(hostname, path, key) {
 function sendWelcomeEmail(resendKey, to, nombre) {
   const nombreDisplay = nombre || 'atleta';
   const bodyStr = JSON.stringify({
-    from: 'TriCoach <onboarding@resend.dev>',
+    from: 'TriCoach <coach@getricoach.com>',
     to: [to],
     subject: '¡Ya eres Pro en TriCoach AI! 🎉',
     html: `
