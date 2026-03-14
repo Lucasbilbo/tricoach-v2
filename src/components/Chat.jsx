@@ -3,6 +3,9 @@ import { getMessages, saveMessage } from '../lib/messages'
 import { canSendMessage } from '../lib/profiles'
 import { buildSystemPrompt } from '../prompts/buildSystemPrompt'
 import { updateContext } from '../lib/context'
+import { adjustPlan } from '../lib/plans'
+
+const CONFIRMA_RE = /^(sí|si|dale|perfecto|ok|okay|venga|claro|exacto|genial|guay|bien|de acuerdo|bueno|va|hazlo|actualiza|actualízalo|sí por favor|si por favor|por favor|adelante|hecho|listo)\b/i
 
 const DEPORTE_LABELS = {
   triatlon: '🏊 Triatlón',
@@ -10,23 +13,55 @@ const DEPORTE_LABELS = {
   hyrox: '💪 Hyrox',
 }
 
-export default function Chat({ userId, profile, plan, personalidad, onPersonalidadChange, onShowUpgrade, prefillMessage }) {
+export default function Chat({ userId, profile, plan, personalidad, onPersonalidadChange, onShowUpgrade, onPlanUpdate, prefillMessage }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [stravaData, setStravaData] = useState(null)
+  const [pendingAdjust, setPendingAdjust] = useState(null)
   const bottomRef = useRef(null)
 
   async function sendMessage() {
     if (!input.trim()) return
 
+    const userMessage = input
+
+    // ── Confirmación de ajuste pendiente ─────────────────────────────────────
+    if (pendingAdjust && plan?.id && CONFIRMA_RE.test(userMessage.trim())) {
+      setInput('')
+      setLoading(true)
+      const updatedMessages = [...messages, { role: 'user', content: userMessage }]
+      setMessages(updatedMessages)
+      await saveMessage(userId, 'user', userMessage)
+
+      try {
+        const planActualizado = await adjustPlan(userId, plan.id, pendingAdjust.motivo, pendingAdjust.descripcion)
+        if (planActualizado?.sesiones) {
+          onPlanUpdate?.(planActualizado)
+          const confirmacion = `✅ ¡Listo! He actualizado tu plan teniendo en cuenta: ${pendingAdjust.descripcion}. Los cambios ya están disponibles en tu plan semanal.`
+          await saveMessage(userId, 'assistant', confirmacion)
+          setMessages([...updatedMessages, { role: 'assistant', content: confirmacion }])
+        } else {
+          const errorMsg = 'No pude actualizar el plan. Inténtalo de nuevo o usa el botón de ajuste manual.'
+          await saveMessage(userId, 'assistant', errorMsg)
+          setMessages([...updatedMessages, { role: 'assistant', content: errorMsg }])
+        }
+      } catch {
+        setMessages((prev) => [...prev, { role: 'assistant', content: 'Hubo un error al actualizar el plan. Inténtalo de nuevo.' }])
+      } finally {
+        setPendingAdjust(null)
+        setLoading(false)
+      }
+      return
+    }
+
+    // ── Flujo normal: llamar a Claude ─────────────────────────────────────────
     const canSend = await canSendMessage(profile)
     if (!canSend) {
       setMessages((prev) => [...prev, { role: 'assistant', content: '⚠️ Has alcanzado el límite de 25 mensajes diarios del plan Free. Actualiza a Pro para mensajes ilimitados.' }])
       return
     }
 
-    const userMessage = input
     setInput('')
     setLoading(true)
 
@@ -51,7 +86,6 @@ export default function Chat({ userId, profile, plan, personalidad, onPersonalid
             ...messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
             { role: 'user', content: userMessage }
           ],
-          // model y max_tokens ya no vienen del frontend — están fijos en el backend
         }),
       })
 
@@ -61,15 +95,22 @@ export default function Chat({ userId, profile, plan, personalidad, onPersonalid
       }
 
       const data = await response.json()
-      const assistantMessage = data.content?.[0]?.text || 'Error al responder'
+      const rawMessage = data.content?.[0]?.text || 'Error al responder'
 
-      // El contador se incrementa en el backend (claude.js) antes de llamar a Claude
+      // Extraer marcador de ajuste propuesto y limpiar el mensaje
+      const markerMatch = rawMessage.match(/\[AJUSTE_PROPUESTO:([^:]+):([^\]]+)\]/)
+      if (markerMatch) {
+        setPendingAdjust({ motivo: markerMatch[1].trim(), descripcion: markerMatch[2].trim() })
+      } else {
+        setPendingAdjust(null)
+      }
+      const assistantMessage = rawMessage.replace(/\[AJUSTE_PROPUESTO:[^\]]+\]/g, '').trim()
+
       await saveMessage(userId, 'assistant', assistantMessage)
 
       const finalMessages = [...updatedMessages, { role: 'assistant', content: assistantMessage }]
       setMessages(finalMessages)
 
-      // Actualizar contexto en segundo plano, sin bloquear el chat
       updateContext(userId, finalMessages, profile.contexto).catch(() => {})
 
     } catch (error) {

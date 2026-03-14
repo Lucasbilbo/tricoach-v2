@@ -78,6 +78,19 @@ NATACIÓN:
 
 Cuando el usuario comparta resultados: calcula sus zonas, explícaselas de forma sencilla y dile que su próximo plan ya estará calibrado con estos datos.`
 
+  const ajusteInstructions = plan ? `
+AJUSTE DE PLAN CONVERSACIONAL:
+Cuando el usuario pida cambiar el plan (lesión, viaje, falta de tiempo, cambio de sesión u otra situación):
+1. Propón el ajuste concreto explicando qué cambiarías y por qué.
+2. Pregunta explícitamente si quiere que lo actualices.
+3. Al final de tu respuesta, añade en una línea nueva el marcador (no lo menciones al usuario):
+   [AJUSTE_PROPUESTO:motivo:descripcion breve]
+   - motivo debe ser uno de: lesion | viaje | dia_suelto | libre
+   - descripcion: texto corto del motivo (máx 60 caracteres)
+   Ejemplo: [AJUSTE_PROPUESTO:lesion:dolor en rodilla derecha]
+4. Cuando el usuario confirme el ajuste, dile que el plan ya está actualizado (el sistema lo hace automáticamente).
+Solo incluye el marcador cuando estés proponiendo un ajuste concreto al plan, no en respuestas generales.` : ''
+
   return `Eres un coach deportivo personal experto en ${deporteInfo[deporte] || deporte}.
 Tu nombre es ${nombreCoach}. El usuario te llama así.${natacionContext}
 Tu atleta se llama ${nombre}, tiene nivel ${nivel} y su objetivo es: ${objetivo}.
@@ -97,5 +110,5 @@ Responde siempre en español, de forma clara y concisa.
 Usa datos concretos: distancias, tiempos, zonas de frecuencia cardíaca cuando sea relevante.
 Cuando tengas datos de Strava del atleta, úsalos activamente en tus respuestas. Son datos reales sincronizados de su cuenta Strava.
 ${actividadesSection}${planSection}
-${interpretacionTests}`
+${interpretacionTests}${ajusteInstructions}`
 }

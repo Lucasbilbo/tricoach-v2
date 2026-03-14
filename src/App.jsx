@@ -143,6 +143,7 @@ function App() {
             personalidad={profile?.personalidad || 'cercano'}
             onPersonalidadChange={handlePersonalidadChange}
             onShowUpgrade={() => setShowUpgradeModal(true)}
+            onPlanUpdate={setPlan}
             prefillMessage={chatPrefill}
           />
         </ErrorBoundary>
