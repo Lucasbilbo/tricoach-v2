@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
 import { getProfile, createProfile, updateProfile } from './lib/profiles'
-import { getPlan, generatePlan, markSessionComplete, getPlanForWeek, getNextWeekStart } from './lib/plans'
+import { getPlanActual, getPlanProximaSemana, getHistorialPlanes, generatePlan, markSessionComplete, getNextWeekStart } from './lib/plans'
 import Login from './components/Login'
 import Onboarding from './components/Onboarding'
 import Chat from './components/Chat'
@@ -22,6 +22,8 @@ function App() {
   const [profile, setProfile] = useState(null)
   const [plan, setPlan] = useState(null)
   const [planProximaSemana, setPlanProximaSemana] = useState(null)
+  const [historialPlanes, setHistorialPlanes] = useState([])
+  const [planActualizadoPorCoach, setPlanActualizadoPorCoach] = useState(null)
   const [planLoading, setPlanLoading] = useState(true)
   const [loading, setLoading] = useState(true)
   const [currentScreen, setCurrentScreen] = useState('dashboard')
@@ -41,6 +43,11 @@ function App() {
   function handleNavigate(screen) {
     window.scrollTo(0, 0)
     setCurrentScreen(screen)
+  }
+
+  function handleCoachPlanUpdate(updated) {
+    setPlan(updated)
+    setPlanActualizadoPorCoach(Date.now())
   }
 
   async function handlePersonalidadChange(e) {
@@ -63,8 +70,9 @@ function App() {
       setSession(session)
       if (session) {
         loadOrCreateProfile(session.user)
-        getPlan(session.user.id).then(p => { setPlan(p); setPlanLoading(false) }).catch(() => setPlanLoading(false))
-        getPlanForWeek(session.user.id, getNextWeekStart()).then(setPlanProximaSemana).catch(() => {})
+        getPlanActual(session.user.id).then(p => { setPlan(p); setPlanLoading(false) }).catch(() => setPlanLoading(false))
+        getPlanProximaSemana(session.user.id).then(setPlanProximaSemana).catch(() => {})
+        getHistorialPlanes(session.user.id).then(setHistorialPlanes).catch(() => {})
       } else {
         setPlanLoading(false)
       }
@@ -75,10 +83,39 @@ function App() {
       setSession(session)
       if (session) {
         loadOrCreateProfile(session.user)
-        getPlan(session.user.id).then(setPlan).catch(() => {})
+        getPlanActual(session.user.id).then(setPlan).catch(() => {})
       }
     })
   }, [])
+
+  useEffect(() => {
+    if (!session?.user?.id) return
+    const uid = session.user.id
+    const channel = supabase
+      .channel(`plans:${uid}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'plans',
+        filter: `user_id=eq.${uid}`
+      }, (payload) => {
+        const updated = payload.new
+        if (!updated?.semana) return
+        const nextMonday = getNextWeekStart()
+        if (updated.semana === nextMonday) {
+          setPlanProximaSemana(updated)
+        } else {
+          const today = new Date().toISOString().split('T')[0]
+          const sixDaysAgo = new Date()
+          sixDaysAgo.setDate(sixDaysAgo.getDate() - 6)
+          if (updated.semana <= today && updated.semana >= sixDaysAgo.toISOString().split('T')[0]) {
+            setPlan(updated)
+          }
+        }
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [session?.user?.id])
 
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: 'var(--muted-foreground)' }}>
@@ -143,10 +180,11 @@ function App() {
             profile={profile}
             plan={plan}
             planProximaSemana={planProximaSemana}
+            historialPlanes={historialPlanes}
             personalidad={profile?.personalidad || 'cercano'}
             onPersonalidadChange={handlePersonalidadChange}
             onShowUpgrade={() => setShowUpgradeModal(true)}
-            onPlanUpdate={setPlan}
+            onPlanUpdate={handleCoachPlanUpdate}
             prefillMessage={chatPrefill}
           />
         </ErrorBoundary>
@@ -162,6 +200,7 @@ function App() {
             onSessionDetail={setSelectedSession}
             onNavigate={handleNavigate}
             onPlanProximaSemanaUpdate={setPlanProximaSemana}
+            planActualizadoPorCoach={planActualizadoPorCoach}
           />
         </ErrorBoundary>
       )}

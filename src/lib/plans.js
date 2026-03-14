@@ -27,6 +27,41 @@ function getLastWeekStart() {
   return monday.toISOString().split('T')[0]
 }
 
+export async function getPlanActual(userId) {
+  const today = new Date().toISOString().split('T')[0]
+  const sixDaysAgo = new Date()
+  sixDaysAgo.setDate(sixDaysAgo.getDate() - 6)
+  const sixDaysAgoStr = sixDaysAgo.toISOString().split('T')[0]
+  const { data } = await supabase
+    .from('plans')
+    .select('*')
+    .eq('user_id', userId)
+    .lte('semana', today)
+    .gte('semana', sixDaysAgoStr)
+    .order('semana', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  return data
+}
+
+export async function getPlanProximaSemana(userId) {
+  return getPlanForWeek(userId, getNextWeekStart())
+}
+
+export async function getHistorialPlanes(userId, semanas = 4) {
+  const sixDaysAgo = new Date()
+  sixDaysAgo.setDate(sixDaysAgo.getDate() - 6)
+  const cutoff = sixDaysAgo.toISOString().split('T')[0]
+  const { data } = await supabase
+    .from('plans')
+    .select('*')
+    .eq('user_id', userId)
+    .lt('semana', cutoff)
+    .order('semana', { ascending: false })
+    .limit(semanas)
+  return data || []
+}
+
 export async function getPlan(userId) {
   const { data } = await supabase
     .from('plans')

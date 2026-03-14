@@ -13,12 +13,13 @@ const DEPORTE_LABELS = {
   hyrox: '💪 Hyrox',
 }
 
-export default function Chat({ userId, profile, plan, planProximaSemana, personalidad, onPersonalidadChange, onShowUpgrade, onPlanUpdate, prefillMessage }) {
+export default function Chat({ userId, profile, plan, planProximaSemana, historialPlanes, personalidad, onPersonalidadChange, onShowUpgrade, onPlanUpdate, prefillMessage }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [stravaData, setStravaData] = useState(null)
   const [pendingAdjust, setPendingAdjust] = useState(null)
+  const [messagesLoaded, setMessagesLoaded] = useState(false)
   const bottomRef = useRef(null)
 
   async function sendMessage() {
@@ -70,7 +71,7 @@ export default function Chat({ userId, profile, plan, planProximaSemana, persona
       const updatedMessages = [...messages, { role: 'user', content: userMessage }]
       setMessages(updatedMessages)
 
-      const systemPrompt = buildSystemPrompt(profile, profile.personalidad || 'cercano', stravaData, plan, planProximaSemana)
+      const systemPrompt = buildSystemPrompt(profile, profile.personalidad || 'cercano', stravaData, plan, planProximaSemana, historialPlanes || [])
       console.log('[Chat] System prompt (primeros 200 chars):', systemPrompt.substring(0, 200))
 
       const response = await fetch('/.netlify/functions/claude', {
@@ -122,7 +123,10 @@ export default function Chat({ userId, profile, plan, planProximaSemana, persona
   }
 
   useEffect(() => {
-    getMessages(userId).then(setMessages)
+    getMessages(userId).then(msgs => {
+      setMessages(msgs)
+      setMessagesLoaded(true)
+    })
   }, [userId])
 
   useEffect(() => {
@@ -155,6 +159,39 @@ export default function Chat({ userId, profile, plan, planProximaSemana, persona
   useEffect(() => {
     if (prefillMessage) setInput(prefillMessage)
   }, [prefillMessage])
+
+  useEffect(() => {
+    if (!messagesLoaded || !plan || !profile) return
+    const key = `welcome_${userId}`
+    if (sessionStorage.getItem(key)) return
+    sessionStorage.setItem(key, '1')
+
+    const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+    const diaSemana = DIAS[new Date().getDay()]
+    const sesionHoy = plan.sesiones?.find(s => s.dia === diaSemana && s.tipo?.toLowerCase() !== 'descanso' && !s.completada)
+    const completadasRecientes = plan.sesiones?.filter(s => s.completada) || []
+    const nombre = profile.nombre || 'atleta'
+
+    let welcomeText = null
+    if (completadasRecientes.length > 0) {
+      const ultima = completadasRecientes[completadasRecientes.length - 1]
+      const resto = sesionHoy ? ` Hoy tienes ${sesionHoy.tipo.toLowerCase()} — ¿listo?` : ' ¿Cómo te encuentras?'
+      welcomeText = `¡Hola ${nombre}! Vi que completaste el ${ultima.tipo.toLowerCase()} del ${ultima.dia.toLowerCase()}.${resto}`
+    } else if (sesionHoy) {
+      welcomeText = `¡Hola ${nombre}! Hoy tienes ${sesionHoy.tipo.toLowerCase()} en tu plan. ¿Ya tienes todo preparado?`
+    } else {
+      const pendientes = plan.sesiones?.filter(s => !s.completada && s.tipo?.toLowerCase() !== 'descanso') || []
+      if (pendientes.length > 0) {
+        welcomeText = `¡Hola ${nombre}! Esta semana tienes ${pendientes.length} sesión${pendientes.length > 1 ? 'es' : ''} pendiente${pendientes.length > 1 ? 's' : ''}. ¿Cómo lo llevas?`
+      }
+    }
+
+    if (welcomeText) {
+      saveMessage(userId, 'assistant', welcomeText).then(() => {
+        setMessages(prev => [...prev, { role: 'assistant', content: welcomeText }])
+      }).catch(() => {})
+    }
+  }, [messagesLoaded, plan?.id, userId])
 
   const messagesHoy = profile?.messages_today || 0
   const esFree = !profile?.plan || profile?.plan === 'free'

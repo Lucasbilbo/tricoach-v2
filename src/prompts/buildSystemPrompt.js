@@ -17,7 +17,7 @@ Usas frases poderosas, referencias a grandes atletas y haces que el usuario sien
 Cada recomendación tiene una razón fisiológica. Usas métricas exactas: zonas de FC (Z1-Z5), ritmos por km, vatios, V̇O2max, velocidad crítica, umbrales. Cuando el atleta te da resultados de entrenamientos, los analizas numéricamente. No das motivación vacía — das datos, progresión medible y explicaciones de por qué cada sesión tiene sentido fisiológicamente. Hablas de forma precisa y directa. Cuando no tienes datos suficientes, lo dices y pides los que necesitas.`,
 }
 
-export function buildSystemPrompt(profile, personalidad = 'cercano', actividades = null, plan = null, planProximaSemana = null) {
+export function buildSystemPrompt(profile, personalidad = 'cercano', actividades = null, plan = null, planProximaSemana = null, historialPlanes = []) {
   const ahora = new Date().toLocaleDateString('es-ES', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
     timeZone: 'Europe/Madrid'
@@ -119,6 +119,46 @@ Cuando el usuario comparta resultados: calcula sus zonas, explícaselas de forma
     ? `\nATENCIÓN: Son dos planes DISTINTOS. El plan actual cubre solo los días restantes de esta semana (puede tener menos de 7 días si se generó a mitad de semana). El plan próxima semana es la semana siguiente completa. No los confundas ni mezcles.`
     : ''
 
+  const planDebug = plan
+    ? `\nPLAN ID: ${plan.id} | SEMANA: ${plan.semana}`
+    : ''
+
+  const historialSection = historialPlanes.length > 0 ? (() => {
+    const LABELS = ['Semana -1', 'Semana -2', 'Semana -3', 'Semana -4']
+    const metricas = historialPlanes.map((p, i) => {
+      const sesiones = p.sesiones || []
+      const activas = sesiones.filter(s => s.tipo?.toLowerCase() !== 'descanso')
+      const completadas = sesiones.filter(s => s.completada)
+      const adherencia = activas.length > 0
+        ? Math.round((completadas.length / activas.length) * 100)
+        : null
+      const getRpe = s => s.rpe ?? s.rpe_usuario
+      const rpesValidos = completadas.filter(s => getRpe(s) != null)
+      const rpeMedia = rpesValidos.length > 0
+        ? Math.round(rpesValidos.reduce((a, s) => a + getRpe(s), 0) / rpesValidos.length * 10) / 10
+        : null
+      const saltadas = activas.filter(s => !s.completada).length
+      return {
+        linea: `${LABELS[i] || `Semana -${i + 1}`}: adherencia ${adherencia != null ? adherencia + '%' : '?'}${rpeMedia != null ? `, RPE ${rpeMedia}` : ''}${saltadas > 0 ? `, ${saltadas} sesión${saltadas > 1 ? 'es' : ''} saltada${saltadas > 1 ? 's' : ''}` : ''}`,
+        adherencia,
+        rpeMedia,
+      }
+    })
+    const adherencias = metricas.map(m => m.adherencia).filter(a => a != null)
+    const rpes = metricas.slice(0, 2).map(m => m.rpeMedia).filter(r => r != null)
+    let tendencia = 'datos insuficientes'
+    if (adherencias.length >= 2) {
+      const avg = adherencias.slice(0, 2).reduce((a, b) => a + b, 0) / 2
+      tendencia = avg >= 85 ? 'alta adherencia, buena recuperación' : avg >= 60 ? 'adherencia moderada' : 'baja adherencia, revisar carga'
+    }
+    if (rpes.length >= 2) {
+      const diff = rpes[0] - rpes[1]
+      if (diff > 1) tendencia += ', esfuerzo percibido subiendo'
+      else if (diff < -1) tendencia += ', esfuerzo percibido bajando'
+    }
+    return `\nHISTORIAL ÚLTIMAS ${metricas.length} SEMANAS:\n${metricas.map(m => m.linea).join('\n')}\nTENDENCIA: ${tendencia}`
+  })() : ''
+
   const ajusteInstructions = plan ? `
 AJUSTE DE PLAN CONVERSACIONAL:
 Cuando el usuario pida cambiar el plan (lesión, viaje, falta de tiempo, cambio de sesión u otra situación):
@@ -151,6 +191,6 @@ Tu rol es:
 Responde siempre en español, de forma clara y concisa.
 Usa datos concretos: distancias, tiempos, zonas de frecuencia cardíaca cuando sea relevante.
 Cuando tengas datos de Strava del atleta, úsalos activamente en tus respuestas. Son datos reales sincronizados de su cuenta Strava.
-${actividadesSection}${planSection}${reconocimientoSection}${planProximaSemanaSection}${separacionPlanes}
+${planDebug}${actividadesSection}${planSection}${reconocimientoSection}${historialSection}${planProximaSemanaSection}${separacionPlanes}
 ${interpretacionTests}${ajusteInstructions}`
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { generatePlan, getPlanForWeek, getNextWeekStart, markSessionComplete, adjustPlan, analizarPlan } from '../lib/plans'
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
@@ -29,7 +29,7 @@ function formatDateLong(dateStr) {
   })
 }
 
-export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSessionDetail, onNavigate, onPlanProximaSemanaUpdate }) {
+export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSessionDetail, onNavigate, onPlanProximaSemanaUpdate, planActualizadoPorCoach }) {
   const _todayDate = new Date()
   const [generando, setGenerando] = useState(false)
   const [viendoProxima, setViendoProxima] = useState(false)
@@ -37,6 +37,8 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
   const [planSiguienteNoExiste, setPlanSiguienteNoExiste] = useState(false)
   const [loadingProxima, setLoadingProxima] = useState(false)
   const [generandoSiguiente, setGenerandoSiguiente] = useState(false)
+  const [errorToast, setErrorToast] = useState(null)
+  const [showCoachBadge, setShowCoachBadge] = useState(false)
   const [completando, setCompletando] = useState(null)
   const [rpe, setRpe] = useState(5)
   const [ajustando, setAjustando] = useState(false)
@@ -44,6 +46,19 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
   const [mesInicio, setMesInicio] = useState(MESES[_todayDate.getMonth()])
   const [anioInicio, setAnioInicio] = useState(String(_todayDate.getFullYear()))
   const [coachIntro, setCoachIntro] = useState(null)
+
+  useEffect(() => {
+    if (!errorToast) return
+    const t = setTimeout(() => setErrorToast(null), 3000)
+    return () => clearTimeout(t)
+  }, [errorToast])
+
+  useEffect(() => {
+    if (!planActualizadoPorCoach) return
+    setShowCoachBadge(true)
+    const t = setTimeout(() => setShowCoachBadge(false), 5 * 60 * 1000)
+    return () => clearTimeout(t)
+  }, [planActualizadoPorCoach])
 
   const today = DIAS_SEMANA[new Date().getDay()]
   const todayStr = getTodayStr()
@@ -111,8 +126,18 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
   }
 
   async function handleCompletar(dia) {
+    const currentPlan = viendoProxima ? planSiguiente : plan
+    const planId = currentPlan.id
+    const optimisticSesiones = currentPlan.sesiones.map(s =>
+      s.dia === dia ? { ...s, completada: true, rpe } : s
+    )
+    const optimisticPlan = { ...currentPlan, sesiones: optimisticSesiones }
+    if (viendoProxima) {
+      setPlanSiguiente(optimisticPlan)
+    } else {
+      onPlanUpdate(optimisticPlan)
+    }
     try {
-      const planId = viendoProxima ? planSiguiente.id : plan.id
       const updated = await markSessionComplete(planId, dia, rpe)
       if (viendoProxima) {
         setPlanSiguiente(updated)
@@ -122,6 +147,12 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
       }
     } catch (e) {
       console.error('Error al completar sesión:', e)
+      if (viendoProxima) {
+        setPlanSiguiente(currentPlan)
+      } else {
+        onPlanUpdate(currentPlan)
+      }
+      setErrorToast('Error al guardar. Inténtalo de nuevo.')
     } finally {
       setCompletando(null)
     }
@@ -321,8 +352,44 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
               >›</button>
             )}
           </div>
-        </div>
+        {showCoachBadge && (
+          <div style={{ maxWidth: 640, margin: '4px auto 0', paddingLeft: 4 }}>
+            <span style={{
+              fontSize: 11,
+              background: 'oklch(0.7 0.18 45 / 0.15)',
+              color: 'var(--primary)',
+              border: '1px solid oklch(0.7 0.18 45 / 0.3)',
+              borderRadius: 4,
+              padding: '2px 8px',
+              fontFamily: 'var(--font-sans)',
+            }}>
+              ✓ Actualizado por el coach
+            </span>
+          </div>
+        )}
       </div>
+      </div>
+
+      {/* Error toast */}
+      {errorToast && (
+        <div style={{
+          position: 'fixed',
+          bottom: 'calc(80px + env(safe-area-inset-bottom, 16px))',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'oklch(0.4 0.2 30)',
+          color: 'white',
+          borderRadius: 8,
+          padding: '10px 20px',
+          fontSize: 14,
+          fontFamily: 'var(--font-sans)',
+          zIndex: 200,
+          whiteSpace: 'nowrap',
+          boxShadow: '0 4px 16px oklch(0 0 0 / 0.3)',
+        }}>
+          {errorToast}
+        </div>
+      )}
 
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '12px 16px', paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 16px))' }}>
 
