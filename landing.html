@@ -1,303 +1,1160 @@
 <!DOCTYPE html>
 <html lang="es">
-  <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-HKG9V6M7KF"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-HKG9V6M7KF');
-</script>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TriCoach AI — Tu entrenador personal para running, triatlón, Hyrox y natación</title>
-  <meta name="description" content="El único coach IA en español que conoce tus datos reales de Strava y te dice exactamente qué entrenar hoy. Running, triatlón, Hyrox y natación. Desde 0€." />
+  <title>TriCoach AI — Tu entrenador personal de running y triatlón con IA</title>
+  <meta name="description" content="TriCoach AI analiza tus entrenamientos de Strava y crea un plan personalizado que se adapta cada semana a tu progreso. Running, triatlón, Hyrox y natación. Empieza gratis." />
+  <meta name="keywords" content="entrenador triatlón online, plan entrenamiento triatlón, app entrenamiento running, plan running personalizado, entrenador running IA, entrenamiento zona 2, coach triatlón español" />
+  <meta property="og:title" content="TriCoach AI — Tu entrenador personal de running y triatlón con IA" />
+  <meta property="og:description" content="El único coach IA en español que analiza tus datos de Strava y te dice exactamente qué entrenar hoy." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://getricoach.com" />
+  <link rel="canonical" href="https://getricoach.com" />
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HKG9V6M7KF"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HKG9V6M7KF');
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --bg: #080808; --bg-2: #0f0f0f; --bg-3: #141414; --bg-4: #1a1a1a;
-      --orange: #FF6B2B; --orange-dim: rgba(255,107,43,0.15); --orange-glow: rgba(255,107,43,0.06);
-      --white: #ffffff; --white-60: rgba(255,255,255,0.6); --white-30: rgba(255,255,255,0.3);
-      --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.14);
+      --bg: #080808;
+      --bg-2: #0d0d0d;
+      --bg-3: #131313;
+      --bg-4: #191919;
+      --orange: #FF6B2B;
+      --orange-dim: rgba(255,107,43,0.12);
+      --orange-glow: rgba(255,107,43,0.06);
+      --orange-border: rgba(255,107,43,0.25);
+      --white: #ffffff;
+      --white-80: rgba(255,255,255,0.8);
+      --white-60: rgba(255,255,255,0.6);
+      --white-40: rgba(255,255,255,0.4);
+      --white-20: rgba(255,255,255,0.2);
+      --white-10: rgba(255,255,255,0.08);
+      --border: rgba(255,255,255,0.08);
+      --border-2: rgba(255,255,255,0.12);
+      --green: #22c55e;
     }
+
     html { scroll-behavior: smooth; }
-    body { font-family: 'Source Sans 3', sans-serif; background: var(--bg); color: var(--white); overflow-x: hidden; -webkit-font-smoothing: antialiased; }
-    body::after { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; z-index: 9998; opacity: .5; }
 
-    nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 0 clamp(24px,5vw,80px); height: 68px; background: rgba(8,8,8,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
-    .nav-logo { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; color: var(--white); text-decoration: none; display: flex; align-items: center; gap: 10px; }
-    .nav-pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--orange); animation: pulse 2.5s ease-in-out infinite; }
-    @keyframes pulse { 0%,100% { transform:scale(1); box-shadow:0 0 0 0 rgba(255,107,43,0.4); } 50% { transform:scale(1.3); box-shadow:0 0 0 6px rgba(255,107,43,0); } }
-    .nav-right { display: flex; align-items: center; gap: 16px; }
-    .nav-link { font-size: .88rem; color: var(--white-60); text-decoration: none; transition: color .2s; }
+    body {
+      font-family: 'Source Sans 3', sans-serif;
+      background: var(--bg);
+      color: var(--white);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.6;
+    }
+
+    /* Noise texture */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 9997; opacity: .45;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 clamp(20px,5vw,80px); height: 66px;
+      background: rgba(8,8,8,0.9); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem; font-weight: 700;
+      color: var(--white); text-decoration: none;
+      display: flex; align-items: center; gap: 9px;
+    }
+
+    .logo-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--orange);
+      animation: pulse-dot 2.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%,100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,107,43,.5); }
+      50% { transform: scale(1.35); box-shadow: 0 0 0 5px rgba(255,107,43,0); }
+    }
+
+    .nav-links { display: flex; align-items: center; gap: 28px; }
+
+    .nav-link {
+      font-size: .88rem; color: var(--white-60);
+      text-decoration: none; transition: color .2s;
+    }
     .nav-link:hover { color: var(--white); }
-    .nav-btn { padding: 9px 22px; background: var(--orange); color: white; border-radius: 6px; font-size: .88rem; font-weight: 600; text-decoration: none; transition: opacity .2s, transform .15s; }
-    .nav-btn:hover { opacity: .88; transform: translateY(-1px); }
 
-    .hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 120px clamp(24px,5vw,80px) 80px; position: relative; text-align: center; overflow: hidden; }
-    .hero-bg { position: absolute; inset: 0; background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255,107,43,0.08) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 20% 80%, rgba(255,107,43,0.04) 0%, transparent 60%); }
-    .hero-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px); background-size: 60px 60px; mask-image: radial-gradient(ellipse 80% 80% at 50% 0%, black 0%, transparent 70%); }
-    .hero-badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 16px; border-radius: 100px; border: 1px solid rgba(255,107,43,0.3); background: rgba(255,107,43,0.08); font-size: .78rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--orange); margin-bottom: 32px; animation: fadeUp .8s ease both; }
-    @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
-    .hero h1 { font-family: 'Playfair Display', serif; font-size: clamp(3rem,8vw,7rem); font-weight: 900; line-height: 1.0; letter-spacing: -0.02em; margin-bottom: 8px; animation: fadeUp .8s .1s ease both; }
+    .nav-cta {
+      padding: 9px 22px;
+      background: var(--orange); color: white;
+      border-radius: 6px; font-size: .88rem; font-weight: 600;
+      text-decoration: none; transition: opacity .2s, transform .15s;
+      box-shadow: 0 2px 12px rgba(255,107,43,.3);
+    }
+    .nav-cta:hover { opacity: .88; transform: translateY(-1px); }
+
+    @media (max-width: 640px) {
+      .nav-links .nav-link { display: none; }
+    }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 110px clamp(20px,5vw,80px) 80px;
+      position: relative; text-align: center; overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 90% 60% at 50% -10%, rgba(255,107,43,.09) 0%, transparent 65%),
+        radial-gradient(ellipse 40% 40% at 15% 85%, rgba(255,107,43,.04) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 40% at 85% 80%, rgba(255,107,43,.03) 0%, transparent 60%);
+    }
+
+    .hero-grid {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.022) 1px, transparent 1px);
+      background-size: 56px 56px;
+      mask-image: radial-gradient(ellipse 85% 75% at 50% 0%, black 0%, transparent 70%);
+    }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 5px 16px; border-radius: 100px;
+      border: 1px solid var(--orange-border);
+      background: var(--orange-dim);
+      font-size: .76rem; font-weight: 600; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--orange);
+      margin-bottom: 28px;
+      animation: fadeUp .7s ease both;
+    }
+
+    .badge-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--orange);
+      animation: pulse-dot 1.8s ease-in-out infinite;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.8rem, 7.5vw, 6.5rem);
+      font-weight: 900; line-height: 1.02;
+      letter-spacing: -0.025em;
+      margin-bottom: 6px;
+      animation: fadeUp .7s .1s ease both;
+    }
+
     .hero h1 em { font-style: italic; color: var(--orange); display: block; }
-    .hero-sub { font-size: clamp(1rem,2vw,1.25rem); color: var(--white-60); font-weight: 300; max-width: 560px; line-height: 1.7; margin: 24px auto 48px; animation: fadeUp .8s .2s ease both; }
-    .hero-ctas { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; animation: fadeUp .8s .3s ease both; margin-bottom: 24px; }
-    .btn-main { padding: 16px 36px; background: var(--orange); color: white; border-radius: 8px; font-size: 1rem; font-weight: 600; text-decoration: none; box-shadow: 0 0 40px rgba(255,107,43,0.3); transition: all .2s; }
-    .btn-main:hover { transform: translateY(-2px); box-shadow: 0 0 60px rgba(255,107,43,0.45); }
-    .btn-ghost { padding: 16px 36px; border: 1px solid var(--border-strong); color: var(--white-60); border-radius: 8px; font-size: 1rem; font-weight: 400; text-decoration: none; transition: all .2s; }
-    .btn-ghost:hover { border-color: var(--white-30); color: var(--white); }
-    .hero-note { font-size: .82rem; color: var(--white-30); animation: fadeUp .8s .4s ease both; }
 
-    .stats { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 28px clamp(24px,5vw,80px); display: flex; align-items: center; justify-content: center; gap: clamp(32px,6vw,80px); flex-wrap: wrap; background: var(--bg-2); }
-    .stat-item { text-align: center; }
-    .stat-num { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900; color: var(--orange); line-height: 1; display: block; margin-bottom: 4px; }
-    .stat-label { font-size: .8rem; color: var(--white-30); font-weight: 400; letter-spacing: .06em; text-transform: uppercase; }
-    .stat-divider { width: 1px; height: 40px; background: var(--border); }
-    @media (max-width:480px) { .stat-divider { display: none; } }
+    .hero-sub {
+      font-size: clamp(.98rem, 1.8vw, 1.2rem);
+      color: var(--white-60); font-weight: 300;
+      max-width: 540px; line-height: 1.75;
+      margin: 22px auto 44px;
+      animation: fadeUp .7s .2s ease both;
+    }
 
-    section { padding: clamp(80px,12vw,140px) clamp(24px,5vw,80px); }
-    .section-label { font-size: .75rem; font-weight: 600; letter-spacing: .15em; text-transform: uppercase; color: var(--orange); margin-bottom: 16px; }
-    h2 { font-family: 'Playfair Display', serif; font-size: clamp(2rem,4vw,3.5rem); font-weight: 900; line-height: 1.1; letter-spacing: -0.02em; margin-bottom: 20px; }
+    .hero-checks {
+      display: flex; flex-wrap: wrap; justify-content: center;
+      gap: 12px 24px; margin-bottom: 44px;
+      animation: fadeUp .7s .25s ease both;
+    }
+
+    .hero-check {
+      display: flex; align-items: center; gap: 7px;
+      font-size: .88rem; color: var(--white-60);
+    }
+
+    .hero-check-icon { color: var(--orange); font-size: .9rem; }
+
+    .hero-ctas {
+      display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+      animation: fadeUp .7s .3s ease both;
+      margin-bottom: 20px;
+    }
+
+    .btn-primary {
+      padding: 15px 34px;
+      background: var(--orange); color: white;
+      border-radius: 8px; font-size: 1rem; font-weight: 600;
+      text-decoration: none;
+      box-shadow: 0 0 40px rgba(255,107,43,.28);
+      transition: all .2s;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 55px rgba(255,107,43,.42); }
+
+    .btn-secondary {
+      padding: 15px 34px;
+      border: 1px solid var(--border-2); color: var(--white-60);
+      border-radius: 8px; font-size: 1rem; font-weight: 400;
+      text-decoration: none; transition: all .2s;
+    }
+    .btn-secondary:hover { border-color: var(--white-40); color: var(--white); }
+
+    .hero-note {
+      font-size: .8rem; color: var(--white-40);
+      animation: fadeUp .7s .35s ease both;
+    }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-2);
+      padding: 24px clamp(20px,5vw,80px);
+      display: flex; align-items: center; justify-content: center;
+      gap: clamp(24px,5vw,72px); flex-wrap: wrap;
+    }
+
+    .stat { text-align: center; }
+
+    .stat-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.9rem; font-weight: 900;
+      color: var(--orange); line-height: 1;
+      display: block; margin-bottom: 3px;
+    }
+
+    .stat-label {
+      font-size: .76rem; color: var(--white-40);
+      text-transform: uppercase; letter-spacing: .07em;
+    }
+
+    .stat-div { width: 1px; height: 36px; background: var(--border); }
+    @media (max-width: 480px) { .stat-div { display: none; } }
+
+    /* ── SECTIONS ── */
+    .section { padding: clamp(72px,10vw,120px) clamp(20px,5vw,80px); }
+    .section-inner { max-width: 1160px; margin: 0 auto; }
+
+    .label {
+      font-size: .73rem; font-weight: 600; letter-spacing: .15em;
+      text-transform: uppercase; color: var(--orange);
+      margin-bottom: 14px;
+    }
+
+    h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.9rem, 3.8vw, 3.2rem);
+      font-weight: 900; line-height: 1.1;
+      letter-spacing: -0.02em; margin-bottom: 16px;
+    }
+
     h2 em { font-style: italic; color: var(--orange); }
-    .section-sub { font-size: 1.05rem; color: var(--white-60); line-height: 1.7; max-width: 520px; }
 
+    .section-sub {
+      font-size: 1.05rem; color: var(--white-60);
+      line-height: 1.7; max-width: 520px;
+    }
+
+    /* ── PROBLEMA ── */
     .problem { background: var(--bg); }
-    .problem-inner { max-width: 1160px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
-    @media (max-width:860px) { .problem-inner { grid-template-columns: 1fr; gap: 48px; } }
-    .problem-cards { display: flex; flex-direction: column; gap: 16px; }
-    .problem-card { padding: 24px 28px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-2); display: flex; gap: 16px; align-items: flex-start; transition: border-color .3s; }
-    .problem-card:hover { border-color: var(--border-strong); }
-    .problem-icon { width: 40px; height: 40px; border-radius: 8px; background: var(--orange-dim); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
-    .problem-card h3 { font-family: 'Source Sans 3', sans-serif; font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
-    .problem-card p { font-size: .9rem; color: var(--white-60); line-height: 1.55; }
 
-    .features { background: var(--bg-2); }
-    .features-inner { max-width: 1160px; margin: 0 auto; }
-    .features-header { max-width: 600px; margin-bottom: 64px; }
-    .features-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; border-radius: 16px; overflow: hidden; border: 1px solid var(--border); }
-    @media (max-width:768px) { .features-grid { grid-template-columns: 1fr; } }
-    .feature-card { padding: 36px 32px; background: var(--bg-3); transition: background .2s; }
-    .feature-card:hover { background: var(--bg-4); }
-    .feature-num { font-family: 'Playfair Display', serif; font-size: 2.5rem; font-weight: 900; color: transparent; -webkit-text-stroke: 1px rgba(255,107,43,0.2); line-height: 1; margin-bottom: 20px; }
-    .feature-card h3 { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; margin-bottom: 12px; }
-    .feature-card p { font-size: .92rem; color: var(--white-60); line-height: 1.65; }
-    .feature-tag { display: inline-block; margin-top: 16px; padding: 4px 10px; border-radius: 4px; background: var(--orange-dim); font-size: .75rem; font-weight: 600; color: var(--orange); letter-spacing: .06em; text-transform: uppercase; }
+    .problem-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 72px; align-items: center; margin-top: 0;
+    }
 
-    .sports { background: var(--bg); }
-    .sports-inner { max-width: 1160px; margin: 0 auto; }
-    .sports-header { max-width: 600px; margin-bottom: 56px; }
-    .sports-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
-    @media (max-width:768px) { .sports-grid { grid-template-columns: repeat(2,1fr); } }
-    @media (max-width:480px) { .sports-grid { grid-template-columns: 1fr; } }
-    .sport-card { padding: 32px 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-2); text-align: center; transition: all .25s; }
-    .sport-card:hover { border-color: var(--orange); background: var(--orange-glow); transform: translateY(-4px); }
-    .sport-emoji { font-size: 2.5rem; margin-bottom: 16px; display: block; }
-    .sport-card h3 { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; }
-    .sport-card p { font-size: .85rem; color: var(--white-60); line-height: 1.5; }
+    @media (max-width: 860px) { .problem-grid { grid-template-columns: 1fr; gap: 48px; } }
 
-    .chat-section { background: var(--bg-2); }
-    .chat-inner { max-width: 1160px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
-    @media (max-width:860px) { .chat-inner { grid-template-columns: 1fr; gap: 48px; } }
-    .chat-mock { background: var(--bg-3); border: 1px solid var(--border-strong); border-radius: 20px; overflow: hidden; box-shadow: 0 32px 80px rgba(0,0,0,0.5); }
-    .chat-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; background: var(--bg-4); }
-    .chat-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--orange); display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 700; color: white; font-family: 'Playfair Display', serif; }
-    .chat-coach-name { font-size: .95rem; font-weight: 600; }
-    .chat-coach-sub { font-size: .75rem; color: var(--white-30); }
-    .chat-online { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; margin-left: auto; box-shadow: 0 0 8px rgba(34,197,94,0.5); }
-    .chat-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
-    .chat-msg { max-width: 85%; padding: 12px 16px; border-radius: 14px; font-size: .9rem; line-height: 1.55; }
-    .chat-msg.coach { background: var(--bg-4); border: 1px solid var(--border); align-self: flex-start; border-radius: 4px 14px 14px 14px; }
-    .chat-msg.user { background: var(--orange); align-self: flex-end; border-radius: 14px 14px 4px 14px; color: white; }
-    .chat-msg strong { color: var(--orange); }
-    .chat-msg.user strong { color: white; font-weight: 700; }
-    .chat-typing { display: flex; align-items: center; gap: 6px; padding: 0 20px 20px; }
-    .typing-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--orange); animation: typingBounce 1.2s ease-in-out infinite; }
-    .typing-dot:nth-child(2) { animation-delay: .15s; }
-    .typing-dot:nth-child(3) { animation-delay: .3s; }
-    @keyframes typingBounce { 0%,60%,100% { transform:translateY(0); opacity:.4; } 30% { transform:translateY(-6px); opacity:1; } }
+    .problem-cards { display: flex; flex-direction: column; gap: 14px; }
 
-    .pricing { background: var(--bg); }
-    .pricing-inner { max-width: 1160px; margin: 0 auto; }
-    .pricing-header { max-width: 600px; margin-bottom: 56px; }
-    .pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 720px; }
-    @media (max-width:600px) { .pricing-grid { grid-template-columns: 1fr; max-width: 380px; } }
-    .price-card { border: 1px solid var(--border); border-radius: 16px; padding: 36px; background: var(--bg-2); position: relative; overflow: hidden; transition: border-color .25s, transform .2s; }
+    .problem-card {
+      display: flex; gap: 16px; align-items: flex-start;
+      padding: 22px 26px;
+      border: 1px solid var(--border);
+      border-radius: 12px; background: var(--bg-2);
+      transition: border-color .25s, transform .2s;
+    }
+
+    .problem-card:hover { border-color: var(--border-2); transform: translateX(4px); }
+
+    .problem-icon {
+      width: 42px; height: 42px; border-radius: 10px;
+      background: var(--orange-dim);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.15rem; flex-shrink: 0;
+    }
+
+    .problem-card h3 {
+      font-family: 'Source Sans 3', sans-serif;
+      font-size: .98rem; font-weight: 600; margin-bottom: 4px;
+    }
+
+    .problem-card p { font-size: .88rem; color: var(--white-60); line-height: 1.55; }
+
+    .problem-cta-box {
+      margin-top: 8px; padding: 22px 26px;
+      border: 1px solid var(--orange-border);
+      border-radius: 12px; background: var(--orange-dim);
+    }
+
+    .problem-cta-box p {
+      font-size: 1rem; font-weight: 500; margin-bottom: 16px; line-height: 1.5;
+    }
+
+    /* ── CÓMO FUNCIONA ── */
+    .how { background: var(--bg-2); }
+
+    .steps {
+      display: grid; grid-template-columns: repeat(3,1fr);
+      gap: 2px; border-radius: 16px; overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 24px 64px rgba(0,0,0,.4);
+      margin-top: 56px;
+    }
+
+    @media (max-width: 768px) { .steps { grid-template-columns: 1fr; } }
+
+    .step { background: var(--bg-3); padding: 40px 32px; position: relative; }
+
+    .step-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 3rem; font-weight: 900; line-height: 1;
+      color: transparent;
+      -webkit-text-stroke: 1.5px rgba(255,107,43,.2);
+      margin-bottom: 20px;
+    }
+
+    .step h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem; font-weight: 700; margin-bottom: 10px;
+    }
+
+    .step p { font-size: .9rem; color: var(--white-60); line-height: 1.65; }
+
+    .step-tag {
+      display: inline-block; margin-top: 16px;
+      padding: 4px 10px; border-radius: 4px;
+      background: var(--orange-dim); color: var(--orange);
+      font-size: .72rem; font-weight: 600; letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+
+    .step-arrow {
+      position: absolute; right: -16px; top: 50%;
+      transform: translateY(-50%);
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--orange); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .85rem; z-index: 1;
+      box-shadow: 0 2px 10px rgba(255,107,43,.35);
+    }
+
+    @media (max-width: 768px) { .step-arrow { display: none; } }
+
+    /* ── ENTRENAMIENTO HOY ── */
+    .today { background: var(--bg); }
+
+    .today-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 72px; align-items: center;
+    }
+
+    @media (max-width: 860px) { .today-grid { grid-template-columns: 1fr; gap: 48px; } }
+
+    .workout-card {
+      background: var(--bg-3);
+      border: 1px solid var(--border-2);
+      border-radius: 20px; overflow: hidden;
+      box-shadow: 0 24px 64px rgba(0,0,0,.5);
+    }
+
+    .workout-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-4);
+      display: flex; align-items: center; gap: 12px;
+    }
+
+    .workout-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--orange);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Playfair Display', serif;
+      font-size: .95rem; font-weight: 700; color: white;
+    }
+
+    .workout-coach { font-size: .9rem; font-weight: 600; }
+    .workout-sub { font-size: .73rem; color: var(--white-40); }
+
+    .online-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--green); margin-left: auto;
+      box-shadow: 0 0 8px rgba(34,197,94,.5);
+    }
+
+    .workout-body { padding: 20px; }
+
+    .workout-day {
+      font-size: .73rem; font-weight: 600; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--orange);
+      margin-bottom: 14px;
+    }
+
+    .workout-session {
+      background: var(--bg-4); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px 18px; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 14px;
+    }
+
+    .workout-session.done {
+      border-color: rgba(34,197,94,.2);
+      background: rgba(34,197,94,.04);
+    }
+
+    .session-emoji { font-size: 1.6rem; }
+
+    .session-info { flex: 1; }
+    .session-type { font-size: .95rem; font-weight: 600; margin-bottom: 2px; }
+    .session-desc { font-size: .8rem; color: var(--white-60); }
+
+    .session-badge {
+      padding: 4px 10px; border-radius: 6px;
+      font-size: .73rem; font-weight: 600;
+    }
+
+    .session-badge.z2 { background: rgba(255,107,43,.15); color: var(--orange); }
+    .session-badge.done { background: rgba(34,197,94,.15); color: var(--green); }
+    .session-badge.rest { background: var(--white-10); color: var(--white-40); }
+
+    .workout-coach-msg {
+      margin-top: 14px; padding: 12px 14px;
+      background: var(--orange-dim); border: 1px solid var(--orange-border);
+      border-radius: 10px; font-size: .85rem; color: var(--white-80);
+      line-height: 1.55;
+    }
+
+    /* ── PARA QUIÉN ── */
+    .for-who { background: var(--bg-2); }
+
+    .use-cases {
+      display: grid; grid-template-columns: repeat(3,1fr);
+      gap: 16px; margin-top: 56px;
+    }
+
+    @media (max-width: 768px) { .use-cases { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 480px) { .use-cases { grid-template-columns: 1fr; } }
+
+    .use-case {
+      padding: 28px 24px;
+      border: 1px solid var(--border);
+      border-radius: 14px; background: var(--bg-3);
+      transition: all .25s;
+    }
+
+    .use-case:hover {
+      border-color: var(--orange-border);
+      background: var(--orange-glow);
+      transform: translateY(-3px);
+    }
+
+    .use-case-emoji { font-size: 2rem; margin-bottom: 14px; display: block; }
+
+    .use-case h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.05rem; font-weight: 700; margin-bottom: 8px;
+    }
+
+    .use-case p { font-size: .85rem; color: var(--white-60); line-height: 1.55; }
+
+    /* ── DIFERENCIAL ── */
+    .diff { background: var(--bg); }
+
+    .diff-table {
+      width: 100%; border-collapse: collapse;
+      border-radius: 14px; overflow: hidden;
+      border: 1px solid var(--border);
+      margin-top: 48px;
+    }
+
+    .diff-table th {
+      padding: 14px 20px; text-align: left;
+      background: var(--bg-4);
+      font-size: .8rem; font-weight: 600;
+      letter-spacing: .07em; text-transform: uppercase;
+      color: var(--white-40);
+    }
+
+    .diff-table th.ours { color: var(--orange); }
+
+    .diff-table td {
+      padding: 14px 20px; font-size: .9rem;
+      color: var(--white-60);
+      border-top: 1px solid var(--border);
+    }
+
+    .diff-table td:first-child { font-weight: 500; color: var(--white-80); }
+    .diff-table td.ours { color: var(--white); font-weight: 500; }
+
+    .yes { color: var(--green); font-weight: 700; }
+    .no { color: var(--white-20); }
+
+    /* ── INTEGRACIONES ── */
+    .integrations { background: var(--bg-2); }
+
+    .integrations-grid {
+      display: grid; grid-template-columns: repeat(3,1fr);
+      gap: 16px; margin-top: 48px;
+    }
+
+    @media (max-width: 640px) { .integrations-grid { grid-template-columns: 1fr; } }
+
+    .integration-card {
+      padding: 28px 24px; text-align: center;
+      border: 1px solid var(--border);
+      border-radius: 14px; background: var(--bg-3);
+      transition: border-color .2s;
+    }
+
+    .integration-card:hover { border-color: var(--border-2); }
+
+    .integration-logo { font-size: 2rem; margin-bottom: 12px; display: block; }
+
+    .integration-card h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.05rem; font-weight: 700; margin-bottom: 6px;
+    }
+
+    .integration-card p { font-size: .85rem; color: var(--white-60); line-height: 1.5; }
+
+    .integration-badge {
+      display: inline-block; margin-top: 12px;
+      padding: 3px 10px; border-radius: 4px;
+      font-size: .72rem; font-weight: 600; letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+
+    .badge-live { background: rgba(34,197,94,.15); color: var(--green); }
+    .badge-soon { background: var(--white-10); color: var(--white-40); }
+
+    /* ── PRÓXIMAMENTE ── */
+    .coming-soon { background: var(--bg); }
+
+    .coming-box {
+      border: 1px solid var(--border);
+      border-radius: 16px; padding: 40px 48px;
+      background: var(--bg-2);
+      display: flex; gap: 48px; align-items: center;
+    }
+
+    @media (max-width: 768px) { .coming-box { flex-direction: column; gap: 28px; padding: 28px; } }
+
+    .coming-emoji { font-size: 4rem; flex-shrink: 0; }
+
+    .coming-text h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem; font-weight: 900; margin-bottom: 10px;
+    }
+
+    .coming-text p { font-size: .95rem; color: var(--white-60); line-height: 1.65; }
+
+    .coming-list {
+      list-style: none; margin-top: 14px;
+      display: flex; flex-wrap: wrap; gap: 8px;
+    }
+
+    .coming-list li {
+      padding: 4px 12px; border-radius: 100px;
+      border: 1px solid var(--border-2);
+      font-size: .8rem; color: var(--white-60);
+    }
+
+    /* ── PRECIOS ── */
+    .pricing { background: var(--bg-2); }
+
+    .pricing-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 20px; max-width: 760px; margin-top: 56px;
+    }
+
+    @media (max-width: 600px) { .pricing-grid { grid-template-columns: 1fr; max-width: 380px; } }
+
+    .price-card {
+      border: 1px solid var(--border);
+      border-radius: 16px; padding: 36px;
+      background: var(--bg-3); position: relative; overflow: hidden;
+      transition: transform .2s;
+    }
+
     .price-card:hover { transform: translateY(-3px); }
-    .price-card.featured { border-color: var(--orange); background: var(--bg-3); }
-    .price-card.featured::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--orange); }
-    .featured-tag { position: absolute; top: 20px; right: 20px; padding: 4px 10px; border-radius: 4px; background: var(--orange); color: white; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-    .price-plan { font-size: .78rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--white-30); margin-bottom: 12px; }
-    .price-amount { font-family: 'Playfair Display', serif; font-size: 3.5rem; font-weight: 900; line-height: 1; margin-bottom: 4px; }
-    .price-amount span { font-size: 1.2rem; font-weight: 400; color: var(--white-30); }
-    .price-desc { font-size: .9rem; color: var(--white-60); margin: 16px 0 28px; line-height: 1.55; }
-    .price-features { list-style: none; display: flex; flex-direction: column; gap: 11px; margin-bottom: 32px; }
-    .price-feature { display: flex; align-items: flex-start; gap: 10px; font-size: .9rem; color: var(--white-60); }
+
+    .price-card.featured {
+      border-color: var(--orange);
+      background: var(--bg-4);
+    }
+
+    .price-card.featured::before {
+      content: ''; position: absolute;
+      top: 0; left: 0; right: 0; height: 2px;
+      background: var(--orange);
+    }
+
+    .featured-badge {
+      position: absolute; top: 18px; right: 18px;
+      padding: 4px 10px; border-radius: 4px;
+      background: var(--orange); color: white;
+      font-size: .7rem; font-weight: 700;
+      letter-spacing: .08em; text-transform: uppercase;
+    }
+
+    .price-plan {
+      font-size: .76rem; font-weight: 600; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--white-40); margin-bottom: 10px;
+    }
+
+    .price-amount {
+      font-family: 'Playfair Display', serif;
+      font-size: 3.2rem; font-weight: 900; line-height: 1; margin-bottom: 4px;
+    }
+
+    .price-amount span { font-size: 1.1rem; font-weight: 400; color: var(--white-40); }
+
+    .price-desc { font-size: .88rem; color: var(--white-60); margin: 14px 0 24px; line-height: 1.55; }
+
+    .price-features { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+
+    .price-feature { display: flex; align-items: flex-start; gap: 9px; font-size: .88rem; color: var(--white-60); }
     .price-check { color: var(--orange); flex-shrink: 0; }
-    .btn-price-ghost { width: 100%; padding: 14px; border: 1px solid var(--border-strong); background: transparent; color: var(--white-60); border-radius: 8px; font-family: 'Source Sans 3', sans-serif; font-size: .95rem; font-weight: 500; cursor: pointer; text-decoration: none; display: block; text-align: center; transition: all .2s; }
-    .btn-price-ghost:hover { border-color: var(--white-30); color: var(--white); }
-    .btn-price-main { width: 100%; padding: 14px; background: var(--orange); color: white; border: none; border-radius: 8px; font-family: 'Source Sans 3', sans-serif; font-size: .95rem; font-weight: 600; cursor: pointer; text-decoration: none; display: block; text-align: center; box-shadow: 0 4px 20px rgba(255,107,43,0.3); transition: all .2s; }
-    .btn-price-main:hover { opacity: .88; box-shadow: 0 8px 30px rgba(255,107,43,0.4); }
-    .pricing-note { margin-top: 28px; font-size: .82rem; color: var(--white-30); display: flex; align-items: center; gap: 8px; }
 
-    .compare { background: var(--bg-2); }
-    .compare-inner { max-width: 900px; margin: 0 auto; }
-    .compare-header { max-width: 560px; margin-bottom: 48px; }
-    .compare-table { width: 100%; border-collapse: collapse; border-radius: 14px; overflow: hidden; border: 1px solid var(--border); }
-    .compare-table th { padding: 14px 20px; text-align: left; background: var(--bg-4); font-size: .82rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--white-30); }
-    .compare-table th.ours { color: var(--orange); }
-    .compare-table td { padding: 14px 20px; font-size: .9rem; color: var(--white-60); border-top: 1px solid var(--border); }
-    .compare-table td:first-child { font-weight: 500; color: var(--white); }
-    .compare-table td.ours { color: var(--white); font-weight: 500; }
-    .check-yes { color: #22c55e; font-weight: 700; }
-    .check-no { color: rgba(255,255,255,0.2); }
+    .btn-price-ghost {
+      width: 100%; padding: 13px;
+      border: 1px solid var(--border-2);
+      background: transparent; color: var(--white-60);
+      border-radius: 8px;
+      font-family: 'Source Sans 3', sans-serif;
+      font-size: .92rem; font-weight: 500;
+      cursor: pointer; text-decoration: none;
+      display: block; text-align: center; transition: all .2s;
+    }
+    .btn-price-ghost:hover { border-color: var(--white-40); color: var(--white); }
 
-    .final-cta { background: var(--bg); text-align: center; position: relative; overflow: hidden; }
-    .final-cta-bg { position: absolute; inset: 0; background: radial-gradient(ellipse 70% 70% at 50% 50%, rgba(255,107,43,0.07) 0%, transparent 70%); }
-    .final-cta-inner { max-width: 640px; margin: 0 auto; position: relative; }
-    .final-cta h2 { margin-bottom: 16px; }
-    .final-cta p { color: var(--white-60); margin-bottom: 48px; font-size: 1.05rem; line-height: 1.7; }
+    .btn-price-main {
+      width: 100%; padding: 13px;
+      background: var(--orange); color: white; border: none;
+      border-radius: 8px;
+      font-family: 'Source Sans 3', sans-serif;
+      font-size: .92rem; font-weight: 600;
+      cursor: pointer; text-decoration: none;
+      display: block; text-align: center;
+      box-shadow: 0 3px 16px rgba(255,107,43,.3);
+      transition: all .2s;
+    }
+    .btn-price-main:hover { opacity: .88; }
 
-    footer { border-top: 1px solid var(--border); padding: 32px clamp(24px,5vw,80px); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; background: var(--bg-2); }
-    .footer-logo { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: var(--white); display: flex; align-items: center; gap: 8px; }
-    .footer-links { display: flex; gap: 24px; }
-    .footer-link { font-size: .82rem; color: var(--white-30); text-decoration: none; transition: color .2s; }
+    .pricing-note {
+      margin-top: 24px; font-size: .8rem; color: var(--white-40);
+      display: flex; align-items: center; gap: 7px;
+    }
+
+    /* ── FAQ ── */
+    .faq { background: var(--bg); }
+
+    .faq-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 16px; margin-top: 48px;
+    }
+
+    @media (max-width: 768px) { .faq-grid { grid-template-columns: 1fr; } }
+
+    .faq-item {
+      padding: 24px 28px;
+      border: 1px solid var(--border);
+      border-radius: 12px; background: var(--bg-2);
+      transition: border-color .2s;
+    }
+
+    .faq-item:hover { border-color: var(--border-2); }
+
+    .faq-item h3 {
+      font-family: 'Source Sans 3', sans-serif;
+      font-size: .98rem; font-weight: 600;
+      margin-bottom: 10px; color: var(--white);
+    }
+
+    .faq-item p { font-size: .88rem; color: var(--white-60); line-height: 1.6; }
+
+    /* ── CTA FINAL ── */
+    .final-cta {
+      background: var(--bg-2);
+      text-align: center; position: relative; overflow: hidden;
+    }
+
+    .final-cta-bg {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 65% 65% at 50% 50%, rgba(255,107,43,.07) 0%, transparent 70%);
+    }
+
+    .final-cta-inner { max-width: 620px; margin: 0 auto; position: relative; }
+
+    .final-cta h2 { margin-bottom: 14px; }
+
+    .final-cta p { color: var(--white-60); margin-bottom: 44px; font-size: 1.05rem; line-height: 1.7; }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 28px clamp(20px,5vw,80px);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 16px;
+      background: var(--bg);
+    }
+
+    .footer-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem; font-weight: 700; color: var(--white);
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .footer-links { display: flex; gap: 20px; flex-wrap: wrap; }
+
+    .footer-link {
+      font-size: .8rem; color: var(--white-40);
+      text-decoration: none; transition: color .2s;
+    }
     .footer-link:hover { color: var(--white-60); }
-    .footer-note { font-size: .78rem; color: var(--white-30); }
 
-    .reveal { opacity: 0; transform: translateY(28px); transition: opacity .7s ease, transform .7s ease; }
+    .footer-note { font-size: .76rem; color: var(--white-40); }
+
+    /* ── BETA BADGE ── */
+    #beta-badge {
+      position: fixed; bottom: 80px; right: 20px; z-index: 9999;
+      background: rgba(255,107,43,.12);
+      border: 1px solid rgba(255,107,43,.35);
+      color: var(--orange);
+      padding: 8px 14px; border-radius: 100px;
+      font-size: .76rem; font-weight: 600; letter-spacing: .07em;
+      cursor: pointer; backdrop-filter: blur(8px);
+      display: flex; align-items: center; gap: 6px;
+      transition: all .2s; font-family: 'Source Sans 3', sans-serif;
+    }
+
+    #beta-badge:hover { background: rgba(255,107,43,.22); }
+
+    /* ── REVEAL ── */
+    .reveal {
+      opacity: 0; transform: translateY(22px);
+      transition: opacity .65s ease, transform .65s ease;
+    }
     .reveal.visible { opacity: 1; transform: translateY(0); }
-    @media (max-width:640px) { .nav-right .nav-link { display: none; } }
+
+    /* ── SCHEMA MARKUP helper ── */
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
   </style>
 </head>
 <body>
 
+<!-- Schema.org structured data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "TriCoach AI",
+  "description": "Entrenador personal de running y triatlón con inteligencia artificial en español. Conectado con Strava.",
+  "url": "https://getricoach.com",
+  "applicationCategory": "SportsApplication",
+  "operatingSystem": "Web",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "EUR"
+  }
+}
+</script>
+
+<!-- NAV -->
 <nav>
-  <a href="/" class="nav-logo"><span class="nav-pulse"></span>TriCoach AI</a>
-  <div class="nav-right">
+  <a href="/" class="logo">
+    <span class="logo-dot"></span>
+    TriCoach AI
+  </a>
+  <div class="nav-links">
+    <a href="#como-funciona" class="nav-link">Cómo funciona</a>
     <a href="#precios" class="nav-link">Precios</a>
-    <a href="#deportes" class="nav-link">Deportes</a>
-    <a href="https://getricoach.com/app" class="nav-btn">Empezar gratis →</a>
+    <a href="#faq" class="nav-link">FAQ</a>
+    <a href="https://getricoach.com/app" class="nav-cta">Empezar gratis →</a>
   </div>
 </nav>
 
-<section class="hero">
+<!-- HERO -->
+<section class="hero" itemscope itemtype="https://schema.org/WebPage">
   <div class="hero-bg"></div>
   <div class="hero-grid"></div>
+
   <div class="hero-badge">
-    <span style="width:6px;height:6px;border-radius:50%;background:var(--orange);animation:pulse 1.5s ease-in-out infinite;display:inline-block"></span>
+    <span class="badge-dot"></span>
     Acceso anticipado abierto
   </div>
-  <h1>Tu coach.<br><em>En español.</em></h1>
-  <p class="hero-sub">El único entrenador con IA que habla tu idioma, conoce tus datos reales de Strava y te dice exactamente qué entrenar hoy. Running, triatlón, Hyrox y natación.</p>
-  <div class="hero-ctas">
-    <a href="https://getricoach.com/app" class="btn-main">Empezar gratis →</a>
-    <a href="#como-funciona" class="btn-ghost">Ver cómo funciona</a>
+
+  <h1 itemprop="name">
+    Tu entrenador personal<br>
+    <em>de running y triatlón</em>
+  </h1>
+
+  <p class="hero-sub" itemprop="description">
+    TriCoach AI analiza tus entrenamientos de Strava y crea un plan personalizado que se adapta cada semana a tu progreso. Siempre en español.
+  </p>
+
+  <div class="hero-checks">
+    <div class="hero-check"><span class="hero-check-icon">✓</span> Plan personalizado cada semana</div>
+    <div class="hero-check"><span class="hero-check-icon">✓</span> Se adapta a tu rendimiento real</div>
+    <div class="hero-check"><span class="hero-check-icon">✓</span> Conectado con Strava</div>
+    <div class="hero-check"><span class="hero-check-icon">✓</span> 100% en español</div>
   </div>
+
+  <div class="hero-ctas">
+    <a href="https://getricoach.com/app" class="btn-primary">Empieza gratis →</a>
+    <a href="#como-funciona" class="btn-secondary">Ver cómo funciona</a>
+  </div>
+
   <p class="hero-note">Sin tarjeta de crédito · Plan gratuito para siempre · Cancela cuando quieras</p>
 </section>
 
-<div class="stats">
-  <div class="stat-item"><span class="stat-num">4</span><span class="stat-label">Deportes</span></div>
-  <div class="stat-divider"></div>
-  <div class="stat-item"><span class="stat-num">4</span><span class="stat-label">Personalidades de coach</span></div>
-  <div class="stat-divider"></div>
-  <div class="stat-item"><span class="stat-num">0€</span><span class="stat-label">Para empezar</span></div>
-  <div class="stat-divider"></div>
-  <div class="stat-item"><span class="stat-num">100%</span><span class="stat-label">En español</span></div>
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stat"><span class="stat-num">4</span><span class="stat-label">Deportes</span></div>
+  <div class="stat-div"></div>
+  <div class="stat"><span class="stat-num">0€</span><span class="stat-label">Para empezar</span></div>
+  <div class="stat-div"></div>
+  <div class="stat"><span class="stat-num">100%</span><span class="stat-label">En español</span></div>
+  <div class="stat-div"></div>
+  <div class="stat"><span class="stat-num">24/7</span><span class="stat-label">Tu coach disponible</span></div>
 </div>
 
-<section class="problem" id="como-funciona">
-  <div class="problem-inner">
-    <div class="reveal">
-      <div class="section-label">El problema</div>
-      <h2>Las apps de entrenamiento<br><em>no son para ti.</em></h2>
-      <p class="section-sub" style="margin-top:16px">TrainingPeaks, Garmin Coach, Runna — todas en inglés, todas complejas, todas pensadas para atletas con equipo técnico. Tú solo quieres saber qué entrenar hoy.</p>
-    </div>
-    <div class="problem-cards reveal">
-      <div class="problem-card">
-        <div class="problem-icon">🇬🇧</div>
-        <div><h3>Todo está en inglés</h3><p>Las apps líderes no tienen versión en español. Tu coach debería hablarte como tú hablas.</p></div>
+<!-- PROBLEMA -->
+<section class="section problem" id="problema">
+  <div class="section-inner">
+    <div class="problem-grid">
+      <div class="reveal">
+        <div class="label">El problema</div>
+        <h2>Entrenar sin guía<br><em>es frustrante.</em></h2>
+        <p class="section-sub">Muchos deportistas no progresan porque no tienen un plan claro. Y los que tienen plan, usan uno genérico que no se adapta a su vida real.</p>
+        <div style="margin-top: 28px;" class="problem-cta-box">
+          <p>"Abre la app y sabrás exactamente qué entrenar hoy."</p>
+          <a href="https://getricoach.com/app" class="btn-primary" style="display:inline-block;padding:12px 28px;font-size:.92rem">Probar gratis</a>
+        </div>
       </div>
-      <div class="problem-card">
-        <div class="problem-icon">💸</div>
-        <div><h3>Un coach humano cuesta 100-300€/mes</h3><p>Fuera del alcance de la mayoría. Y cuando lo tienes, no está disponible a las 6am del domingo.</p></div>
-      </div>
-      <div class="problem-card">
-        <div class="problem-icon">📋</div>
-        <div><h3>Planes genéricos que no te conocen</h3><p>No saben que tienes una lesión, que viajaste esta semana o que tu carrera es en 8 semanas.</p></div>
+      <div class="problem-cards reveal">
+        <div class="problem-card">
+          <div class="problem-icon">❓</div>
+          <div>
+            <h3>No sabes qué entrenar cada día</h3>
+            <p>Sin estructura clara, cada sesión es una improvisación. Resultado: progreso lento o lesión.</p>
+          </div>
+        </div>
+        <div class="problem-card">
+          <div class="problem-icon">📋</div>
+          <div>
+            <h3>Los planes genéricos no funcionan</h3>
+            <p>Un plan de internet no sabe que viajaste esta semana, que tienes una carrera en 6 semanas o que te duele la rodilla.</p>
+          </div>
+        </div>
+        <div class="problem-card">
+          <div class="problem-icon">💸</div>
+          <div>
+            <h3>Un entrenador personal cuesta 100-300€/mes</h3>
+            <p>Fuera del alcance de la mayoría. Y cuando lo tienes, no está disponible a las 6am del domingo.</p>
+          </div>
+        </div>
+        <div class="problem-card">
+          <div class="problem-icon">📉</div>
+          <div>
+            <h3>Progresos lentos y riesgo de lesión</h3>
+            <p>Sin progresión planificada, entrenar demasiado o demasiado poco tiene consecuencias reales.</p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<section class="features">
-  <div class="features-inner">
-    <div class="features-header reveal">
-      <div class="section-label">Por qué TriCoach AI</div>
-      <h2>Un entrenador que<br><em>te conoce de verdad.</em></h2>
+<!-- CÓMO FUNCIONA -->
+<section class="section how" id="como-funciona">
+  <div class="section-inner">
+    <div class="reveal" style="max-width:600px">
+      <div class="label">Cómo funciona</div>
+      <h2>Tu plan listo<br><em>en 5 minutos.</em></h2>
+      <p class="section-sub">Sin configuraciones complejas. Sin curva de aprendizaje. Solo dinos tu objetivo y empieza.</p>
     </div>
-    <div class="features-grid">
-      <div class="feature-card reveal"><div class="feature-num">01</div><h3>Planes que se adaptan a tu vida</h3><p>¿Lesión? ¿Viaje? ¿Solo 30 minutos hoy? Tu coach ajusta el plan al momento, no al revés.</p><span class="feature-tag">IA conversacional</span></div>
-      <div class="feature-card reveal"><div class="feature-num">02</div><h3>Conectado a tu Strava</h3><p>Tu coach ve tu FC media, potencia, cadencia y desnivel de cada entrenamiento. No adivina — analiza tus datos reales.</p><span class="feature-tag">Integración Strava Pro</span></div>
-      <div class="feature-card reveal"><div class="feature-num">03</div><h3>Método inteligente</h3><p>Fase base, polarizado, pico o taper — el método cambia automáticamente según las semanas que quedan para tu carrera.</p><span class="feature-tag">Periodización automática</span></div>
-      <div class="feature-card reveal"><div class="feature-num">04</div><h3>Tu coach, tu personalidad</h3><p>Elige entre motivador, científico, cercano o exigente. Dale el nombre que quieras. Es tuyo.</p><span class="feature-tag">4 personalidades</span></div>
-      <div class="feature-card reveal"><div class="feature-num">05</div><h3>Descarga en tu reloj</h3><p>Exporta cada sesión en formato TCX directamente a tu Garmin, Suunto o Polar. Sin copiar nada a mano.</p><span class="feature-tag">Garmin · Suunto · Polar</span></div>
-      <div class="feature-card reveal"><div class="feature-num">06</div><h3>Disponible 24/7</h3><p>A las 6am del domingo antes de salir. En el tren de camino al trabajo. Cuando lo necesitas.</p><span class="feature-tag">Siempre contigo</span></div>
-    </div>
-  </div>
-</section>
-
-<section class="sports" id="deportes">
-  <div class="sports-inner">
-    <div class="sports-header reveal">
-      <div class="section-label">Deportes</div>
-      <h2>Para el atleta<br><em>completo.</em></h2>
-      <p class="section-sub" style="margin-top:16px">Cuatro disciplinas, un solo coach que las combina según tus carreras objetivo.</p>
-    </div>
-    <div class="sports-grid">
-      <div class="sport-card reveal"><span class="sport-emoji">🏃</span><h3>Running</h3><p>5K, 10K, media maratón, maratón. Rodajes, series, cuestas y fuerza específica.</p></div>
-      <div class="sport-card reveal"><span class="sport-emoji">🏊</span><h3>Triatlón</h3><p>Sprint, olímpico, 70.3 y larga distancia. Natación, ciclismo y running coordinados.</p></div>
-      <div class="sport-card reveal"><span class="sport-emoji">💪</span><h3>Hyrox</h3><p>El deporte de fitness más en auge. Planes para los 8 stations y el running entre ellos.</p></div>
-      <div class="sport-card reveal"><span class="sport-emoji">🏊‍♂️</span><h3>Natación</h3><p>Fitness acuático y fondo. Series, técnica y volumen adaptados a tu nivel.</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="chat-section">
-  <div class="chat-inner">
-    <div class="reveal">
-      <div class="section-label">Coach conversacional</div>
-      <h2>Pregúntale lo que<br><em>necesites saber.</em></h2>
-      <p class="section-sub" style="margin-top:16px">No es un chatbot genérico. Tu coach conoce tu perfil, tus carreras, tus lesiones y tus últimos entrenamientos de Strava. Cada respuesta es tuya.</p>
-    </div>
-    <div class="chat-mock reveal">
-      <div class="chat-header">
-        <div class="chat-avatar">M</div>
-        <div><div class="chat-coach-name">Marco · Tu coach motivador</div><div class="chat-coach-sub">Triatlón · Running · Hyrox</div></div>
-        <div class="chat-online"></div>
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-num">01</div>
+        <h3>Conecta tu cuenta</h3>
+        <p>Sincroniza tus actividades desde Strava. La IA analiza tu volumen, ritmo y evolución real.</p>
+        <span class="step-tag">Strava OAuth</span>
+        <div class="step-arrow">→</div>
       </div>
-      <div class="chat-body">
-        <div class="chat-msg user">Hoy tengo solo 40 minutos y me duele un poco el tendón. ¿Qué hago?</div>
-        <div class="chat-msg coach">Perfecto, lo ajustamos. Viendo que ayer hiciste <strong>12km a Z2</strong> con buena FC, hoy toca recuperar activo. Te propongo <strong>35 min de rodaje suave a Z1</strong>. Si molesta, paras sin drama. ¿Tienes piscina cerca por si acaso?</div>
-        <div class="chat-msg user">No, solo tengo el parque. ¿Y para el martes que tengo 1h30?</div>
-        <div class="chat-msg coach">Para el martes con 1h30 y quedan <strong>6 semanas para tu media</strong>, te planteo: 15 min calentamiento, <strong>3×10 min a Z3-Z4</strong> con 3 min recuperación, 15 min vuelta calma. Es la sesión clave de esta semana 💪</div>
+      <div class="step reveal">
+        <div class="step-num">02</div>
+        <h3>La IA analiza tu nivel</h3>
+        <p>TriCoach AI entiende dónde estás y hacia dónde vas. Calcula el método correcto según las semanas a tu carrera.</p>
+        <span class="step-tag">IA personalizada</span>
+        <div class="step-arrow">→</div>
       </div>
-      <div class="chat-typing"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+      <div class="step reveal">
+        <div class="step-num">03</div>
+        <h3>Recibe tu plan adaptativo</h3>
+        <p>Cada semana obtienes un plan ajustado a tu progreso. Si algo cambia, el coach lo adapta al instante.</p>
+        <span class="step-tag">Adaptación automática</span>
+      </div>
     </div>
   </div>
 </section>
 
-<section class="pricing" id="precios">
-  <div class="pricing-inner">
-    <div class="pricing-header reveal">
-      <div class="section-label">Precios</div>
+<!-- ENTRENAMIENTO DE HOY -->
+<section class="section today">
+  <div class="section-inner">
+    <div class="today-grid">
+      <div class="reveal">
+        <div class="label">Tu entrenamiento de hoy</div>
+        <h2>Siempre sabes<br><em>qué hacer.</em></h2>
+        <p class="section-sub" style="margin-top:14px">No más dudas. Cada mañana abres la app y tu coach ya sabe qué necesitas entrenar hoy, basándose en tus datos reales.</p>
+        <div style="margin-top: 28px; display:flex; flex-direction:column; gap:12px;">
+          <div style="display:flex;align-items:center;gap:10px;font-size:.9rem;color:var(--white-60)">
+            <span style="color:var(--orange)">✓</span> Sesiones detalladas con zonas de FC y ritmos
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:.9rem;color:var(--white-60)">
+            <span style="color:var(--orange)">✓</span> Descarga directa a tu Garmin, Suunto o Polar
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:.9rem;color:var(--white-60)">
+            <span style="color:var(--orange)">✓</span> Ajuste inmediato si tienes lesión o poco tiempo
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:.9rem;color:var(--white-60)">
+            <span style="color:var(--orange)">✓</span> Progresión semanal automática hacia tu carrera
+          </div>
+        </div>
+      </div>
+      <div class="workout-card reveal">
+        <div class="workout-header">
+          <div class="workout-avatar">M</div>
+          <div>
+            <div class="workout-coach">Marco · Tu coach motivador</div>
+            <div class="workout-sub">Hoy · Semana 4 de 12</div>
+          </div>
+          <div class="online-dot"></div>
+        </div>
+        <div class="workout-body">
+          <div class="workout-day">Martes — Sesión de calidad</div>
+          <div class="workout-session">
+            <span class="session-emoji">🏃</span>
+            <div class="session-info">
+              <div class="session-type">Running — Series</div>
+              <div class="session-desc">5×1km a Z4 · rec 90s · 10min cal + vuelta calma</div>
+            </div>
+            <span class="session-badge z2">Z4</span>
+          </div>
+          <div class="workout-session done">
+            <span class="session-emoji">🚴</span>
+            <div class="session-info">
+              <div class="session-type">Bici — Completada ✓</div>
+              <div class="session-desc">60min Z2 · FC media 142bpm · Strava</div>
+            </div>
+            <span class="session-badge done">✓</span>
+          </div>
+          <div class="workout-coach-msg">
+            💪 Vi que completaste la bici de ayer con buena FC. Hoy toca calidad — las series van a doler un poco pero es lo que necesitas a 8 semanas de la carrera.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PARA QUIÉN -->
+<section class="section for-who" id="para-quien">
+  <div class="section-inner">
+    <div class="reveal" style="max-width:600px">
+      <div class="label">Casos de uso</div>
+      <h2>Diseñado para<br><em>atletas como tú.</em></h2>
+      <p class="section-sub">No importa tu nivel ni tu disciplina. TriCoach AI se adapta a tu objetivo.</p>
+    </div>
+    <div class="use-cases">
+      <div class="use-case reveal">
+        <span class="use-case-emoji">🏅</span>
+        <h3>Preparar tu primer triatlón</h3>
+        <p>Desde cero hasta la línea de meta. Plan estructurado para las tres disciplinas sin morir en el intento.</p>
+      </div>
+      <div class="use-case reveal">
+        <span class="use-case-emoji">🏃</span>
+        <h3>Mejorar tu tiempo en 10K</h3>
+        <p>Series, rodajes y progresión específica para bajar tu marca personal en running.</p>
+      </div>
+      <div class="use-case reveal">
+        <span class="use-case-emoji">🏊</span>
+        <h3>Preparar una media maratón</h3>
+        <p>Plan de 8-16 semanas adaptado a tu nivel actual y tu fecha de carrera.</p>
+      </div>
+      <div class="use-case reveal">
+        <span class="use-case-emoji">💪</span>
+        <h3>Entrenar para Hyrox</h3>
+        <p>El deporte más en auge. Planes específicos para los 8 stations y el running entre ellos.</p>
+      </div>
+      <div class="use-case reveal">
+        <span class="use-case-emoji">🚵</span>
+        <h3>Preparar una carrera MTB</h3>
+        <p>Fuerza, resistencia y técnica específica para tu próxima carrera de montaña.</p>
+      </div>
+      <div class="use-case reveal">
+        <span class="use-case-emoji">🎯</span>
+        <h3>Entrenar con estructura</h3>
+        <p>Sin objetivo concreto pero queriendo mejorar. Periodización inteligente para progresar semana a semana.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DIFERENCIAL -->
+<section class="section diff" id="diferencial">
+  <div class="section-inner">
+    <div class="reveal" style="max-width:600px">
+      <div class="label">Comparativa</div>
+      <h2>El único coach IA<br><em>en español.</em></h2>
+      <p class="section-sub">Ningún competidor combina IA conversacional, datos reales de Strava y soporte completo en español.</p>
+    </div>
+    <table class="diff-table reveal">
+      <thead>
+        <tr>
+          <th>Característica</th>
+          <th class="ours">TriCoach AI</th>
+          <th>TrainingPeaks</th>
+          <th>Runna</th>
+          <th>Coach humano</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Precio mensual</td>
+          <td class="ours"><strong>0 – 9,99€</strong></td>
+          <td>19,95 $</td>
+          <td>14,99 $</td>
+          <td>100-300€</td>
+        </tr>
+        <tr>
+          <td>En español</td>
+          <td class="ours"><span class="yes">✓ Sí</span></td>
+          <td><span class="no">✗ No</span></td>
+          <td><span class="no">✗ No</span></td>
+          <td><span class="yes">✓ Sí</span></td>
+        </tr>
+        <tr>
+          <td>IA conversacional</td>
+          <td class="ours"><span class="yes">✓ Sí</span></td>
+          <td><span class="no">✗ No</span></td>
+          <td><span class="no">✗ No</span></td>
+          <td><span class="no">✗ No</span></td>
+        </tr>
+        <tr>
+          <td>Integración Strava</td>
+          <td class="ours"><span class="yes">✓ Profunda</span></td>
+          <td><span class="yes">✓ Básica</span></td>
+          <td><span class="yes">✓ Básica</span></td>
+          <td><span class="no">✗ No</span></td>
+        </tr>
+        <tr>
+          <td>Adapta el plan en tiempo real</td>
+          <td class="ours"><span class="yes">✓ Sí</span></td>
+          <td><span class="no">✗ No</span></td>
+          <td><span class="no">✗ No</span></td>
+          <td><span class="yes">✓ Sí</span></td>
+        </tr>
+        <tr>
+          <td>Disponible 24/7</td>
+          <td class="ours"><span class="yes">✓ Sí</span></td>
+          <td><span class="yes">✓ Sí</span></td>
+          <td><span class="yes">✓ Sí</span></td>
+          <td><span class="no">✗ No</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- INTEGRACIONES -->
+<section class="section integrations" id="integraciones">
+  <div class="section-inner">
+    <div class="reveal" style="max-width:600px">
+      <div class="label">Integraciones</div>
+      <h2>Conectado con<br><em>tus herramientas.</em></h2>
+      <p class="section-sub">TriCoach AI funciona con las plataformas que ya usas para entrenar.</p>
+    </div>
+    <div class="integrations-grid">
+      <div class="integration-card reveal">
+        <span class="integration-logo">🟠</span>
+        <h3>Strava</h3>
+        <p>Sincronización automática de actividades. El coach ve tu FC, potencia, cadencia y desnivel reales.</p>
+        <span class="integration-badge badge-live">Disponible</span>
+      </div>
+      <div class="integration-card reveal">
+        <span class="integration-logo">⌚</span>
+        <h3>Garmin · Suunto · Polar</h3>
+        <p>Descarga tus sesiones directamente al reloj en formato TCX. Sin copiar nada a mano.</p>
+        <span class="integration-badge badge-live">Disponible</span>
+      </div>
+      <div class="integration-card reveal">
+        <span class="integration-logo">📊</span>
+        <h3>Intervals.icu · Apple Health</h3>
+        <p>Sincronización avanzada de métricas de rendimiento y datos de salud.</p>
+        <span class="integration-badge badge-soon">Próximamente</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRÓXIMAMENTE: EVENTOS -->
+<section class="section coming-soon">
+  <div class="section-inner">
+    <div class="coming-box reveal">
+      <span class="coming-emoji">🏁</span>
+      <div class="coming-text">
+        <h3>Próximamente: Módulo de Eventos</h3>
+        <p>Prepárate para carreras reales con planes específicos para cada recorrido. El organizador sube el GPX, la IA analiza el perfil y cada atleta recibe un plan personalizado para ese recorrido.</p>
+        <ul class="coming-list">
+          <li>Triatlones</li>
+          <li>Carreras de running</li>
+          <li>Pruebas de ciclismo</li>
+          <li>Eventos de MTB</li>
+          <li>Hyrox</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRECIOS -->
+<section class="section pricing" id="precios">
+  <div class="section-inner">
+    <div class="reveal" style="max-width:600px">
+      <div class="label">Precios</div>
       <h2>Empieza gratis.<br><em>Escala cuando quieras.</em></h2>
-      <p class="section-sub" style="margin-top:16px">Sin contratos, sin permanencia. Cancela cuando quieras en un clic.</p>
+      <p class="section-sub">Sin contratos ni permanencia. Cancela cuando quieras en un clic.</p>
     </div>
     <div class="pricing-grid">
       <div class="price-card reveal">
@@ -314,7 +1171,7 @@
         <a href="https://getricoach.com/app" class="btn-price-ghost">Empezar gratis</a>
       </div>
       <div class="price-card featured reveal">
-        <div class="featured-tag">Popular</div>
+        <div class="featured-badge">Popular</div>
         <div class="price-plan">Pro</div>
         <div class="price-amount">9,99€ <span>/mes</span></div>
         <div class="price-desc">Para atletas serios que quieren sacar el máximo partido.</div>
@@ -330,77 +1187,110 @@
       </div>
     </div>
     <p class="pricing-note reveal">
-      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
       Plan anual: 79€/año — ahorra un 34% · Sin permanencia en ningún plan
     </p>
   </div>
 </section>
 
-<section class="compare">
-  <div class="compare-inner">
-    <div class="compare-header reveal">
-      <div class="section-label">Comparativa</div>
-      <h2>El único coach IA<br><em>en español.</em></h2>
+<!-- FAQ -->
+<section class="section faq" id="faq">
+  <div class="section-inner">
+    <div class="reveal" style="max-width:560px">
+      <div class="label">Preguntas frecuentes</div>
+      <h2>Todo lo que<br><em>necesitas saber.</em></h2>
     </div>
-    <table class="compare-table reveal">
-      <thead>
-        <tr>
-          <th>Característica</th>
-          <th class="ours">TriCoach AI</th>
-          <th>TrainingPeaks</th>
-          <th>Runna</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td>Precio mensual</td><td class="ours">0 – 9,99€</td><td>19,95 $</td><td>14,99 $</td></tr>
-        <tr><td>En español</td><td class="ours"><span class="check-yes">✓ Sí</span></td><td><span class="check-no">✗ No</span></td><td><span class="check-no">✗ No</span></td></tr>
-        <tr><td>IA conversacional</td><td class="ours"><span class="check-yes">✓ Sí</span></td><td><span class="check-no">✗ No</span></td><td><span class="check-no">✗ No</span></td></tr>
-        <tr><td>Integración Strava</td><td class="ours"><span class="check-yes">✓ Profunda</span></td><td><span class="check-yes">✓ Básica</span></td><td><span class="check-yes">✓ Básica</span></td></tr>
-        <tr><td>Múltiples deportes</td><td class="ours"><span class="check-yes">✓ 4 deportes</span></td><td><span class="check-yes">✓ Sí</span></td><td><span class="check-no">✗ Solo running</span></td></tr>
-        <tr><td>Ajuste por lesión / viaje</td><td class="ours"><span class="check-yes">✓ Sí</span></td><td><span class="check-no">✗ No</span></td><td><span class="check-no">✗ No</span></td></tr>
-      </tbody>
-    </table>
+    <div class="faq-grid">
+      <div class="faq-item reveal">
+        <h3>¿Necesito experiencia en triatlón o running?</h3>
+        <p>No. TriCoach AI se adapta tanto a principiantes que empiezan desde cero como a atletas más avanzados. En el onboarding defines tu nivel y el coach se ajusta.</p>
+      </div>
+      <div class="faq-item reveal">
+        <h3>¿Funciona con Strava?</h3>
+        <p>Sí. La app se conecta con Strava para analizar tus entrenamientos reales — FC, potencia, cadencia y desnivel. Disponible en el plan Pro.</p>
+      </div>
+      <div class="faq-item reveal">
+        <h3>¿El plan se adapta automáticamente?</h3>
+        <p>Sí. Cada semana el plan se ajusta según tu progreso y los datos de Strava. También puedes pedirle al coach que lo cambie si tienes una lesión, viaje o poco tiempo.</p>
+      </div>
+      <div class="faq-item reveal">
+        <h3>¿Qué diferencia a TriCoach AI de otros planes?</h3>
+        <p>Es el único coach IA en español con integración profunda de Strava. No es un plan genérico — es una IA conversacional que conoce tu historial y adapta cada sesión a tu vida real.</p>
+      </div>
+      <div class="faq-item reveal">
+        <h3>¿Es gratis?</h3>
+        <p>Sí, hay un plan gratuito para siempre con 25 mensajes al día y 1 plan semanal. El plan Pro (9,99€/mes) incluye Strava, más mensajes y más ajustes.</p>
+      </div>
+      <div class="faq-item reveal">
+        <h3>¿Para qué deportes funciona?</h3>
+        <p>Running, triatlón, Hyrox y natación. El coach puede combinar varias disciplinas en un solo plan si tienes múltiples objetivos.</p>
+      </div>
+      <div class="faq-item reveal">
+        <h3>¿Puedo cancelar cuando quiera?</h3>
+        <p>Sí, sin contratos ni permanencia. Cancelas en un clic desde tu perfil y no se te cobra nada más.</p>
+      </div>
+      <div class="faq-item reveal">
+        <h3>¿Funciona con mi reloj Garmin o Suunto?</h3>
+        <p>Sí. Puedes descargar cada sesión en formato TCX directamente a tu Garmin, Suunto o Polar. Sin copiar nada a mano.</p>
+      </div>
+    </div>
   </div>
 </section>
 
-<section class="final-cta">
+<!-- CTA FINAL -->
+<section class="section final-cta">
   <div class="final-cta-bg"></div>
   <div class="final-cta-inner reveal">
-    <div class="hero-badge" style="margin:0 auto 32px;width:fit-content">
-      <span style="width:6px;height:6px;border-radius:50%;background:var(--orange);animation:pulse 1.5s ease-in-out infinite;display:inline-block"></span>
-      Acceso anticipado abierto ahora
+    <div class="hero-badge" style="margin: 0 auto 28px; width: fit-content;">
+      <span class="badge-dot"></span>
+      Empieza hoy — es gratis
     </div>
     <h2>Tu próxima carrera<br><em>empieza hoy.</em></h2>
-    <p>Únete a los primeros atletas que entrenan con IA en español. Gratis para siempre en el plan Free.</p>
+    <p>Únete a los primeros atletas que entrenan con IA en español. Sin tarjeta, sin compromiso.</p>
     <div class="hero-ctas">
-      <a href="https://getricoach.com/app" class="btn-main">Empezar gratis →</a>
-      <a href="#precios" class="btn-ghost">Ver planes</a>
+      <a href="https://getricoach.com/app" class="btn-primary">Empezar gratis →</a>
+      <a href="#precios" class="btn-secondary">Ver planes</a>
     </div>
-    <p class="hero-note">Sin tarjeta · Sin compromiso · En español</p>
+    <p class="hero-note" style="margin-top: 16px;">Sin tarjeta · Sin compromiso · En español</p>
   </div>
 </section>
 
+<!-- FOOTER -->
 <footer>
-  <div class="footer-logo"><span style="width:7px;height:7px;border-radius:50%;background:var(--orange)"></span>TriCoach AI</div>
+  <div class="footer-logo">
+    <span style="width:7px;height:7px;border-radius:50%;background:var(--orange)"></span>
+    TriCoach AI
+  </div>
   <div class="footer-links">
-    <a href="#" class="footer-link">Privacidad</a>
-    <a href="#" class="footer-link">Términos</a>
+    <a href="/privacidad" class="footer-link">Privacidad</a>
+    <a href="#faq" class="footer-link">FAQ</a>
     <a href="mailto:coach@getricoach.com" class="footer-link">Contacto</a>
+    <a href="https://tally.so/r/VL8pyl" target="_blank" class="footer-link">Reportar problema</a>
   </div>
   <p class="footer-note">© 2026 TriCoach AI · getricoach.com</p>
 </footer>
 
+<!-- BETA BADGE -->
+<div id="beta-badge" onclick="window.open('https://tally.so/r/VL8pyl','_blank')">
+  <span style="width:6px;height:6px;border-radius:50%;background:var(--orange);animation:pulse-dot 2s infinite;display:inline-block"></span>
+  BETA · Reportar problema
+</div>
+
 <script>
+  // Scroll reveal
   const observer = new IntersectionObserver(entries => {
     entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-  }, { threshold: 0.1 });
+  }, { threshold: 0.08 });
   document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Smooth scroll
   document.querySelectorAll('a[href^="#"]').forEach(a => {
     a.addEventListener('click', e => {
-      const target = document.querySelector(a.getAttribute('href'));
-      if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
+      const t = document.querySelector(a.getAttribute('href'));
+      if (t) { e.preventDefault(); t.scrollIntoView({ behavior: 'smooth' }); }
     });
   });
 </script>
+
 </body>
 </html>
