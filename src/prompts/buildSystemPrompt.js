@@ -59,11 +59,19 @@ export function buildSystemPrompt(profile, personalidad = 'cercano', actividades
     return s.via_strava ? ' ✓ completada (Strava)' : ' ✓ completada (manual)'
   }
 
-  const planSection = plan
-    ? `\nPLAN DE ESTA SEMANA:\n${plan.sesiones.map(s =>
-        `${s.dia}: ${s.tipo} - ${s.descripcion}${completadaLabel(s)}`
-      ).join('\n')}`
-    : ''
+  const hoyFormatted = new Date().toLocaleDateString('es-ES', {
+    day: 'numeric', month: 'long', timeZone: 'Europe/Madrid'
+  })
+
+  const planSection = plan ? (() => {
+    const nDias = plan.sesiones.length
+    const nota = nDias < 7
+      ? `\n(Este plan tiene ${nDias} día${nDias > 1 ? 's' : ''} porque se generó a mitad de semana. No es una semana completa.)`
+      : ''
+    return `\nPLAN SEMANA ACTUAL (días restantes desde hoy, ${hoyFormatted}):\n${plan.sesiones.map(s =>
+      `${s.dia}: ${s.tipo} - ${s.descripcion}${completadaLabel(s)}`
+    ).join('\n')}${nota}`
+  })() : ''
 
   const sesionesCompletadas = plan
     ? plan.sesiones.filter(s => s.completada)
@@ -97,10 +105,18 @@ NATACIÓN:
 
 Cuando el usuario comparta resultados: calcula sus zonas, explícaselas de forma sencilla y dile que su próximo plan ya estará calibrado con estos datos.`
 
-  const planProximaSemanaSection = planProximaSemana
-    ? `\nPLAN PRÓXIMA SEMANA:\n${planProximaSemana.sesiones.map(s =>
-        `${s.dia}: ${s.tipo} - ${s.descripcion}`
-      ).join('\n')}\nSi el usuario pregunta por la próxima semana, usa este plan.`
+  const planProximaSemanaSection = planProximaSemana ? (() => {
+    const lunes = new Date(planProximaSemana.semana + 'T12:00:00')
+    const domingo = new Date(lunes)
+    domingo.setDate(lunes.getDate() + 6)
+    const fmt = (d) => d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })
+    return `\nPLAN PRÓXIMA SEMANA (lunes ${fmt(lunes)} — domingo ${fmt(domingo)}):\n${planProximaSemana.sesiones.map(s =>
+      `${s.dia}: ${s.tipo} - ${s.descripcion}`
+    ).join('\n')}\nSi el usuario pregunta por la próxima semana, usa este plan.`
+  })() : ''
+
+  const separacionPlanes = (plan && planProximaSemana)
+    ? `\nATENCIÓN: Son dos planes DISTINTOS. El plan actual cubre solo los días restantes de esta semana (puede tener menos de 7 días si se generó a mitad de semana). El plan próxima semana es la semana siguiente completa. No los confundas ni mezcles.`
     : ''
 
   const ajusteInstructions = plan ? `
@@ -135,6 +151,6 @@ Tu rol es:
 Responde siempre en español, de forma clara y concisa.
 Usa datos concretos: distancias, tiempos, zonas de frecuencia cardíaca cuando sea relevante.
 Cuando tengas datos de Strava del atleta, úsalos activamente en tus respuestas. Son datos reales sincronizados de su cuenta Strava.
-${actividadesSection}${planSection}${reconocimientoSection}${planProximaSemanaSection}
+${actividadesSection}${planSection}${reconocimientoSection}${planProximaSemanaSection}${separacionPlanes}
 ${interpretacionTests}${ajusteInstructions}`
 }

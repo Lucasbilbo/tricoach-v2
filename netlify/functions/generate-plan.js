@@ -220,10 +220,11 @@ intensidades posibles: "suave", "moderada", "fuerte", "descanso"
 Devuelve exactamente ${dias.length} sesiones en el orden: ${dias.join(', ')}.`;
 }
 
-function buildAnalisisSemanaAnterior(planAnterior, stravaText) {
+function buildAnalisisSemanaAnterior(planAnterior, stravaText, numeroDeSemana) {
   const sesiones = planAnterior.sesiones || [];
   const completadas = sesiones.filter(s => s.completada);
   const saltadas = sesiones.filter(s => !s.completada && s.tipo?.toLowerCase() !== 'descanso');
+  const activas = sesiones.filter(s => s.tipo?.toLowerCase() !== 'descanso');
 
   const getRpe = s => s.rpe ?? s.rpe_usuario;
   const rpesValidos = completadas.filter(s => getRpe(s) != null);
@@ -235,17 +236,29 @@ function buildAnalisisSemanaAnterior(planAnterior, stravaText) {
     ? saltadas.map(s => `${s.dia} (${s.tipo})`).join(', ')
     : 'Ninguna';
 
-  return `ANÁLISIS DE LA SEMANA ANTERIOR:
-- Sesiones completadas: ${completadas.length} de 7
+  const sesionesResumen = activas.map(s =>
+    `${s.dia}: ${s.tipo} — ${s.descripcion?.substring(0, 60)}...`
+  ).join('\n  ');
+
+  const esSemanaDescarga = numeroDeSemana && numeroDeSemana % 4 === 0;
+
+  return `SEMANA ANTERIOR (semana ${numeroDeSemana ? numeroDeSemana - 1 : '?'} del plan):
+- Sesiones completadas: ${completadas.length} de ${activas.length}
 - RPE medio: ${rpeMedia != null ? `${rpeMedia}/10` : 'No registrado'}
 - Sesiones no completadas: ${saltadasStr}
-- Actividades Strava registradas: ${stravaText || 'Sin datos'}
+- Actividades Strava: ${stravaText || 'Sin datos'}
+- Sesiones entrenadas:
+  ${sesionesResumen || 'Sin datos'}
 
-CRITERIOS PARA ESTA SEMANA:
-- Si RPE medio > 7 o completadas < 4: reducir carga un 15%, más recuperación
-- Si RPE medio < 5 y completadas >= 6: se puede aumentar carga un 10%
-- Si hay sesiones saltadas de un tipo específico: no acumular deuda, redistribuir
-- Mantener progresión hacia la fecha de carrera`;
+PROGRESIÓN OBLIGATORIA PARA ESTA SEMANA (semana ${numeroDeSemana || '?'}):
+${esSemanaDescarga
+  ? '- SEMANA DE DESCARGA: reducir volumen 20-30%, mantener alguna intensidad corta, priorizar recuperación'
+  : `- Este plan NO puede ser igual al de la semana anterior — variar tipos de sesión y estructura
+- Si la semana pasada había series, esta semana incluir rodaje largo o tempo (y viceversa)
+- Aplicar progresión de carga: +5-10% en volumen o intensidad respecto a semana anterior, nunca más de +10%
+- Variar el orden de disciplinas y días de descanso`}
+- Si RPE medio > 7 o completadas < ${Math.ceil(activas.length * 0.6)}: reducir carga un 15%, más recuperación
+- Si RPE medio < 5 y completadas >= ${activas.length}: se puede aumentar carga un 10%`;
 }
 
 exports.handler = async (event) => {
@@ -276,7 +289,7 @@ exports.handler = async (event) => {
   // Obtener perfil del usuario (incluyendo campos de Strava)
   const profiles = await supabaseGet(
     hostname,
-    `/rest/v1/profiles?id=eq.${userId}&select=deporte,nivel,objetivo,fecha_carrera,contexto,strava_token,strava_token_expires_at,plan`,
+    `/rest/v1/profiles?id=eq.${userId}&select=deporte,nivel,objetivo,fecha_carrera,contexto,strava_token,strava_token_expires_at,plan,created_at`,
     supabaseKey
   );
 
@@ -328,19 +341,28 @@ Prioridad: llegar fresco al día de la carrera. Reduce volumen 30-50%, mantén a
 
   const metodo = calcularMetodo(profile.fecha_carrera, profile.nivel);
 
-  // Detectar si necesita semana de diagnóstico
-  const planesExistentes = await supabaseGet(
-    hostname,
-    `/rest/v1/plans?user_id=eq.${userId}&select=id&limit=1`,
-    supabaseKey
-  );
-  const esPrimerPlan = !Array.isArray(planesExistentes) || planesExistentes.length === 0;
-  const actividadesCount = Array.isArray(stravaActivities) ? stravaActivities.length : 0;
-  const necesitaDiagnostico = esPrimerPlan && actividadesCount < 3;
-
   const weekStart = fechaInicio || getMondayOfCurrentWeek();
   const startDate = fechaInicio || getTodayDate();
   const dias = getDiasDesdeDate(startDate, weekStart);
+
+  // Obtener planes recientes para detectar primer plan y plan anterior
+  const planesRecientes = await supabaseGet(
+    hostname,
+    `/rest/v1/plans?user_id=eq.${userId}&select=*&order=semana.desc&limit=3`,
+    supabaseKey
+  );
+  const planesArr = Array.isArray(planesRecientes) ? planesRecientes : [];
+  const esPrimerPlan = planesArr.length === 0;
+  const actividadesCount = Array.isArray(stravaActivities) ? stravaActivities.length : 0;
+  const necesitaDiagnostico = esPrimerPlan && actividadesCount < 3;
+
+  // Plan anterior = plan más reciente anterior a la semana actual que se está generando
+  const planAnteriorEfectivo = planesArr.find(p => p.semana < weekStart) || planAnterior || null;
+
+  // Número de semana desde el registro del usuario
+  const numeroDeSemana = profile.created_at
+    ? Math.max(1, Math.round((new Date(weekStart) - new Date(profile.created_at)) / (7 * 24 * 60 * 60 * 1000)) + 1)
+    : null;
 
   const deporteInfo = {
     triatlon: 'triatlón olímpico (natación 1.5km, ciclismo 40km, running 10km)',
@@ -356,15 +378,18 @@ Instrucción: devuelve SOLO un JSON válido, sin texto adicional, sin markdown, 
   if (necesitaDiagnostico) {
     userMessage = buildDiagnosticoUserMessage(profile, weekStart, deporteInfo, dias);
   } else {
-    const analisisSection = (isPro && planAnterior)
-      ? '\n\n' + buildAnalisisSemanaAnterior(planAnterior, stravaText)
+    const stravaParaAnalisis = isPro ? stravaText : null;
+    const analisisSection = planAnteriorEfectivo
+      ? '\n\n' + buildAnalisisSemanaAnterior(planAnteriorEfectivo, stravaParaAnalisis, numeroDeSemana)
       : '';
+    const semanaLabel = numeroDeSemana ? `Semana ${numeroDeSemana} del plan del atleta.` : '';
     userMessage = `Genera un plan de entrenamiento semanal para este atleta:
 
 Deporte: ${deporteInfo[profile.deporte] || profile.deporte || 'deporte de resistencia'}
 Nivel: ${profile.nivel || 'principiante'}
 Objetivo: ${profile.objetivo || 'mejorar forma física'}
 ${profile.fecha_carrera ? `Próximo evento: ${profile.fecha_carrera}` : ''}
+${semanaLabel}
 ${profile.contexto ? `Contexto del atleta: ${profile.contexto}` : ''}${analisisSection}
 
 El plan empieza el ${weekStart}. Los días en orden son: ${dias.join(', ')}.

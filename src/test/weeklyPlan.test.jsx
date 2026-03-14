@@ -74,7 +74,7 @@ describe('WeeklyPlan', () => {
     const profile = { nombre: 'Lucas', deporte: 'running', nivel: 'intermedio', objetivo: 'bajar de 50min' }
     const prompt = buildSystemPrompt(profile, 'cercano', null, planMock)
 
-    expect(prompt).toContain('PLAN DE ESTA SEMANA')
+    expect(prompt).toContain('PLAN SEMANA ACTUAL')
     expect(prompt).toContain('Lunes')
     expect(prompt).toContain('Correr')
   })
