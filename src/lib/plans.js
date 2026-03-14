@@ -9,6 +9,15 @@ function getWeekStart() {
   return monday.toISOString().split('T')[0]
 }
 
+export function getNextWeekStart() {
+  const now = new Date()
+  const day = now.getDay()
+  const diff = day === 0 ? 1 : 8 - day
+  const monday = new Date(now)
+  monday.setDate(now.getDate() + diff)
+  return monday.toISOString().split('T')[0]
+}
+
 function getLastWeekStart() {
   const now = new Date()
   const day = now.getDay()
@@ -31,6 +40,16 @@ export async function getPlan(userId) {
 
 export async function getLastWeekPlan(userId) {
   const semana = getLastWeekStart()
+  const { data } = await supabase
+    .from('plans')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('semana', semana)
+    .maybeSingle()
+  return data
+}
+
+export async function getPlanForWeek(userId, semana) {
   const { data } = await supabase
     .from('plans')
     .select('*')

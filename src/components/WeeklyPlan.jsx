@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { generatePlan, markSessionComplete, adjustPlan, analizarPlan } from '../lib/plans'
+import { generatePlan, getPlanForWeek, getNextWeekStart, markSessionComplete, adjustPlan, analizarPlan } from '../lib/plans'
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 
@@ -32,6 +32,7 @@ function formatDateLong(dateStr) {
 export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSessionDetail, onNavigate }) {
   const _todayDate = new Date()
   const [generando, setGenerando] = useState(false)
+  const [generandoSiguiente, setGenerandoSiguiente] = useState(false)
   const [completando, setCompletando] = useState(null)
   const [rpe, setRpe] = useState(5)
   const [ajustando, setAjustando] = useState(false)
@@ -125,6 +126,24 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
       console.error('Error al ajustar plan:', e)
     } finally {
       setAjustando(false)
+    }
+  }
+
+  async function handlePlanificarSiguiente() {
+    setGenerandoSiguiente(true)
+    try {
+      const proximoLunes = getNextWeekStart()
+      const existente = await getPlanForWeek(userId, proximoLunes)
+      if (existente) {
+        onPlanUpdate(existente)
+        return
+      }
+      const nuevo = await generatePlan(userId, plan, proximoLunes)
+      if (nuevo?.id) onPlanUpdate(nuevo)
+    } catch (e) {
+      console.error('Error al planificar próxima semana:', e)
+    } finally {
+      setGenerandoSiguiente(false)
     }
   }
 
@@ -224,6 +243,11 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
   const analisis = analizarPlan(plan)
   const esDiagnostico = plan?.sesiones?.[0]?.tipo_semana === 'diagnostico'
 
+  const proximoLunes = getNextWeekStart()
+  const dow = new Date().getDay() // 0=Dom, 1=Lun, ..., 6=Sáb
+  const esJuevesODespues = dow >= 4 || dow === 0
+  const mostrarBotonSiguiente = esJuevesODespues && plan?.semana !== proximoLunes
+
   return (
     <div style={{
       height: 'calc(100vh - 64px)',
@@ -241,7 +265,7 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
         top: 0,
         zIndex: 50,
       }}>
-        <div style={{ maxWidth: 640, margin: '0 auto' }}>
+        <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 600 }}>
             {(() => {
               const lunes = new Date(plan.semana + 'T12:00:00')
@@ -251,6 +275,26 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
               return `Semana del ${fmt(lunes)} al ${fmt(domingo)}`
             })()}
           </h3>
+          {mostrarBotonSiguiente && (
+            <button
+              onClick={handlePlanificarSiguiente}
+              disabled={generandoSiguiente}
+              style={{
+                background: 'none',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                color: generandoSiguiente ? 'var(--muted-foreground)' : 'var(--foreground)',
+                fontFamily: 'var(--font-sans)',
+                fontSize: 13,
+                padding: '6px 12px',
+                cursor: generandoSiguiente ? 'not-allowed' : 'pointer',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+              }}
+            >
+              {generandoSiguiente ? 'Generando...' : 'Próxima semana →'}
+            </button>
+          )}
         </div>
       </div>
 

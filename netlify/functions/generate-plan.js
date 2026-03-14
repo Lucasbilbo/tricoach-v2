@@ -22,14 +22,14 @@ function getMondayOfCurrentWeek() {
   return monday.toISOString().split('T')[0];
 }
 
-function getDiasDesdeHoy(mondayStr) {
+function getDiasDesdeDate(startStr, mondayStr) {
   const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-  const today = new Date(getTodayDate() + 'T12:00:00');
+  const start = new Date(startStr + 'T12:00:00');
   const monday = new Date(mondayStr + 'T12:00:00');
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
   const days = [];
-  const current = new Date(today);
+  const current = new Date(start);
   while (current <= sunday) {
     days.push(DIAS[current.getDay()]);
     current.setDate(current.getDate() + 1);
@@ -338,8 +338,9 @@ Prioridad: llegar fresco al día de la carrera. Reduce volumen 30-50%, mantén a
   const actividadesCount = Array.isArray(stravaActivities) ? stravaActivities.length : 0;
   const necesitaDiagnostico = esPrimerPlan && actividadesCount < 3;
 
-  const weekStart = getMondayOfCurrentWeek();
-  const dias = getDiasDesdeHoy(weekStart);
+  const weekStart = fechaInicio || getMondayOfCurrentWeek();
+  const startDate = fechaInicio || getTodayDate();
+  const dias = getDiasDesdeDate(startDate, weekStart);
 
   const deporteInfo = {
     triatlon: 'triatlón olímpico (natación 1.5km, ciclismo 40km, running 10km)',
