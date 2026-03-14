@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Entrenamiento Zona 2 — Qué es, beneficios y cómo aplicarlo | TriCoach AI</title>
+  <meta name="description" content="Guía completa sobre el entrenamiento en zona 2: qué es, cómo calcular tus zonas de frecuencia cardíaca, cuánto tiempo dedicarle y cómo integrarlo en tu plan de running o triatlón." />
+  <meta name="keywords" content="entrenamiento zona 2, zona 2 running, zona 2 triatlón, frecuencia cardíaca zona 2, entrenamiento aeróbico, base aeróbica running" />
+  <link rel="canonical" href="https://getricoach.com/entrenamiento-zona-2" />
+  <meta property="og:title" content="Entrenamiento Zona 2 — Guía completa para runners y triatletas" />
+  <meta property="og:description" content="Todo lo que necesitas saber sobre el entrenamiento en zona 2. Cálculo de zonas, beneficios y cómo aplicarlo en tu plan." />
+  <meta property="og:url" content="https://getricoach.com/entrenamiento-zona-2" />
+  <meta property="og:type" content="article" />
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HKG9V6M7KF"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HKG9V6M7KF');
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "Entrenamiento Zona 2: Qué es y cómo aplicarlo en running y triatlón",
+    "description": "Guía completa sobre el entrenamiento en zona 2 para runners y triatletas hispanohablantes.",
+    "url": "https://getricoach.com/entrenamiento-zona-2",
+    "publisher": {
+      "@type": "Organization",
+      "name": "TriCoach AI",
+      "url": "https://getricoach.com"
+    }
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #080808; --bg-2: #0d0d0d; --bg-3: #131313; --bg-4: #191919;
+      --orange: #FF6B2B; --orange-dim: rgba(255,107,43,0.12); --orange-border: rgba(255,107,43,0.25);
+      --white: #fff; --white-80: rgba(255,255,255,0.8); --white-60: rgba(255,255,255,0.6);
+      --white-40: rgba(255,255,255,0.4); --white-20: rgba(255,255,255,0.2);
+      --border: rgba(255,255,255,0.08); --border-2: rgba(255,255,255,0.12);
+      --green: #22c55e;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Source Sans 3', sans-serif; background: var(--bg); color: var(--white); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 clamp(20px,5vw,80px); height: 64px;
+      background: rgba(8,8,8,0.92); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .logo { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: var(--white); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+    .logo-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--orange); animation: pulse 2.5s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.35); } }
+    .nav-cta { padding: 8px 20px; background: var(--orange); color: white; border-radius: 6px; font-size: .86rem; font-weight: 600; text-decoration: none; transition: opacity .2s; }
+    .nav-cta:hover { opacity: .88; }
+
+    .hero-article {
+      padding: clamp(60px,8vw,100px) clamp(20px,5vw,80px) clamp(48px,6vw,72px);
+      max-width: 860px; margin: 0 auto; text-align: center;
+    }
+    .breadcrumb { font-size: .78rem; color: var(--white-40); margin-bottom: 20px; }
+    .breadcrumb a { color: var(--orange); text-decoration: none; }
+    .label { font-size: .72rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--orange); margin-bottom: 16px; }
+
+    h1 { font-family: 'Playfair Display', serif; font-size: clamp(2.2rem,5vw,3.8rem); font-weight: 900; line-height: 1.08; letter-spacing: -0.02em; margin-bottom: 20px; }
+    h1 em { font-style: italic; color: var(--orange); }
+
+    .hero-article p { font-size: 1.1rem; color: var(--white-60); line-height: 1.75; max-width: 640px; margin: 0 auto 36px; }
+
+    .article-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: .8rem; color: var(--white-40); flex-wrap: wrap; }
+    .meta-sep { width: 3px; height: 3px; border-radius: 50%; background: var(--white-20); }
+
+    .content { max-width: 760px; margin: 0 auto; padding: 0 clamp(20px,5vw,80px) clamp(72px,10vw,120px); }
+
+    h2 { font-family: 'Playfair Display', serif; font-size: clamp(1.6rem,3vw,2.2rem); font-weight: 900; line-height: 1.15; letter-spacing: -0.02em; margin: 56px 0 16px; }
+    h2 em { font-style: italic; color: var(--orange); }
+    h3 { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: 700; margin: 32px 0 10px; }
+
+    p { font-size: 1rem; color: var(--white-60); line-height: 1.8; margin-bottom: 18px; }
+    strong { color: var(--white-80); font-weight: 600; }
+
+    .info-box {
+      border: 1px solid var(--orange-border); border-radius: 12px;
+      background: var(--orange-dim); padding: 24px 28px; margin: 32px 0;
+    }
+    .info-box-label { font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--orange); margin-bottom: 10px; }
+    .info-box p { color: var(--white-80); margin: 0; font-size: .95rem; }
+
+    .zones-table { width: 100%; border-collapse: collapse; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); margin: 28px 0; }
+    .zones-table th { padding: 13px 18px; background: var(--bg-4); font-size: .8rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--white-40); text-align: left; }
+    .zones-table td { padding: 13px 18px; font-size: .9rem; color: var(--white-60); border-top: 1px solid var(--border); }
+    .zones-table tr.highlight td { background: var(--orange-dim); color: var(--white-80); font-weight: 500; }
+    .zone-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: .75rem; font-weight: 700; }
+    .z1 { background: rgba(34,197,94,.15); color: #22c55e; }
+    .z2 { background: var(--orange-dim); color: var(--orange); }
+    .z3 { background: rgba(234,179,8,.15); color: #eab308; }
+    .z4 { background: rgba(239,68,68,.15); color: #ef4444; }
+    .z5 { background: rgba(168,85,247,.15); color: #a855f7; }
+
+    .calculator {
+      border: 1px solid var(--border-2); border-radius: 16px;
+      background: var(--bg-2); padding: 32px; margin: 36px 0;
+    }
+    .calculator h3 { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; margin: 0 0 8px; }
+    .calc-sub { font-size: .88rem; color: var(--white-40); margin-bottom: 24px !important; }
+
+    .calc-row { display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 20px; }
+    .calc-field { flex: 1; min-width: 140px; }
+    .calc-field label { display: block; font-size: .8rem; font-weight: 600; color: var(--white-40); margin-bottom: 8px; letter-spacing: .06em; text-transform: uppercase; }
+    .calc-field input {
+      width: 100%; padding: 12px 16px;
+      background: var(--bg-3); border: 1px solid var(--border-2);
+      border-radius: 8px; color: var(--white);
+      font-family: 'Source Sans 3', sans-serif; font-size: 1rem;
+      outline: none; transition: border-color .2s;
+    }
+    .calc-field input:focus { border-color: var(--orange); }
+    .calc-field select {
+      width: 100%; padding: 12px 16px;
+      background: var(--bg-3); border: 1px solid var(--border-2);
+      border-radius: 8px; color: var(--white);
+      font-family: 'Source Sans 3', sans-serif; font-size: 1rem;
+      outline: none; cursor: pointer;
+    }
+
+    .btn-calc {
+      padding: 12px 28px; background: var(--orange); color: white;
+      border: none; border-radius: 8px;
+      font-family: 'Source Sans 3', sans-serif; font-size: .95rem; font-weight: 600;
+      cursor: pointer; transition: opacity .2s; white-space: nowrap;
+    }
+    .btn-calc:hover { opacity: .88; }
+
+    .calc-results { display: none; margin-top: 20px; }
+    .calc-results.show { display: block; }
+    .result-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; }
+    @media (max-width: 600px) { .result-grid { grid-template-columns: repeat(2,1fr); } }
+    .result-zone {
+      padding: 14px 12px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--bg-3);
+      text-align: center;
+    }
+    .result-zone.active { border-color: var(--orange); background: var(--orange-dim); }
+    .result-zone-label { font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--white-40); margin-bottom: 6px; }
+    .result-zone-range { font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 700; color: var(--white); }
+    .result-zone-name { font-size: .72rem; color: var(--white-40); margin-top: 4px; }
+    .result-zone.active .result-zone-label { color: var(--orange); }
+    .result-zone.active .result-zone-range { color: var(--white); }
+
+    .week-example {
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--bg-2); overflow: hidden; margin: 28px 0;
+    }
+    .week-header { padding: 14px 20px; background: var(--bg-4); border-bottom: 1px solid var(--border); font-size: .8rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--white-40); }
+    .week-row { display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-top: 1px solid var(--border); }
+    .week-row:first-of-type { border-top: none; }
+    .week-day { font-size: .82rem; font-weight: 600; color: var(--white-40); width: 80px; flex-shrink: 0; }
+    .week-session { flex: 1; }
+    .week-session-name { font-size: .9rem; font-weight: 500; margin-bottom: 2px; }
+    .week-session-desc { font-size: .78rem; color: var(--white-40); }
+    .week-badge { padding: 3px 9px; border-radius: 4px; font-size: .72rem; font-weight: 600; }
+
+    .cta-box {
+      border: 1px solid var(--orange-border); border-radius: 16px;
+      background: var(--orange-dim); padding: 36px; margin: 48px 0;
+      text-align: center;
+    }
+    .cta-box h3 { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 900; margin-bottom: 10px; }
+    .cta-box p { font-size: .95rem; color: var(--white-60); margin-bottom: 24px; line-height: 1.65; }
+    .btn-primary { padding: 14px 32px; background: var(--orange); color: white; border-radius: 8px; font-size: 1rem; font-weight: 600; text-decoration: none; box-shadow: 0 0 32px rgba(255,107,43,.28); transition: all .2s; display: inline-block; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 48px rgba(255,107,43,.4); }
+    .cta-note { font-size: .78rem; color: var(--white-40); margin-top: 12px !important; }
+
+    .related { border-top: 1px solid var(--border); padding: clamp(48px,8vw,80px) clamp(20px,5vw,80px); }
+    .related-inner { max-width: 760px; margin: 0 auto; }
+    .related h3 { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; margin-bottom: 20px; }
+    .related-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+    @media (max-width: 640px) { .related-grid { grid-template-columns: 1fr; } }
+    .related-card { padding: 20px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-2); text-decoration: none; transition: border-color .2s, transform .2s; }
+    .related-card:hover { border-color: var(--border-2); transform: translateY(-2px); }
+    .related-card-label { font-size: .7rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--orange); margin-bottom: 8px; }
+    .related-card h4 { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; color: var(--white); line-height: 1.3; }
+
+    footer { border-top: 1px solid var(--border); padding: 24px clamp(20px,5vw,80px); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: var(--bg); }
+    .footer-logo { font-family: 'Playfair Display', serif; font-size: .95rem; font-weight: 700; color: var(--white); display: flex; align-items: center; gap: 7px; }
+    .footer-links { display: flex; gap: 18px; }
+    .footer-link { font-size: .78rem; color: var(--white-40); text-decoration: none; transition: color .2s; }
+    .footer-link:hover { color: var(--white-60); }
+    .footer-note { font-size: .74rem; color: var(--white-40); }
+
+    #beta-badge { position: fixed; bottom: 80px; right: 20px; z-index: 9999; background: rgba(255,107,43,.12); border: 1px solid rgba(255,107,43,.35); color: var(--orange); padding: 8px 14px; border-radius: 100px; font-size: .74rem; font-weight: 600; letter-spacing: .07em; cursor: pointer; backdrop-filter: blur(8px); display: flex; align-items: center; gap: 6px; transition: all .2s; font-family: 'Source Sans 3', sans-serif; }
+    #beta-badge:hover { background: rgba(255,107,43,.22); }
+
+    .reveal { opacity: 0; transform: translateY(20px); transition: opacity .6s ease, transform .6s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="logo"><span class="logo-dot"></span>TriCoach AI</a>
+  <a href="https://getricoach.com/app" class="nav-cta">Empezar gratis →</a>
+</nav>
+
+<div class="hero-article">
+  <div class="breadcrumb"><a href="/">TriCoach AI</a> → Guías de entrenamiento</div>
+  <div class="label">Guía completa</div>
+  <h1>Entrenamiento<br><em>Zona 2</em></h1>
+  <p>Qué es, cómo calcular tus zonas, cuánto tiempo dedicarle y cómo integrarlo en tu plan de running o triatlón para mejorar de verdad.</p>
+  <div class="article-meta">
+    <span>TriCoach AI</span>
+    <span class="meta-sep"></span>
+    <span>Actualizado 2026</span>
+    <span class="meta-sep"></span>
+    <span>10 min de lectura</span>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="info-box reveal">
+    <div class="info-box-label">Resumen rápido</div>
+    <p>La zona 2 es la intensidad a la que puedes mantener una conversación. Entrenar aquí el 70-80% del tiempo construye la base aeróbica que necesitas para mejorar en running, triatlón y cualquier deporte de resistencia.</p>
+  </div>
+
+  <h2>¿Qué es la <em>zona 2</em>?</h2>
+
+  <p>La zona 2 es un rango de intensidad de ejercicio — aproximadamente entre el <strong>60% y el 70% de tu frecuencia cardíaca máxima</strong> — en el que tu cuerpo utiliza principalmente grasa como combustible y el sistema aeróbico trabaja de forma eficiente sin acumular lactato.</p>
+
+  <p>En términos prácticos, es la intensidad a la que <strong>puedes mantener una conversación</strong> sin quedarte sin aliento. Si tienes que hacer pausas para hablar, estás en zona 3 o más. Si puedes cantar, probablemente estás en zona 1.</p>
+
+  <p>Fisiológicamente, entrenar en zona 2 mejora la densidad mitocondrial — aumentas el número y la eficiencia de las mitocondrias en tus células musculares, que son las "fábricas de energía" del cuerpo. Más mitocondrias significa más capacidad de producir energía aeróbicamente, lo que se traduce en mejor rendimiento en todos los ritmos.</p>
+
+  <h2>Las 5 zonas de <em>frecuencia cardíaca</em></h2>
+
+  <p>Existen diferentes sistemas de zonas, pero el más usado en running y triatlón divide el espectro de intensidad en 5 zonas:</p>
+
+  <table class="zones-table reveal">
+    <thead>
+      <tr>
+        <th>Zona</th>
+        <th>% FCmax</th>
+        <th>Nombre</th>
+        <th>Sensación</th>
+        <th>Uso principal</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="zone-badge z1">Z1</span></td>
+        <td>50–60%</td>
+        <td>Recuperación</td>
+        <td>Muy fácil, conversación fluida</td>
+        <td>Calentamiento, recuperación activa</td>
+      </tr>
+      <tr class="highlight">
+        <td><span class="zone-badge z2">Z2</span></td>
+        <td>60–70%</td>
+        <td>Base aeróbica</td>
+        <td>Cómodo, puedes hablar</td>
+        <td><strong>Rodajes largos, volumen base</strong></td>
+      </tr>
+      <tr>
+        <td><span class="zone-badge z3">Z3</span></td>
+        <td>70–80%</td>
+        <td>Tempo</td>
+        <td>Moderado, frases cortas</td>
+        <td>Ritmo de carrera media distancia</td>
+      </tr>
+      <tr>
+        <td><span class="zone-badge z4">Z4</span></td>
+        <td>80–90%</td>
+        <td>Umbral</td>
+        <td>Duro, difícil hablar</td>
+        <td>Series, intervalos, umbral</td>
+      </tr>
+      <tr>
+        <td><span class="zone-badge z5">Z5</span></td>
+        <td>90–100%</td>
+        <td>VO2max</td>
+        <td>Máximo esfuerzo</td>
+        <td>Repeticiones cortas, sprints</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Calcula tus <em>zonas de FC</em></h2>
+
+  <p>Para entrenar por zonas necesitas saber tu frecuencia cardíaca máxima (FCmax). La fórmula clásica es <strong>220 − tu edad</strong>, aunque una prueba de campo da resultados más precisos.</p>
+
+  <div class="calculator reveal">
+    <h3>Calculadora de zonas de FC</h3>
+    <p class="calc-sub">Introduce tu edad o tu FCmax real si la conoces</p>
+    <div class="calc-row">
+      <div class="calc-field">
+        <label>Edad</label>
+        <input type="number" id="age" placeholder="35" min="15" max="80" />
+      </div>
+      <div class="calc-field">
+        <label>FCmax real (opcional)</label>
+        <input type="number" id="hrmax" placeholder="185" min="140" max="220" />
+      </div>
+      <div class="calc-field">
+        <label>Deporte</label>
+        <select id="sport">
+          <option value="running">Running</option>
+          <option value="cycling">Ciclismo</option>
+          <option value="swimming">Natación</option>
+        </select>
+      </div>
+      <button class="btn-calc" onclick="calcZones()">Calcular →</button>
+    </div>
+    <div class="calc-results" id="calc-results">
+      <div class="result-grid" id="result-grid"></div>
+      <p style="font-size:.8rem;color:var(--white-40);margin-top:14px;margin-bottom:0">
+        * Valores orientativos basados en FCmax estimada. Para mayor precisión realiza un test de campo.
+      </p>
+    </div>
+  </div>
+
+  <h2>¿Por qué el 80% del entrenamiento<br><em>debe ser zona 2</em>?</h2>
+
+  <p>El <strong>método polarizado</strong> — respaldado por investigaciones del fisiólogo Stephen Seiler — establece que los atletas de élite en deportes de resistencia pasan aproximadamente el <strong>80% de su tiempo de entrenamiento en zonas bajas (Z1-Z2)</strong> y solo el 20% en zonas altas (Z4-Z5).</p>
+
+  <p>La trampa en la que caen la mayoría de atletas amateur es entrenar demasiado en zona 3 — ni suficientemente suave para recuperar ni suficientemente intenso para estimular adaptaciones. Esta "zona gris" genera fatiga sin los beneficios de ningún extremo.</p>
+
+  <div class="info-box reveal">
+    <div class="info-box-label">El error más común</div>
+    <p>Correr demasiado rápido en los rodajes "suaves". Si tu rodaje de recuperación está en Z3, no estás recuperando — estás acumulando fatiga. Baja el ritmo aunque te parezca ridículamente lento al principio.</p>
+  </div>
+
+  <h2>Beneficios concretos del<br><em>entrenamiento en zona 2</em></h2>
+
+  <h3>1. Mejora la eficiencia aeróbica</h3>
+  <p>Más mitocondrias = más capacidad de oxidar grasa y glucosa. Corres más rápido al mismo esfuerzo percibido. El ritmo de zona 2 baja semana a semana con el mismo pulso.</p>
+
+  <h3>2. Acelera la recuperación</h3>
+  <p>El sistema aeróbico es el motor de recuperación. Cuanto más desarrollado esté, más rápido eliminas el lactato de las sesiones duras y antes estás listo para la siguiente sesión de calidad.</p>
+
+  <h3>3. Reduce el riesgo de lesión</h3>
+  <p>Las lesiones por sobreuso ocurren cuando acumulas más carga de la que puedes absorber. La zona 2 permite volumen alto con bajo impacto en el sistema nervioso central.</p>
+
+  <h3>4. Base para el trabajo de calidad</h3>
+  <p>Sin base aeróbica sólida, las series y los intervalos no tienen dónde apoyarse. Primero construyes la base, luego añades velocidad.</p>
+
+  <h2>Cómo integrar zona 2 en<br><em>tu semana de entrenamiento</em></h2>
+
+  <p>Ejemplo de semana para un runner de nivel intermedio preparando una media maratón con 5 sesiones semanales:</p>
+
+  <div class="week-example reveal">
+    <div class="week-header">Semana tipo — Running (5 sesiones)</div>
+    <div class="week-row">
+      <div class="week-day">Lunes</div>
+      <div class="week-session">
+        <div class="week-session-name">Descanso o movilidad</div>
+        <div class="week-session-desc">Recuperación completa</div>
+      </div>
+      <span class="week-badge" style="background:var(--bg-4);color:var(--white-40)">Descanso</span>
+    </div>
+    <div class="week-row">
+      <div class="week-day">Martes</div>
+      <div class="week-session">
+        <div class="week-session-name">Rodaje Z2 — 50 min</div>
+        <div class="week-session-desc">Conversación cómoda todo el rato</div>
+      </div>
+      <span class="week-badge z2" style="background:var(--orange-dim);color:var(--orange)">Z2</span>
+    </div>
+    <div class="week-row">
+      <div class="week-day">Miércoles</div>
+      <div class="week-session">
+        <div class="week-session-name">Series — Calidad</div>
+        <div class="week-session-desc">5×1km a Z4 + recuperación Z1</div>
+      </div>
+      <span class="week-badge" style="background:rgba(239,68,68,.15);color:#ef4444">Z4</span>
+    </div>
+    <div class="week-row">
+      <div class="week-day">Jueves</div>
+      <div class="week-session">
+        <div class="week-session-name">Rodaje Z2 — 40 min</div>
+        <div class="week-session-desc">Recuperación activa post-series</div>
+      </div>
+      <span class="week-badge z2" style="background:var(--orange-dim);color:var(--orange)">Z2</span>
+    </div>
+    <div class="week-row">
+      <div class="week-day">Viernes</div>
+      <div class="week-session">
+        <div class="week-session-name">Descanso</div>
+        <div class="week-session-desc">Recuperación completa</div>
+      </div>
+      <span class="week-badge" style="background:var(--bg-4);color:var(--white-40)">Descanso</span>
+    </div>
+    <div class="week-row">
+      <div class="week-day">Sábado</div>
+      <div class="week-session">
+        <div class="week-session-name">Rodaje largo Z2 — 80-90 min</div>
+        <div class="week-session-desc">La sesión más importante de la semana</div>
+      </div>
+      <span class="week-badge z2" style="background:var(--orange-dim);color:var(--orange)">Z2</span>
+    </div>
+    <div class="week-row">
+      <div class="week-day">Domingo</div>
+      <div class="week-session">
+        <div class="week-session-name">Rodaje Z1-Z2 suave — 30 min</div>
+        <div class="week-session-desc">Activación ligera, piernas sueltas</div>
+      </div>
+      <span class="week-badge" style="background:rgba(34,197,94,.12);color:#22c55e">Z1</span>
+    </div>
+  </div>
+
+  <p>En esta semana, <strong>4 de 5 sesiones son zona 1-2</strong> (80% del tiempo total). Solo una sesión de calidad en Z4. Esto es exactamente el modelo polarizado aplicado a un runner amateur.</p>
+
+  <h2>Zona 2 en <em>triatlón y natación</em></h2>
+
+  <p>El principio es el mismo en todas las disciplinas, pero hay matices importantes:</p>
+
+  <p><strong>Ciclismo:</strong> La zona 2 en bici es más fácil de mantener que corriendo porque el impacto es menor. Es ideal para acumular volumen aeróbico sin fatiga muscular. Un triatleta puede hacer sesiones de 2-3 horas en Z2 sin comprometer el entrenamiento del día siguiente.</p>
+
+  <p><strong>Natación:</strong> Las zonas en natación se calculan de forma diferente — se usan ritmos por cada 100m en lugar de FC. La "zona 2" equivale aproximadamente a nadar a ritmo cómodo donde puedes mantener la técnica durante toda la sesión sin degradarla.</p>
+
+  <p><strong>Triatlón combinado:</strong> En semanas de bloque triatlón, la zona 2 permite encadenar sesiones de las tres disciplinas sin agotar el sistema nervioso central. Bici larga en Z2 el sábado + carrera en Z2 el domingo es una combinación clásica.</p>
+
+  <div class="cta-box reveal">
+    <h3>¿Quieres un plan que aplique esto automáticamente?</h3>
+    <p>TriCoach AI genera tu plan semanal calculando exactamente cuándo entrenar en zona 2 y cuándo añadir calidad, según tus datos reales de Strava y las semanas que quedan para tu carrera.</p>
+    <a href="https://getricoach.com/app" class="btn-primary">Empezar gratis →</a>
+    <p class="cta-note">Sin tarjeta · Plan gratuito para siempre · 100% en español</p>
+  </div>
+
+  <h2>Preguntas frecuentes sobre<br><em>zona 2</em></h2>
+
+  <h3>¿Es normal que el ritmo de zona 2 parezca ridículamente lento?</h3>
+  <p>Sí, completamente. La mayoría de runners que empiezan a entrenar por zonas se sorprenden de lo lento que tienen que ir para mantenerse en Z2. Es normal y es señal de que tienes margen de mejora aeróbica. Con el tiempo el ritmo de Z2 sube significativamente.</p>
+
+  <h3>¿Cuántas semanas para ver resultados en zona 2?</h3>
+  <p>Las adaptaciones mitocondriales tardan <strong>6-8 semanas mínimo</strong> en ser perceptibles. En 3-4 meses de trabajo consistente en Z2 verás mejoras claras en el ritmo que puedes mantener al mismo pulso.</p>
+
+  <h3>¿Puedo hacer todo el entrenamiento en zona 2?</h3>
+  <p>En fases de base, sí — especialmente si llevas poco tiempo entrenando o vuelves tras una lesión. En fases más avanzadas necesitas añadir trabajo de calidad (Z4-Z5) para desarrollar la velocidad.</p>
+
+  <h3>¿La zona 2 sirve para perder peso?</h3>
+  <p>La zona 2 es la intensidad donde el porcentaje de oxidación de grasas es mayor. Dicho esto, la pérdida de peso depende principalmente del balance calórico total, no solo de la intensidad del ejercicio.</p>
+
+</div>
+
+<!-- RELATED -->
+<div class="related">
+  <div class="related-inner">
+    <h3>Guías relacionadas</h3>
+    <div class="related-grid">
+      <a href="/plan-media-maraton" class="related-card">
+        <div class="related-card-label">Guía</div>
+        <h4>Plan de entrenamiento para media maratón</h4>
+      </a>
+      <a href="/preparar-primer-triatlon" class="related-card">
+        <div class="related-card-label">Guía</div>
+        <h4>Cómo preparar tu primer triatlón</h4>
+      </a>
+      <a href="/plan-entrenamiento-triatlon" class="related-card">
+        <div class="related-card-label">Guía</div>
+        <h4>Plan de entrenamiento para triatlón</h4>
+      </a>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-logo"><span style="width:7px;height:7px;border-radius:50%;background:var(--orange)"></span>TriCoach AI</div>
+  <div class="footer-links">
+    <a href="/" class="footer-link">Inicio</a>
+    <a href="/plan-entrenamiento-triatlon" class="footer-link">Triatlón</a>
+    <a href="mailto:coach@getricoach.com" class="footer-link">Contacto</a>
+    <a href="https://tally.so/r/VL8pyl" target="_blank" class="footer-link">Reportar problema</a>
+  </div>
+  <p class="footer-note">© 2026 TriCoach AI</p>
+</footer>
+
+<div id="beta-badge" onclick="window.open('https://tally.so/r/VL8pyl','_blank')">
+  <span style="width:6px;height:6px;border-radius:50%;background:var(--orange);animation:pulse 2s infinite;display:inline-block"></span>
+  BETA · Reportar problema
+</div>
+
+<script>
+  // Reveal
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Calculator
+  function calcZones() {
+    const age = parseInt(document.getElementById('age').value);
+    const hrmaxInput = parseInt(document.getElementById('hrmax').value);
+    const sport = document.getElementById('sport').value;
+
+    let hrmax = hrmaxInput || (220 - age);
+    if (!hrmax || hrmax < 140) { alert('Introduce tu edad o FCmax'); return; }
+
+    // Sport adjustment
+    if (sport === 'cycling') hrmax = Math.round(hrmax * 0.95);
+    if (sport === 'swimming') hrmax = Math.round(hrmax * 0.92);
+
+    const zones = [
+      { label: 'Z1', name: 'Recuperación', min: 0.50, max: 0.60 },
+      { label: 'Z2', name: 'Base aeróbica', min: 0.60, max: 0.70 },
+      { label: 'Z3', name: 'Tempo', min: 0.70, max: 0.80 },
+      { label: 'Z4', name: 'Umbral', min: 0.80, max: 0.90 },
+      { label: 'Z5', name: 'VO2max', min: 0.90, max: 1.00 },
+    ];
+
+    const grid = document.getElementById('result-grid');
+    grid.innerHTML = zones.map((z, i) => `
+      <div class="result-zone ${i === 1 ? 'active' : ''}">
+        <div class="result-zone-label">${z.label}</div>
+        <div class="result-zone-range">${Math.round(hrmax * z.min)}–${Math.round(hrmax * z.max)}</div>
+        <div class="result-zone-name">${z.name}</div>
+      </div>
+    `).join('');
+
+    document.getElementById('calc-results').classList.add('show');
+  }
+
+  // Enter key
+  document.querySelectorAll('input').forEach(i => {
+    i.addEventListener('keydown', e => { if (e.key === 'Enter') calcZones(); });
+  });
+</script>
+</body>
+</html>
