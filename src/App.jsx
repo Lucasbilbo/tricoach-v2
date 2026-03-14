@@ -139,6 +139,7 @@ function App() {
           <Chat
             userId={session.user.id}
             profile={profile}
+            plan={plan}
             personalidad={profile?.personalidad || 'cercano'}
             onPersonalidadChange={handlePersonalidadChange}
             onShowUpgrade={() => setShowUpgradeModal(true)}
