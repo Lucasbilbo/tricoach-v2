@@ -241,28 +241,10 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
         top: 0,
         zIndex: 50,
       }}>
-        <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ maxWidth: 640, margin: '0 auto' }}>
           <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 600 }}>
             Semana del {plan.semana}
           </h3>
-          {!esSemanaPasada && (
-            <button
-              onClick={() => handleGenerarPlan()}
-              disabled={generando}
-              style={{
-                background: 'var(--secondary)',
-                border: '1px solid var(--border)',
-                borderRadius: 8,
-                color: 'var(--muted-foreground)',
-                fontFamily: 'var(--font-sans)',
-                fontSize: 12,
-                padding: '4px 10px',
-                cursor: 'pointer',
-              }}
-            >
-              {generando ? '...' : '↻ Regenerar'}
-            </button>
-          )}
         </div>
       </div>
 
@@ -287,25 +269,26 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
                   {analisis?.rpeMedia != null ? ` · RPE medio ${analisis.rpeMedia}` : ''}
                 </p>
               </div>
-              <button
-                onClick={() => handleGenerarPlan(plan)}
-                disabled={generando}
-                style={{
-                  background: generando ? 'var(--muted)' : 'var(--primary)',
-                  color: 'var(--primary-foreground)',
-                  border: 'none',
-                  borderRadius: 8,
-                  padding: '8px 14px',
-                  fontFamily: 'var(--font-sans)',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: generando ? 'not-allowed' : 'pointer',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                }}
-              >
-                {generando ? '...' : 'Generar esta semana'}
-              </button>
+              {onNavigate && (
+                <button
+                  onClick={() => onNavigate('coach')}
+                  style={{
+                    background: 'var(--primary)',
+                    color: 'var(--primary-foreground)',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '8px 14px',
+                    fontFamily: 'var(--font-sans)',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                  }}
+                >
+                  💬 Nuevo plan con el coach
+                </button>
+              )}
             </div>
           </div>
         )}

@@ -18,6 +18,10 @@ Cada recomendación tiene una razón fisiológica. Usas métricas exactas: zonas
 }
 
 export function buildSystemPrompt(profile, personalidad = 'cercano', actividades = null, plan = null) {
+  const ahora = new Date().toLocaleDateString('es-ES', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    timeZone: 'Europe/Madrid'
+  })
   const deporte = profile.deporte || 'deporte de resistencia'
   const nivel = profile.nivel || 'principiante'
   const objetivo = profile.objetivo || 'mejorar mi forma física'
@@ -93,6 +97,7 @@ Solo incluye el marcador cuando estés proponiendo un ajuste concreto al plan, n
 
   return `Eres un coach deportivo personal experto en ${deporteInfo[deporte] || deporte}.
 Tu nombre es ${nombreCoach}. El usuario te llama así.${natacionContext}
+HOY ES: ${ahora}. Nunca preguntes al usuario qué día es.
 Tu atleta se llama ${nombre}, tiene nivel ${nivel} y su objetivo es: ${objetivo}.
 ${fechaCarrera}
 ${contexto}
