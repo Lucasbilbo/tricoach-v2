@@ -13,14 +13,28 @@ function getTodayDate() {
   return new Date().toISOString().split('T')[0];
 }
 
-function getDiasSemana(fechaInicio) {
+function getMondayOfCurrentWeek() {
+  const now = new Date();
+  const day = now.getUTCDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+  const diff = day === 0 ? -6 : 1 - day;
+  const monday = new Date(now);
+  monday.setUTCDate(now.getUTCDate() + diff);
+  return monday.toISOString().split('T')[0];
+}
+
+function getDiasDesdeHoy(mondayStr) {
   const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-  const start = new Date(fechaInicio + 'T12:00:00');
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(start);
-    d.setDate(start.getDate() + i);
-    return DIAS[d.getDay()];
-  });
+  const today = new Date(getTodayDate() + 'T12:00:00');
+  const monday = new Date(mondayStr + 'T12:00:00');
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  const days = [];
+  const current = new Date(today);
+  while (current <= sunday) {
+    days.push(DIAS[current.getDay()]);
+    current.setDate(current.getDate() + 1);
+  }
+  return days;
 }
 
 function supabaseGet(hostname, path, key) {
@@ -170,7 +184,7 @@ function buildDiagnosticoUserMessage(profile, weekStart, deporteInfo, dias) {
     ],
   };
 
-  const sesionesInfo = (testsInfo[deporte] || testsInfo.running).join('\n- ');
+  const sesionesInfo = (testsInfo[deporte] || testsInfo.running).slice(0, dias.length).join('\n- ');
 
   return `Este atleta acaba de registrarse. Genera una SEMANA DE DIAGNÓSTICO para evaluar su nivel real.
 
@@ -199,11 +213,11 @@ Para cada sesión de test (no descanso), la descripción debe:
 3. Indicar QUÉ debe medir o anotar el atleta
 4. Indicar RPE objetivo del bloque principal
 
-En la descripción del ${dias[6]} (última sesión) añade: "Cuando termines cada test, cuéntame el resultado en el chat y lo usaré para calibrar tu plan personalizado de la próxima semana."
+En la descripción de la última sesión añade: "Cuando termines cada test, cuéntame el resultado en el chat y lo usaré para calibrar tu plan personalizado de la próxima semana."
 
 tipos posibles: "Correr", "Bici", "Nadar", "Fuerza", "Brick", "Descanso"
 intensidades posibles: "suave", "moderada", "fuerte", "descanso"
-Devuelve exactamente 7 sesiones en el orden: ${dias.join(', ')}.`;
+Devuelve exactamente ${dias.length} sesiones en el orden: ${dias.join(', ')}.`;
 }
 
 function buildAnalisisSemanaAnterior(planAnterior, stravaText) {
@@ -324,8 +338,8 @@ Prioridad: llegar fresco al día de la carrera. Reduce volumen 30-50%, mantén a
   const actividadesCount = Array.isArray(stravaActivities) ? stravaActivities.length : 0;
   const necesitaDiagnostico = esPrimerPlan && actividadesCount < 3;
 
-  const weekStart = fechaInicio || getTodayDate();
-  const dias = getDiasSemana(weekStart);
+  const weekStart = getMondayOfCurrentWeek();
+  const dias = getDiasDesdeHoy(weekStart);
 
   const deporteInfo = {
     triatlon: 'triatlón olímpico (natación 1.5km, ciclismo 40km, running 10km)',
@@ -373,7 +387,7 @@ El JSON debe tener esta estructura exacta con los días en el orden indicado:
 
 tipos posibles: "Correr", "Bici", "Nadar", "Fuerza", "Brick", "Descanso"
 intensidades posibles: "suave", "moderada", "fuerte", "descanso"
-Devuelve exactamente 7 sesiones en el orden: ${dias.join(', ')}.
+Devuelve exactamente ${dias.length} sesiones en el orden: ${dias.join(', ')}.
 
 Para la descripción de cada sesión activa incluye en una sola línea:
 - Calentamiento específico (10-15% del tiempo): qué hacer exactamente
@@ -408,8 +422,8 @@ Ejemplo descripción running: "Cal 10min trote suave z1. Principal: 4x1000m a 5:
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'El plan generado no es JSON válido' }) };
   }
 
-  if (!planData.sesiones || planData.sesiones.length !== 7) {
-    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'El plan debe tener exactamente 7 sesiones' }) };
+  if (!planData.sesiones || planData.sesiones.length < 1) {
+    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'El plan no tiene sesiones' }) };
   }
 
   // Inyectar tipo_semana en cada sesión de diagnóstico

@@ -243,7 +243,13 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
       }}>
         <div style={{ maxWidth: 640, margin: '0 auto' }}>
           <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 600 }}>
-            Semana del {plan.semana}
+            {(() => {
+              const lunes = new Date(plan.semana + 'T12:00:00')
+              const domingo = new Date(lunes)
+              domingo.setDate(lunes.getDate() + 6)
+              const fmt = (d) => d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })
+              return `Semana del ${fmt(lunes)} al ${fmt(domingo)}`
+            })()}
           </h3>
         </div>
       </div>
