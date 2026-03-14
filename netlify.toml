@@ -3,22 +3,6 @@
   functions = "netlify/functions"
   ignore = "git diff --quiet HEAD^ HEAD -- . ':(exclude)push-subscription.json' ':(exclude)history.json'"
 
-# ── Landing page y rutas de la app ───────────────────────────────────────────
-[[redirects]]
-  from = "/"
-  to = "/landing.html"
-  status = 200
-
-[[redirects]]
-  from = "/app"
-  to = "/index.html"
-  status = 200
-
-[[redirects]]
-  from = "/app/*"
-  to = "/index.html"
-  status = 200
-
 # ── Bloquear archivos sensibles ───────────────────────────────────────────────
 [[redirects]]
   from = "/history.json"
