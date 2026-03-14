@@ -47,7 +47,32 @@
 
 [functions."push-send"]
   schedule = "0 7,19 * * *"
+# ── Páginas SEO ──────────────────────────────────────────────────────────────
+[[redirects]]
+  from = "/entrenamiento-zona-2"
+  to = "/entrenamiento-zona-2.html"
+  status = 200
 
+[[redirects]]
+  from = "/plan-media-maraton"
+  to = "/plan-media-maraton.html"
+  status = 200
+
+[[redirects]]
+  from = "/preparar-primer-triatlon"
+  to = "/preparar-primer-triatlon.html"
+  status = 200
+
+[[redirects]]
+  from = "/plan-entrenamiento-triatlon"
+  to = "/plan-entrenamiento-triatlon.html"
+  status = 200
+
+[[redirects]]
+  from = "/plan-entrenamiento-hyrox"
+  to = "/plan-entrenamiento-hyrox.html"
+  status = 200
+  
 [dev]
   command = "npm run dev"
   port = 8888
