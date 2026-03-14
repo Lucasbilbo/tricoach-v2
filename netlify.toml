@@ -1,7 +1,14 @@
 [build]
   command = "npm run build"
+  publish = "dist"
   functions = "netlify/functions"
   ignore = "git diff --quiet HEAD^ HEAD -- . ':(exclude)push-subscription.json' ':(exclude)history.json'"
+
+# ── App React (SPA fallback) ──────────────────────────────────────────────────
+[[redirects]]
+  from = "/app/*"
+  to = "/app/index.html"
+  status = 200
 
 # ── Bloquear archivos sensibles ───────────────────────────────────────────────
 [[redirects]]
