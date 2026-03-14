@@ -200,7 +200,7 @@ exports.handler = async (event) => {
     const key = `${sesionFecha}_${sesion.tipo}`;
     if (actividadesPorFecha[key]) {
       sincronizadas++;
-      return { ...sesion, completada: true, rpe: sesion.rpe || null };
+      return { ...sesion, completada: true, via_strava: true, rpe: sesion.rpe || null };
     }
 
     return sesion;

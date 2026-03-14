@@ -54,10 +54,25 @@ export function buildSystemPrompt(profile, personalidad = 'cercano', actividades
       ? '\nEl atleta tiene Strava conectado pero no hay actividades recientes.'
       : '\nEl atleta no tiene Strava conectado. Puedes sugerirle que lo conecte para darte más contexto.'
 
+  const completadaLabel = (s) => {
+    if (!s.completada) return ' (pendiente)'
+    return s.via_strava ? ' ✓ completada (Strava)' : ' ✓ completada (manual)'
+  }
+
   const planSection = plan
     ? `\nPLAN DE ESTA SEMANA:\n${plan.sesiones.map(s =>
-        `${s.dia}: ${s.tipo} - ${s.descripcion}${s.completada ? ' ✓ completada' : ' (pendiente)'}`
+        `${s.dia}: ${s.tipo} - ${s.descripcion}${completadaLabel(s)}`
       ).join('\n')}`
+    : ''
+
+  const sesionesCompletadas = plan
+    ? plan.sesiones.filter(s => s.completada)
+    : []
+
+  const reconocimientoSection = sesionesCompletadas.length > 0
+    ? `\nSESIONES COMPLETADAS ESTA SEMANA:\n${sesionesCompletadas.map(s =>
+        `- ${s.dia}: ${s.tipo} (${s.descripcion})${s.via_strava ? ' — datos reales de Strava disponibles' : ''}`
+      ).join('\n')}\n\nCuando el usuario te escriba, si hay sesiones recién completadas que aún no has comentado, reconócelas brevemente: "Vi que completaste el [entrenamiento] del [día], ¿cómo fue?" Solo pregunta una vez por sesión, no repitas si ya lo comentaste en la conversación.`
     : ''
 
   const interpretacionTests = `
@@ -114,6 +129,6 @@ Tu rol es:
 Responde siempre en español, de forma clara y concisa.
 Usa datos concretos: distancias, tiempos, zonas de frecuencia cardíaca cuando sea relevante.
 Cuando tengas datos de Strava del atleta, úsalos activamente en tus respuestas. Son datos reales sincronizados de su cuenta Strava.
-${actividadesSection}${planSection}
+${actividadesSection}${planSection}${reconocimientoSection}
 ${interpretacionTests}${ajusteInstructions}`
 }
