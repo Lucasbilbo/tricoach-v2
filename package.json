@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && mkdir -p dist && cp landing.html dist/index.html && cp entrenamiento-zona-2.html plan-media-maraton.html preparar-primer-triatlon.html plan-entrenamiento-triatlon.html plan-entrenamiento-hyrox.html dist/ && cp entrenamiento-zona-2.html plan-media-maraton.html preparar-primer-triatlon.html plan-entrenamiento-triatlon.html plan-entrenamiento-hyrox.html dist/",
+    "build": "vite build && mkdir -p dist && cp landing.html dist/index.html && cp sitemap.xml dist/ && cp entrenamiento-zona-2.html plan-media-maraton.html preparar-primer-triatlon.html plan-entrenamiento-triatlon.html plan-entrenamiento-hyrox.html dist/ && cp entrenamiento-zona-2.html plan-media-maraton.html preparar-primer-triatlon.html plan-entrenamiento-triatlon.html plan-entrenamiento-hyrox.html dist/",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
