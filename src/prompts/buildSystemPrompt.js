@@ -17,7 +17,7 @@ Usas frases poderosas, referencias a grandes atletas y haces que el usuario sien
 Cada recomendación tiene una razón fisiológica. Usas métricas exactas: zonas de FC (Z1-Z5), ritmos por km, vatios, V̇O2max, velocidad crítica, umbrales. Cuando el atleta te da resultados de entrenamientos, los analizas numéricamente. No das motivación vacía — das datos, progresión medible y explicaciones de por qué cada sesión tiene sentido fisiológicamente. Hablas de forma precisa y directa. Cuando no tienes datos suficientes, lo dices y pides los que necesitas.`,
 }
 
-export function buildSystemPrompt(profile, personalidad = 'cercano', actividades = null, plan = null) {
+export function buildSystemPrompt(profile, personalidad = 'cercano', actividades = null, plan = null, planProximaSemana = null) {
   const ahora = new Date().toLocaleDateString('es-ES', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
     timeZone: 'Europe/Madrid'
@@ -97,6 +97,12 @@ NATACIÓN:
 
 Cuando el usuario comparta resultados: calcula sus zonas, explícaselas de forma sencilla y dile que su próximo plan ya estará calibrado con estos datos.`
 
+  const planProximaSemanaSection = planProximaSemana
+    ? `\nPLAN PRÓXIMA SEMANA:\n${planProximaSemana.sesiones.map(s =>
+        `${s.dia}: ${s.tipo} - ${s.descripcion}`
+      ).join('\n')}\nSi el usuario pregunta por la próxima semana, usa este plan.`
+    : ''
+
   const ajusteInstructions = plan ? `
 AJUSTE DE PLAN CONVERSACIONAL:
 Cuando el usuario pida cambiar el plan (lesión, viaje, falta de tiempo, cambio de sesión u otra situación):
@@ -129,6 +135,6 @@ Tu rol es:
 Responde siempre en español, de forma clara y concisa.
 Usa datos concretos: distancias, tiempos, zonas de frecuencia cardíaca cuando sea relevante.
 Cuando tengas datos de Strava del atleta, úsalos activamente en tus respuestas. Son datos reales sincronizados de su cuenta Strava.
-${actividadesSection}${planSection}${reconocimientoSection}
+${actividadesSection}${planSection}${reconocimientoSection}${planProximaSemanaSection}
 ${interpretacionTests}${ajusteInstructions}`
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
 import { getProfile, createProfile, updateProfile } from './lib/profiles'
-import { getPlan, generatePlan, markSessionComplete } from './lib/plans'
+import { getPlan, generatePlan, markSessionComplete, getPlanForWeek, getNextWeekStart } from './lib/plans'
 import Login from './components/Login'
 import Onboarding from './components/Onboarding'
 import Chat from './components/Chat'
@@ -21,6 +21,7 @@ function App() {
   const [session, setSession] = useState(null)
   const [profile, setProfile] = useState(null)
   const [plan, setPlan] = useState(null)
+  const [planProximaSemana, setPlanProximaSemana] = useState(null)
   const [planLoading, setPlanLoading] = useState(true)
   const [loading, setLoading] = useState(true)
   const [currentScreen, setCurrentScreen] = useState('dashboard')
@@ -63,6 +64,7 @@ function App() {
       if (session) {
         loadOrCreateProfile(session.user)
         getPlan(session.user.id).then(p => { setPlan(p); setPlanLoading(false) }).catch(() => setPlanLoading(false))
+        getPlanForWeek(session.user.id, getNextWeekStart()).then(setPlanProximaSemana).catch(() => {})
       } else {
         setPlanLoading(false)
       }
@@ -140,6 +142,7 @@ function App() {
             userId={session.user.id}
             profile={profile}
             plan={plan}
+            planProximaSemana={planProximaSemana}
             personalidad={profile?.personalidad || 'cercano'}
             onPersonalidadChange={handlePersonalidadChange}
             onShowUpgrade={() => setShowUpgradeModal(true)}
@@ -158,6 +161,7 @@ function App() {
             onPlanUpdate={setPlan}
             onSessionDetail={setSelectedSession}
             onNavigate={handleNavigate}
+            onPlanProximaSemanaUpdate={setPlanProximaSemana}
           />
         </ErrorBoundary>
       )}

@@ -13,7 +13,7 @@ const DEPORTE_LABELS = {
   hyrox: '💪 Hyrox',
 }
 
-export default function Chat({ userId, profile, plan, personalidad, onPersonalidadChange, onShowUpgrade, onPlanUpdate, prefillMessage }) {
+export default function Chat({ userId, profile, plan, planProximaSemana, personalidad, onPersonalidadChange, onShowUpgrade, onPlanUpdate, prefillMessage }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -70,7 +70,7 @@ export default function Chat({ userId, profile, plan, personalidad, onPersonalid
       const updatedMessages = [...messages, { role: 'user', content: userMessage }]
       setMessages(updatedMessages)
 
-      const systemPrompt = buildSystemPrompt(profile, profile.personalidad || 'cercano', stravaData, plan)
+      const systemPrompt = buildSystemPrompt(profile, profile.personalidad || 'cercano', stravaData, plan, planProximaSemana)
       console.log('[Chat] System prompt (primeros 200 chars):', systemPrompt.substring(0, 200))
 
       const response = await fetch('/.netlify/functions/claude', {

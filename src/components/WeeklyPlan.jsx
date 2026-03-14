@@ -29,9 +29,13 @@ function formatDateLong(dateStr) {
   })
 }
 
-export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSessionDetail, onNavigate }) {
+export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSessionDetail, onNavigate, onPlanProximaSemanaUpdate }) {
   const _todayDate = new Date()
   const [generando, setGenerando] = useState(false)
+  const [viendoProxima, setViendoProxima] = useState(false)
+  const [planSiguiente, setPlanSiguiente] = useState(null)
+  const [planSiguienteNoExiste, setPlanSiguienteNoExiste] = useState(false)
+  const [loadingProxima, setLoadingProxima] = useState(false)
   const [generandoSiguiente, setGenerandoSiguiente] = useState(false)
   const [completando, setCompletando] = useState(null)
   const [rpe, setRpe] = useState(5)
@@ -48,8 +52,8 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
     d.setDate(d.getDate() + 6)
     return d.toISOString().split('T')[0]
   })() : null
-  const esSemanaPasada = plan && planEndStr < todayStr
-  const esPlanFuturo = plan && plan.semana > todayStr
+  const esSemanaPasada = !viendoProxima && plan && planEndStr < todayStr
+  const esPlanFuturo = !viendoProxima && plan && plan.semana > todayStr
 
   const hayPendientes = plan?.sesiones?.some(s => !s.completada && s.tipo?.toLowerCase() !== 'descanso')
 
@@ -108,8 +112,14 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
 
   async function handleCompletar(dia) {
     try {
-      const updated = await markSessionComplete(plan.id, dia, rpe)
-      onPlanUpdate(updated)
+      const planId = viendoProxima ? planSiguiente.id : plan.id
+      const updated = await markSessionComplete(planId, dia, rpe)
+      if (viendoProxima) {
+        setPlanSiguiente(updated)
+        onPlanProximaSemanaUpdate?.(updated)
+      } else {
+        onPlanUpdate(updated)
+      }
     } catch (e) {
       console.error('Error al completar sesión:', e)
     } finally {
@@ -129,19 +139,37 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
     }
   }
 
-  async function handlePlanificarSiguiente() {
+  async function handleVerSiguiente() {
+    setViendoProxima(true)
+    if (planSiguiente || planSiguienteNoExiste) return
+    setLoadingProxima(true)
+    try {
+      const encontrado = await getPlanForWeek(userId, getNextWeekStart())
+      if (encontrado) {
+        setPlanSiguiente(encontrado)
+        onPlanProximaSemanaUpdate?.(encontrado)
+      } else {
+        setPlanSiguienteNoExiste(true)
+      }
+    } catch (e) {
+      console.error('Error al cargar próxima semana:', e)
+      setPlanSiguienteNoExiste(true)
+    } finally {
+      setLoadingProxima(false)
+    }
+  }
+
+  async function handleGenerarSiguiente() {
     setGenerandoSiguiente(true)
     try {
-      const proximoLunes = getNextWeekStart()
-      const existente = await getPlanForWeek(userId, proximoLunes)
-      if (existente) {
-        onPlanUpdate(existente)
-        return
+      const nuevo = await generatePlan(userId, plan, getNextWeekStart())
+      if (nuevo?.id) {
+        setPlanSiguiente(nuevo)
+        setPlanSiguienteNoExiste(false)
+        onPlanProximaSemanaUpdate?.(nuevo)
       }
-      const nuevo = await generatePlan(userId, plan, proximoLunes)
-      if (nuevo?.id) onPlanUpdate(nuevo)
     } catch (e) {
-      console.error('Error al planificar próxima semana:', e)
+      console.error('Error al generar plan próxima semana:', e)
     } finally {
       setGenerandoSiguiente(false)
     }
@@ -240,13 +268,13 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
     )
   }
 
-  const analisis = analizarPlan(plan)
-  const esDiagnostico = plan?.sesiones?.[0]?.tipo_semana === 'diagnostico'
+  const displayedPlan = viendoProxima ? planSiguiente : plan
+  const analisis = analizarPlan(displayedPlan)
+  const esDiagnostico = displayedPlan?.sesiones?.[0]?.tipo_semana === 'diagnostico'
 
-  const proximoLunes = getNextWeekStart()
   const dow = new Date().getDay() // 0=Dom, 1=Lun, ..., 6=Sáb
   const esJuevesODespues = dow >= 4 || dow === 0
-  const mostrarBotonSiguiente = esJuevesODespues && plan?.semana !== proximoLunes
+  const puedeVerSiguiente = esJuevesODespues && plan?.semana !== getNextWeekStart()
 
   return (
     <div style={{
@@ -265,36 +293,34 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
         top: 0,
         zIndex: 50,
       }}>
-        <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 600 }}>
-            {(() => {
-              const lunes = new Date(plan.semana + 'T12:00:00')
-              const domingo = new Date(lunes)
-              domingo.setDate(lunes.getDate() + 6)
-              const fmt = (d) => d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })
-              return `Semana del ${fmt(lunes)} al ${fmt(domingo)}`
-            })()}
-          </h3>
-          {mostrarBotonSiguiente && (
-            <button
-              onClick={handlePlanificarSiguiente}
-              disabled={generandoSiguiente}
-              style={{
-                background: 'none',
-                border: '1px solid var(--border)',
-                borderRadius: 8,
-                color: generandoSiguiente ? 'var(--muted-foreground)' : 'var(--foreground)',
-                fontFamily: 'var(--font-sans)',
-                fontSize: 13,
-                padding: '6px 12px',
-                cursor: generandoSiguiente ? 'not-allowed' : 'pointer',
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-              }}
-            >
-              {generandoSiguiente ? 'Generando...' : 'Próxima semana →'}
-            </button>
-          )}
+        <div style={{ maxWidth: 640, margin: '0 auto' }}>
+          <div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginBottom: 4, fontFamily: 'var(--font-sans)' }}>
+            {viendoProxima ? 'Próxima semana' : 'Semana actual'}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {viendoProxima && (
+              <button
+                onClick={() => setViendoProxima(false)}
+                style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--foreground)', fontFamily: 'var(--font-sans)', fontSize: 16, padding: '2px 8px', cursor: 'pointer', lineHeight: 1.2 }}
+              >‹</button>
+            )}
+            <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 600, flex: 1 }}>
+              {(() => {
+                const src = viendoProxima ? getNextWeekStart() : plan.semana
+                const lunes = new Date(src + 'T12:00:00')
+                const domingo = new Date(lunes)
+                domingo.setDate(lunes.getDate() + 6)
+                const fmt = (d) => d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })
+                return `Semana del ${fmt(lunes)} al ${fmt(domingo)}`
+              })()}
+            </h3>
+            {!viendoProxima && puedeVerSiguiente && (
+              <button
+                onClick={handleVerSiguiente}
+                style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--foreground)', fontFamily: 'var(--font-sans)', fontSize: 16, padding: '2px 8px', cursor: 'pointer', lineHeight: 1.2 }}
+              >›</button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -484,7 +510,7 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
         )}
 
         {/* Botones de ajuste rápido */}
-        {!esSemanaPasada && hayPendientes && (
+        {!esSemanaPasada && !viendoProxima && hayPendientes && (
           <div style={{
             display: 'flex',
             gap: 6,
@@ -517,9 +543,44 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
           </div>
         )}
 
+        {/* Próxima semana — estados de carga y sin plan */}
+        {viendoProxima && loadingProxima && (
+          <div style={{ textAlign: 'center', color: 'var(--muted-foreground)', padding: '40px 0', fontSize: 14 }}>
+            Cargando plan...
+          </div>
+        )}
+        {viendoProxima && !loadingProxima && planSiguienteNoExiste && (
+          <div style={{ textAlign: 'center', padding: '40px 16px' }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>📅</div>
+            <p style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: 16, marginBottom: 8 }}>
+              Aún no hay plan para la próxima semana
+            </p>
+            <p style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 20 }}>
+              Genera el plan ahora y empieza la semana preparado.
+            </p>
+            <button
+              onClick={handleGenerarSiguiente}
+              disabled={generandoSiguiente}
+              style={{
+                background: generandoSiguiente ? 'var(--muted)' : 'var(--primary)',
+                color: 'var(--primary-foreground)',
+                border: 'none',
+                borderRadius: 'var(--radius)',
+                padding: '10px 24px',
+                fontFamily: 'var(--font-sans)',
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: generandoSiguiente ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {generandoSiguiente ? 'Generando...' : 'Generar plan próxima semana'}
+            </button>
+          </div>
+        )}
+
         {/* Sessions */}
-        {plan.sesiones.map((sesion) => {
-          const esHoy = sesion.dia === today && !esSemanaPasada && !esPlanFuturo
+        {(!viendoProxima || (viendoProxima && displayedPlan)) && !loadingProxima && displayedPlan?.sesiones?.map((sesion) => {
+          const esHoy = sesion.dia === today && !esSemanaPasada && !esPlanFuturo && !viendoProxima
           return (
             <div
               key={sesion.dia}
