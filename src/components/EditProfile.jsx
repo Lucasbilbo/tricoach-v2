@@ -365,6 +365,15 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
               cursor: 'pointer',
             }}
           >
+            <a 
+  href="https://tally.so/r/VL8pyl" 
+  target="_blank" 
+  rel="noreferrer"
+  style={{fontSize: '0.78rem', color: 'rgba(255,255,255,0.3)', textAlign: 'center', display: 'block', marginBottom: '16px'}}
+>
+  ¿Algo no funciona? Cuéntanoslo →
+</a>
+
             Eliminar mi cuenta
           </button>
         ) : (
