@@ -16,15 +16,22 @@ export async function updateContext(userId, messages, currentContext) {
       messages: [
         {
           role: 'user',
-          content: `Basándote en esta conversación reciente con un atleta, genera un resumen breve (máximo 150 palabras) de lo más relevante que un coach debería recordar sobre este atleta: sus logros recientes, problemas mencionados, preferencias y cualquier dato importante.
+          content: `Analiza esta conversación de coaching deportivo y genera una FICHA TÉCNICA del atleta en máximo 150 palabras. Extrae SOLO información concreta y útil para un coach:
 
-Contexto previo que ya tenías:
-${currentContext || 'Ninguno'}
+FORMATO OBLIGATORIO (omite secciones sin datos):
+- LESIONES: [dolores, molestias, zona afectada, fecha]
+- HITOS: [PRs, logros recientes, mejoras]
+- MÉTRICAS: [FC máxima, umbrales, ritmos, vatios, peso si se menciona]
+- LIMITACIONES: [días/horarios restringidos, equipamiento, contexto vital]
+- ALERTAS: [sobreentrenamiento, fatiga acumulada, riesgos]
+
+Contexto previo:
+${currentContext || 'Sin contexto previo'}
 
 Conversación reciente:
 ${lastMessages}
 
-Genera el resumen actualizado:`
+Genera la ficha técnica actualizada (máximo 150 palabras, sin paja):`
         }
       ],
       model: 'claude-sonnet-4-20250514',
