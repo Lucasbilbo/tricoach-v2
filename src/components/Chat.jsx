@@ -7,6 +7,29 @@ import { adjustPlan } from '../lib/plans'
 
 const AJUSTE_RE = /actualiz|cambiar|modificar|ajustar/i
 
+function renderMarkdown(text) {
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+
+  // Listas: líneas que empiezan con "- "
+  html = html.replace(/((?:^|\n)- .+)+/g, (block) => {
+    const items = block.trim().split('\n').map(line =>
+      `<li>${line.replace(/^- /, '')}</li>`
+    ).join('')
+    return `<ul style="margin:6px 0;padding-left:18px">${items}</ul>`
+  })
+
+  html = html
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/\n\n/g, '<br/><br/>')
+    .replace(/\n/g, '<br/>')
+
+  return html
+}
+
 const DEPORTE_LABELS = {
   triatlon: '🏊 Triatlón',
   running: '🏃 Running',
@@ -316,19 +339,35 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
                     {nombreCoach}
                   </div>
                 )}
-                <span style={{
-                  background: msg.role === 'user' ? 'var(--primary)' : 'var(--secondary)',
-                  color: msg.role === 'user' ? 'var(--primary-foreground)' : 'var(--foreground)',
-                  border: msg.role === 'user' ? 'none' : '1px solid var(--border)',
-                  padding: '10px 14px',
-                  borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                  display: 'inline-block',
-                  fontSize: 15,
-                  lineHeight: 1.5,
-                  whiteSpace: 'pre-wrap',
-                }}>
-                  {msg.content}
-                </span>
+                {msg.role === 'assistant' ? (
+                  <span
+                    style={{
+                      background: 'var(--secondary)',
+                      color: 'var(--foreground)',
+                      border: '1px solid var(--border)',
+                      padding: '10px 14px',
+                      borderRadius: '18px 18px 18px 4px',
+                      display: 'inline-block',
+                      fontSize: 15,
+                      lineHeight: 1.5,
+                    }}
+                    dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
+                  />
+                ) : (
+                  <span style={{
+                    background: 'var(--primary)',
+                    color: 'var(--primary-foreground)',
+                    border: 'none',
+                    padding: '10px 14px',
+                    borderRadius: '18px 18px 4px 18px',
+                    display: 'inline-block',
+                    fontSize: 15,
+                    lineHeight: 1.5,
+                    whiteSpace: 'pre-wrap',
+                  }}>
+                    {msg.content}
+                  </span>
+                )}
                 {/* Botón aplicar cambio al plan */}
                 {plan?.id
                   && i === lastAssistantIdx
