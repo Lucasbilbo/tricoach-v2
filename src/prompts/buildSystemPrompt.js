@@ -1,13 +1,13 @@
 const personalidades = {
-  cercano: `Eres cercano, empático y motivador. Tratas al atleta como a un amigo. 
+  cercano: `Eres cercano, empático y motivador. Tratas al atleta como a un amigo.
 Usas un tono cálido y personal, celebras sus logros y le apoyas en los momentos difíciles.`,
 
-  estricto: `Eres exigente y directo. No te andas con rodeos. 
-Marcas objetivos claros, exiges cumplimiento y no aceptas excusas. 
+  estricto: `Eres exigente y directo. No te andas con rodeos.
+Marcas objetivos claros, exiges cumplimiento y no aceptas excusas.
 El atleta sabe que contigo no hay medias tintas.`,
 
-  gracioso: `Eres divertido y usas el humor para motivar. 
-Haces referencias a la cultura pop, pones apodos cariñosos y conviertes el entrenamiento en algo entretenido. 
+  gracioso: `Eres divertido y usas el humor para motivar.
+Haces referencias a la cultura pop, pones apodos cariñosos y conviertes el entrenamiento en algo entretenido.
 Sin perder nunca el rigor técnico.`,
 
   motivador: `Eres un coach al estilo Tony Robbins. Cada mensaje es una dosis de energía.
@@ -47,9 +47,17 @@ export function buildSystemPrompt(profile, personalidad = 'cercano', actividades
 
   const estiloPersonalidad = personalidades[personalidad] || personalidades.cercano
 
+  // ── 1. Protocolo de seguridad (universal, todas las personalidades) ──────────
+  const protocoloSeguridad = `
+PROTOCOLO DE SEGURIDAD: Si el atleta menciona dolor, molestias, pinchazos o cualquier síntoma físico preocupante, SIEMPRE responde primero con el protocolo RICE (Reposo, Hielo, Compresión, Elevación), recomienda descanso completo y sugiere consultar a un fisioterapeuta antes de retomar el entrenamiento. Nunca minimices el dolor ni propongas continuar entrenando con molestias.`
+
+  // ── 2. Actividades Strava (con alerta sobreentrenamiento zona 2) ─────────────
   const tieneActividades = actividades && actividades.resumen && actividades.resumen !== 'Sin actividades recientes'
+  const alertaZona2 = tieneActividades
+    ? `\nSi los datos de Strava muestran que el atleta entrena consistentemente por encima de zona 2 en sesiones marcadas como suaves (ritmo notablemente más rápido de lo planificado o FC media >75% FCmax en sesiones Z2), advierte sobre el riesgo de sobreentrenamiento y recuerda la importancia de respetar las zonas de intensidad.`
+    : ''
   const actividadesSection = tieneActividades
-    ? `\nDATOS REALES DE STRAVA (sincronizados automáticamente): ${actividades.resumen}\nEstos datos son reales y actualizados. Úsalos con confianza cuando el atleta pregunte por sus entrenamientos recientes.`
+    ? `\nDATOS REALES DE STRAVA (sincronizados automáticamente): ${actividades.resumen}\nEstos datos son reales y actualizados. Úsalos con confianza cuando el atleta pregunte por sus entrenamientos recientes.${alertaZona2}`
     : actividades
       ? '\nEl atleta tiene Strava conectado pero no hay actividades recientes.'
       : ''
@@ -83,6 +91,85 @@ export function buildSystemPrompt(profile, personalidad = 'cercano', actividades
       ).join('\n')}\n\nCuando el usuario te escriba, si hay sesiones recién completadas que aún no has comentado, reconócelas brevemente: "Vi que completaste el [entrenamiento] del [día], ¿cómo fue?" Solo pregunta una vez por sesión, no repitas si ya lo comentaste en la conversación.`
     : ''
 
+  // ── 4. Historial + alerta fatiga acumulada ───────────────────────────────────
+  // Calculamos métricas fuera del IIFE para reutilizarlas en la alerta de fatiga
+  const historialMetricas = historialPlanes.map((p) => {
+    const sesiones = p.sesiones || []
+    const activas = sesiones.filter(s => s.tipo?.toLowerCase() !== 'descanso')
+    const completadas = sesiones.filter(s => s.completada)
+    const adherencia = activas.length > 0
+      ? Math.round((completadas.length / activas.length) * 100)
+      : null
+    const getRpe = s => s.rpe ?? s.rpe_usuario
+    const rpesValidos = completadas.filter(s => getRpe(s) != null)
+    const rpeMedia = rpesValidos.length > 0
+      ? Math.round(rpesValidos.reduce((a, s) => a + getRpe(s), 0) / rpesValidos.length * 10) / 10
+      : null
+    const saltadas = activas.filter(s => !s.completada).length
+    return { adherencia, rpeMedia, saltadas }
+  })
+
+  const historialSection = historialMetricas.length > 0 ? (() => {
+    const LABELS = ['Semana -1', 'Semana -2', 'Semana -3', 'Semana -4']
+    const lineas = historialMetricas.map((m, i) =>
+      `${LABELS[i] || `Semana -${i + 1}`}: adherencia ${m.adherencia != null ? m.adherencia + '%' : '?'}${m.rpeMedia != null ? `, RPE ${m.rpeMedia}` : ''}${m.saltadas > 0 ? `, ${m.saltadas} sesión${m.saltadas > 1 ? 'es' : ''} saltada${m.saltadas > 1 ? 's' : ''}` : ''}`
+    )
+    const adherencias = historialMetricas.map(m => m.adherencia).filter(a => a != null)
+    const rpes = historialMetricas.slice(0, 2).map(m => m.rpeMedia).filter(r => r != null)
+    let tendencia = 'datos insuficientes'
+    if (adherencias.length >= 2) {
+      const avg = adherencias.slice(0, 2).reduce((a, b) => a + b, 0) / 2
+      tendencia = avg >= 85 ? 'alta adherencia, buena recuperación' : avg >= 60 ? 'adherencia moderada' : 'baja adherencia, revisar carga'
+    }
+    if (rpes.length >= 2) {
+      const diff = rpes[0] - rpes[1]
+      if (diff > 1) tendencia += ', esfuerzo percibido subiendo'
+      else if (diff < -1) tendencia += ', esfuerzo percibido bajando'
+    }
+    return `\nHISTORIAL ÚLTIMAS ${historialMetricas.length} SEMANAS:\n${lineas.join('\n')}\nTENDENCIA: ${tendencia}`
+  })() : ''
+
+  const alertaFatigaSection = (() => {
+    if (historialMetricas.length === 0) return ''
+    const rpes = historialMetricas.slice(0, 2).map(m => m.rpeMedia).filter(r => r != null)
+    const adherencias = historialMetricas.slice(0, 2).map(m => m.adherencia).filter(a => a != null)
+    const rpeAlto = rpes.length >= 2 && (rpes[0] + rpes[1]) / 2 > 8
+    const adherenciaBaja = adherencias.some(a => a < 60)
+    if (!rpeAlto && !adherenciaBaja) return ''
+    const motivo = [rpeAlto && 'RPE elevado', adherenciaBaja && 'baja adherencia'].filter(Boolean).join('/')
+    return `\nALERTA FATIGA: El atleta muestra signos de fatiga acumulada (${motivo}). Esta semana prioriza recuperación, reduce volumen un 20% y no propongas sesiones nuevas intensas.`
+  })()
+
+  const planProximaSemanaSection = planProximaSemana ? (() => {
+    const lunes = new Date(planProximaSemana.semana + 'T12:00:00')
+    const domingo = new Date(lunes)
+    domingo.setDate(lunes.getDate() + 6)
+    const fmt = (d) => d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })
+    return `\nPLAN PRÓXIMA SEMANA (lunes ${fmt(lunes)} — domingo ${fmt(domingo)}):\n${planProximaSemana.sesiones.map(s =>
+      `${s.dia}: ${s.tipo} - ${s.descripcion}`
+    ).join('\n')}\nSi el usuario pregunta por la próxima semana, usa este plan.`
+  })() : ''
+
+  const separacionPlanes = (plan && planProximaSemana)
+    ? `\nATENCIÓN: Son dos planes DISTINTOS. El plan actual cubre solo los días restantes de esta semana (puede tener menos de 7 días si se generó a mitad de semana). El plan próxima semana es la semana siguiente completa. No los confundas ni mezcles.`
+    : ''
+
+  // ── 3. Modo taper automático ─────────────────────────────────────────────────
+  const taperSection = (() => {
+    if (!profile.fecha_carrera) return ''
+    const hoy = new Date()
+    const carrera = new Date(profile.fecha_carrera + 'T12:00:00')
+    const diasRestantes = Math.ceil((carrera - hoy) / (1000 * 60 * 60 * 24))
+    if (diasRestantes > 0 && diasRestantes <= 14) {
+      return `\nMODO TAPER ACTIVO: La carrera es en ${diasRestantes} día${diasRestantes > 1 ? 's' : ''}. Prioriza el descanso y la frescura muscular por encima de cualquier ganancia de forma. No propongas sesiones largas ni intensas. El trabajo ya está hecho — ahora toca llegar fresco.`
+    }
+    return ''
+  })()
+
+  const planDebug = plan
+    ? `\nPLAN ID: ${plan.id} | SEMANA: ${plan.semana}`
+    : ''
+
   const interpretacionTests = `
 INTERPRETACIÓN DE RESULTADOS DE TESTS DE EVALUACIÓN:
 Si el usuario menciona resultados de tests, interprétalos y calcula sus zonas:
@@ -104,60 +191,6 @@ NATACIÓN:
 - Vcrit = (400 - 200) / (t400_seg - t200_seg) m/s → ritmo Z4. Z2 = 85-90% Vcrit.
 
 Cuando el usuario comparta resultados: calcula sus zonas, explícaselas de forma sencilla y dile que su próximo plan ya estará calibrado con estos datos.`
-
-  const planProximaSemanaSection = planProximaSemana ? (() => {
-    const lunes = new Date(planProximaSemana.semana + 'T12:00:00')
-    const domingo = new Date(lunes)
-    domingo.setDate(lunes.getDate() + 6)
-    const fmt = (d) => d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })
-    return `\nPLAN PRÓXIMA SEMANA (lunes ${fmt(lunes)} — domingo ${fmt(domingo)}):\n${planProximaSemana.sesiones.map(s =>
-      `${s.dia}: ${s.tipo} - ${s.descripcion}`
-    ).join('\n')}\nSi el usuario pregunta por la próxima semana, usa este plan.`
-  })() : ''
-
-  const separacionPlanes = (plan && planProximaSemana)
-    ? `\nATENCIÓN: Son dos planes DISTINTOS. El plan actual cubre solo los días restantes de esta semana (puede tener menos de 7 días si se generó a mitad de semana). El plan próxima semana es la semana siguiente completa. No los confundas ni mezcles.`
-    : ''
-
-  const planDebug = plan
-    ? `\nPLAN ID: ${plan.id} | SEMANA: ${plan.semana}`
-    : ''
-
-  const historialSection = historialPlanes.length > 0 ? (() => {
-    const LABELS = ['Semana -1', 'Semana -2', 'Semana -3', 'Semana -4']
-    const metricas = historialPlanes.map((p, i) => {
-      const sesiones = p.sesiones || []
-      const activas = sesiones.filter(s => s.tipo?.toLowerCase() !== 'descanso')
-      const completadas = sesiones.filter(s => s.completada)
-      const adherencia = activas.length > 0
-        ? Math.round((completadas.length / activas.length) * 100)
-        : null
-      const getRpe = s => s.rpe ?? s.rpe_usuario
-      const rpesValidos = completadas.filter(s => getRpe(s) != null)
-      const rpeMedia = rpesValidos.length > 0
-        ? Math.round(rpesValidos.reduce((a, s) => a + getRpe(s), 0) / rpesValidos.length * 10) / 10
-        : null
-      const saltadas = activas.filter(s => !s.completada).length
-      return {
-        linea: `${LABELS[i] || `Semana -${i + 1}`}: adherencia ${adherencia != null ? adherencia + '%' : '?'}${rpeMedia != null ? `, RPE ${rpeMedia}` : ''}${saltadas > 0 ? `, ${saltadas} sesión${saltadas > 1 ? 'es' : ''} saltada${saltadas > 1 ? 's' : ''}` : ''}`,
-        adherencia,
-        rpeMedia,
-      }
-    })
-    const adherencias = metricas.map(m => m.adherencia).filter(a => a != null)
-    const rpes = metricas.slice(0, 2).map(m => m.rpeMedia).filter(r => r != null)
-    let tendencia = 'datos insuficientes'
-    if (adherencias.length >= 2) {
-      const avg = adherencias.slice(0, 2).reduce((a, b) => a + b, 0) / 2
-      tendencia = avg >= 85 ? 'alta adherencia, buena recuperación' : avg >= 60 ? 'adherencia moderada' : 'baja adherencia, revisar carga'
-    }
-    if (rpes.length >= 2) {
-      const diff = rpes[0] - rpes[1]
-      if (diff > 1) tendencia += ', esfuerzo percibido subiendo'
-      else if (diff < -1) tendencia += ', esfuerzo percibido bajando'
-    }
-    return `\nHISTORIAL ÚLTIMAS ${metricas.length} SEMANAS:\n${metricas.map(m => m.linea).join('\n')}\nTENDENCIA: ${tendencia}`
-  })() : ''
 
   const ajusteInstructions = plan ? `
 AJUSTE DE PLAN CONVERSACIONAL:
@@ -191,6 +224,7 @@ Tu rol es:
 Responde siempre en español, de forma clara y concisa.
 Usa datos concretos: distancias, tiempos, zonas de frecuencia cardíaca cuando sea relevante.
 Cuando tengas datos de Strava del atleta, úsalos activamente en tus respuestas. Son datos reales sincronizados de su cuenta Strava.
-${planDebug}${actividadesSection}${planSection}${reconocimientoSection}${historialSection}${planProximaSemanaSection}${separacionPlanes}
+${protocoloSeguridad}
+${planDebug}${actividadesSection}${planSection}${reconocimientoSection}${historialSection}${alertaFatigaSection}${taperSection}${planProximaSemanaSection}${separacionPlanes}
 ${interpretacionTests}${ajusteInstructions}`
 }

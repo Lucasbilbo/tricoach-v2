@@ -60,4 +60,88 @@ describe('System Prompt dinámico', () => {
     const prompt = buildSystemPrompt(profile, 'motivador')
     expect(prompt).toContain('energía')
   })
+
+  it('incluye protocolo de seguridad en todas las personalidades', () => {
+    const profile = { nombre: 'Lucas', deporte: 'running', nivel: 'intermedio', objetivo: 'bajar de 50min' }
+    for (const p of ['cercano', 'estricto', 'gracioso', 'motivador', 'cientifico']) {
+      const prompt = buildSystemPrompt(profile, p)
+      expect(prompt).toContain('PROTOCOLO DE SEGURIDAD')
+      expect(prompt).toContain('RICE')
+    }
+  })
+
+  it('incluye alerta zona 2 cuando hay actividades de Strava', () => {
+    const profile = { nombre: 'Lucas', deporte: 'running', nivel: 'intermedio', objetivo: 'bajar de 50min' }
+    const actividades = { resumen: 'Última semana: 3 salidas, 25km', actividades: [] }
+    const prompt = buildSystemPrompt(profile, 'cercano', actividades)
+    expect(prompt).toContain('zona 2')
+    expect(prompt).toContain('sobreentrenamiento')
+  })
+
+  it('no incluye alerta zona 2 cuando no hay actividades', () => {
+    const profile = { nombre: 'Lucas', deporte: 'running', nivel: 'intermedio', objetivo: 'bajar de 50min' }
+    const prompt = buildSystemPrompt(profile, 'cercano', null)
+    expect(prompt).not.toContain('sobreentrenamiento')
+  })
+
+  it('activa modo taper cuando la carrera es en menos de 14 días', () => {
+    const proxima = new Date()
+    proxima.setDate(proxima.getDate() + 7)
+    const profile = {
+      nombre: 'Lucas', deporte: 'running', nivel: 'intermedio', objetivo: 'bajar de 50min',
+      fecha_carrera: proxima.toISOString().split('T')[0],
+    }
+    const prompt = buildSystemPrompt(profile)
+    expect(prompt).toContain('MODO TAPER ACTIVO')
+    expect(prompt).toContain('llegar fresco')
+  })
+
+  it('no activa modo taper cuando la carrera es en más de 14 días', () => {
+    const lejana = new Date()
+    lejana.setDate(lejana.getDate() + 30)
+    const profile = {
+      nombre: 'Lucas', deporte: 'running', nivel: 'intermedio', objetivo: 'bajar de 50min',
+      fecha_carrera: lejana.toISOString().split('T')[0],
+    }
+    const prompt = buildSystemPrompt(profile)
+    expect(prompt).not.toContain('MODO TAPER ACTIVO')
+  })
+
+  it('activa alerta fatiga cuando RPE medio > 8 en últimas 2 semanas', () => {
+    const profile = { nombre: 'Lucas', deporte: 'running', nivel: 'intermedio', objetivo: 'bajar de 50min' }
+    const historial = [
+      { sesiones: [{ tipo: 'Correr', completada: true, rpe: 9 }, { tipo: 'Bici', completada: true, rpe: 9 }] },
+      { sesiones: [{ tipo: 'Correr', completada: true, rpe: 9 }, { tipo: 'Nadar', completada: true, rpe: 9 }] },
+    ]
+    const prompt = buildSystemPrompt(profile, 'cercano', null, null, null, historial)
+    expect(prompt).toContain('ALERTA FATIGA')
+    expect(prompt).toContain('RPE elevado')
+  })
+
+  it('activa alerta fatiga cuando adherencia < 60%', () => {
+    const profile = { nombre: 'Lucas', deporte: 'running', nivel: 'intermedio', objetivo: 'bajar de 50min' }
+    const historial = [
+      {
+        sesiones: [
+          { tipo: 'Correr', completada: true, rpe: 5 },
+          { tipo: 'Bici', completada: false },
+          { tipo: 'Nadar', completada: false },
+          { tipo: 'Correr', completada: false },
+        ]
+      },
+    ]
+    const prompt = buildSystemPrompt(profile, 'cercano', null, null, null, historial)
+    expect(prompt).toContain('ALERTA FATIGA')
+    expect(prompt).toContain('baja adherencia')
+  })
+
+  it('no activa alerta fatiga con RPE y adherencia normales', () => {
+    const profile = { nombre: 'Lucas', deporte: 'running', nivel: 'intermedio', objetivo: 'bajar de 50min' }
+    const historial = [
+      { sesiones: [{ tipo: 'Correr', completada: true, rpe: 6 }, { tipo: 'Bici', completada: true, rpe: 6 }] },
+      { sesiones: [{ tipo: 'Correr', completada: true, rpe: 6 }, { tipo: 'Nadar', completada: true, rpe: 6 }] },
+    ]
+    const prompt = buildSystemPrompt(profile, 'cercano', null, null, null, historial)
+    expect(prompt).not.toContain('ALERTA FATIGA')
+  })
 })
