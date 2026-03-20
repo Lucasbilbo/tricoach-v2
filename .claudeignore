@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.git/
+*.lock
+*.log
+coverage/
+.netlify/
+public/
+*.min.js
+*.map
