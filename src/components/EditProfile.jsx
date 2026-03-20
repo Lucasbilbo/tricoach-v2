@@ -394,15 +394,6 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
               cursor: 'pointer',
             }}
           >
-            <a 
-  href="https://tally.so/r/VL8pyl" 
-  target="_blank" 
-  rel="noreferrer"
-  style={{fontSize: '0.78rem', color: 'rgba(255,255,255,0.3)', textAlign: 'center', display: 'block', marginBottom: '16px'}}
->
-  ¿Algo no funciona? Cuéntanoslo →
-</a>
-
             Eliminar mi cuenta
           </button>
         ) : (
@@ -447,6 +438,17 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
             </div>
           </div>
         )}
+      </div>
+
+      <div style={{ textAlign: 'center', paddingBottom: 8 }}>
+        <a
+          href="https://tally.so/r/VL8pyl"
+          target="_blank"
+          rel="noreferrer"
+          style={{ fontSize: 12, color: 'var(--muted-foreground)', textDecoration: 'none' }}
+        >
+          ¿Algo no funciona? → Reportar problema
+        </a>
       </div>
     </div>
   )
