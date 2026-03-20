@@ -16,26 +16,45 @@ function formatPace(distanceM, movingTimeSec) {
   return `${min}:${sec.toString().padStart(2, '0')}`;
 }
 
-function formatActivities(raw) {
+function getZonaFc(pct) {
+  if (pct < 60) return 'Z1 (recuperación)'
+  if (pct < 70) return 'Z2 (base aeróbica)'
+  if (pct < 80) return 'Z3 (tempo)'
+  if (pct < 90) return 'Z4 (umbral)'
+  return 'Z5 (máximo)'
+}
+
+function formatActivities(raw, fcMaximaAtleta = null) {
   const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
   const recentRaw = raw.filter(a => a.start_date_local && new Date(a.start_date_local).getTime() >= sevenDaysAgo);
 
   const usandoUltimaSemana = recentRaw.length > 0;
   const rawToUse = usandoUltimaSemana ? recentRaw : raw.slice(0, 3);
 
-  const actividades = rawToUse.map(a => ({
-    tipo: a.type,
-    tipo_deporte: a.sport_type || a.type,
-    distancia_km: Math.round((a.distance / 1000) * 10) / 10,
-    duracion_min: Math.round(a.moving_time / 60),
-    fecha: a.start_date_local ? a.start_date_local.split('T')[0] : null,
-    ritmo_min_km: formatPace(a.distance, a.moving_time),
-    fc_media: a.average_heartrate || null,
-    fc_maxima: a.max_heartrate || null,
-    potencia_media: a.average_watts || null,
-    cadencia_media: a.average_cadence || null,
-    desnivel: Math.round(a.total_elevation_gain) || null,
-  }));
+  const actividades = rawToUse.map(a => {
+    const fc_media = a.average_heartrate || null
+    let intensidad_pct = null
+    let zona_fc = null
+    if (fc_media && fcMaximaAtleta) {
+      intensidad_pct = Math.round((fc_media / fcMaximaAtleta) * 100)
+      zona_fc = getZonaFc(intensidad_pct)
+    }
+    return {
+      tipo: a.type,
+      tipo_deporte: a.sport_type || a.type,
+      distancia_km: Math.round((a.distance / 1000) * 10) / 10,
+      duracion_min: Math.round(a.moving_time / 60),
+      fecha: a.start_date_local ? a.start_date_local.split('T')[0] : null,
+      ritmo_min_km: formatPace(a.distance, a.moving_time),
+      fc_media,
+      fc_maxima: a.max_heartrate || null,
+      potencia_media: a.average_watts || null,
+      cadencia_media: a.average_cadence || null,
+      desnivel: Math.round(a.total_elevation_gain) || null,
+      intensidad_pct,
+      zona_fc,
+    }
+  });
 
   const total_km = actividades.reduce((sum, a) => sum + a.distancia_km, 0);
   const n = actividades.length;
@@ -103,7 +122,7 @@ exports.handler = async (event) => {
 
   // Fetch user's Strava tokens from Supabase
   const profileData = await new Promise((resolve) => {
-    const path = `/rest/v1/profiles?id=eq.${userId}&select=strava_token,strava_refresh_token,strava_token_expires_at`;
+    const path = `/rest/v1/profiles?id=eq.${userId}&select=strava_token,strava_refresh_token,strava_token_expires_at,fc_maxima,edad`;
     const options = {
       hostname: new URL(supabaseUrl).hostname,
       path,
@@ -246,7 +265,8 @@ exports.handler = async (event) => {
     };
   }
 
-  const formatted = formatActivities(activitiesResult);
+  const fcMaximaEfectiva = profileData.fc_maxima || (profileData.edad ? 220 - profileData.edad : null)
+  const formatted = formatActivities(activitiesResult, fcMaximaEfectiva);
 
   return {
     statusCode: 200,

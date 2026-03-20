@@ -87,6 +87,8 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
   const [lesiones, setLesiones] = useState(profile.lesiones || '')
   const [disponibilidad, setDisponibilidad] = useState(profile.disponibilidad || '')
   const [personalidad, setPersonalidad] = useState(profile.personalidad || 'cercano')
+  const [edad, setEdad] = useState(profile.edad || '')
+  const [fcMaxima, setFcMaxima] = useState(profile.fc_maxima || '')
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -112,6 +114,8 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
         lesiones,
         disponibilidad,
         personalidad,
+        edad: edad !== '' ? parseInt(edad) : null,
+        fc_maxima: fcMaxima !== '' ? parseInt(fcMaxima) : null,
         // pass-through jsonb fields unchanged
         equipamiento: profile.equipamiento ?? null,
         carreras: profile.carreras ?? null,
@@ -292,11 +296,36 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
 
         <label style={labelStyle}>Disponibilidad semanal</label>
         <input
-          style={{ ...inputStyle, marginBottom: 20 }}
+          style={inputStyle}
           value={disponibilidad}
           onChange={e => setDisponibilidad(e.target.value)}
           placeholder="Ej: 8 horas/semana, mañanas entre semana"
         />
+
+        <label style={labelStyle}>Edad</label>
+        <input
+          type="number"
+          min={18}
+          max={80}
+          style={inputStyle}
+          value={edad}
+          onChange={e => setEdad(e.target.value)}
+          placeholder="Tu edad"
+        />
+
+        <label style={labelStyle}>FC Máxima</label>
+        <input
+          type="number"
+          min={150}
+          max={220}
+          style={{ ...inputStyle, marginBottom: 4 }}
+          value={fcMaxima}
+          onChange={e => setFcMaxima(e.target.value)}
+          placeholder="Ej: 185 — de tu reloj Garmin"
+        />
+        <p style={{ fontSize: 12, color: 'var(--muted-foreground)', marginBottom: 20, marginTop: 0 }}>
+          Opcional. Si no la conoces, la estimamos con tu edad.
+        </p>
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button

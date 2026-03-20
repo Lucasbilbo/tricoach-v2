@@ -196,6 +196,7 @@ Validación Free/Pro siempre en **backend** (claude.js, generate-plan.js) — nu
 - Si el prompt especifica el archivo, ve directo a él
 - No ejecutes npm test en medio de la tarea, solo al final
 - No confirmes con el usuario durante la ejecución, completa todo el prompt de una vez
+- Lee solo los archivos mencionados en el prompt, no explores el proyecto entero
 
 ## Configuración del entorno
 - PATH de Claude Code: `export PATH="$HOME/.local/bin:$PATH"` — ya añadido permanentemente en `~/.zshrc`

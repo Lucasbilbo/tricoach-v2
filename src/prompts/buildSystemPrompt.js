@@ -56,8 +56,19 @@ PROTOCOLO DE SEGURIDAD: Si el atleta menciona dolor, molestias, pinchazos o cual
   const alertaZona2 = tieneActividades
     ? `\nSi los datos de Strava muestran que el atleta entrena consistentemente por encima de zona 2 en sesiones marcadas como suaves (ritmo notablemente más rápido de lo planificado o FC media >75% FCmax en sesiones Z2), advierte sobre el riesgo de sobreentrenamiento y recuerda la importancia de respetar las zonas de intensidad.`
     : ''
+
+  const detalleActividades = tieneActividades && actividades.actividades?.length > 0
+    ? actividades.actividades
+        .filter(a => a.intensidad_pct != null && a.fc_media != null)
+        .map(a => {
+          const alerta = a.duracion_min < 60 && a.intensidad_pct > 75 ? ' ⚠️' : ''
+          return `${a.tipo} ${a.distancia_km}km — FC media ${a.fc_media}ppm (${a.intensidad_pct}% FCmax = ${a.zona_fc})${alerta}`
+        })
+        .join('\n')
+    : ''
+
   const actividadesSection = tieneActividades
-    ? `\nDATOS REALES DE STRAVA (sincronizados automáticamente): ${actividades.resumen}\nEstos datos son reales y actualizados. Úsalos con confianza cuando el atleta pregunte por sus entrenamientos recientes.${alertaZona2}`
+    ? `\nDATOS REALES DE STRAVA (sincronizados automáticamente): ${actividades.resumen}${detalleActividades ? '\nDetalle por actividad:\n' + detalleActividades : ''}\nEstos datos son reales y actualizados. Úsalos con confianza cuando el atleta pregunte por sus entrenamientos recientes.${alertaZona2}`
     : actividades
       ? '\nEl atleta tiene Strava conectado pero no hay actividades recientes.'
       : ''
