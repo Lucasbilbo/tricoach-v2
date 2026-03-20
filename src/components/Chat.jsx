@@ -5,7 +5,7 @@ import { buildSystemPrompt } from '../prompts/buildSystemPrompt'
 import { updateContext } from '../lib/context'
 import { adjustPlan } from '../lib/plans'
 
-const CONFIRMA_RE = /^(sí|si|dale|perfecto|ok|okay|venga|claro|exacto|genial|guay|bien|de acuerdo|bueno|va|hazlo|actualiza|actualízalo|sí por favor|si por favor|por favor|adelante|hecho|listo)\b/i
+const AJUSTE_RE = /actualiz|cambiar|modificar|ajustar/i
 
 const DEPORTE_LABELS = {
   triatlon: '🏊 Triatlón',
@@ -18,45 +18,44 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [stravaData, setStravaData] = useState(null)
-  const [pendingAdjust, setPendingAdjust] = useState(null)
   const [messagesLoaded, setMessagesLoaded] = useState(false)
+  const [adjustLoading, setAdjustLoading] = useState(false)
+  const [adjustApplied, setAdjustApplied] = useState(false)
+  const [adjustToast, setAdjustToast] = useState(null)
   const bottomRef = useRef(null)
+
+  function showAdjustToast(msg, type) {
+    setAdjustToast({ msg, type })
+    setTimeout(() => setAdjustToast(null), 3500)
+  }
+
+  async function handleApplyAdjust() {
+    if (!plan?.id || adjustLoading) return
+    const lastAssistant = [...messages].reverse().find(m => m.role === 'assistant')
+    if (!lastAssistant) return
+
+    setAdjustLoading(true)
+    try {
+      const planActualizado = await adjustPlan(userId, plan.id, 'libre', lastAssistant.content.slice(0, 200))
+      if (planActualizado?.sesiones) {
+        onPlanUpdate?.(planActualizado)
+        setAdjustApplied(true)
+        showAdjustToast('✅ Plan actualizado', 'success')
+      } else {
+        showAdjustToast('No se pudo actualizar el plan. Inténtalo de nuevo.', 'error')
+      }
+    } catch {
+      showAdjustToast('Error al actualizar el plan. Inténtalo de nuevo.', 'error')
+    } finally {
+      setAdjustLoading(false)
+    }
+  }
 
   async function sendMessage() {
     if (!input.trim()) return
 
     const userMessage = input
 
-    // ── Confirmación de ajuste pendiente ─────────────────────────────────────
-    if (pendingAdjust && plan?.id && CONFIRMA_RE.test(userMessage.trim())) {
-      setInput('')
-      setLoading(true)
-      const updatedMessages = [...messages, { role: 'user', content: userMessage }]
-      setMessages(updatedMessages)
-      await saveMessage(userId, 'user', userMessage)
-
-      try {
-        const planActualizado = await adjustPlan(userId, plan.id, pendingAdjust.motivo, pendingAdjust.descripcion)
-        if (planActualizado?.sesiones) {
-          onPlanUpdate?.(planActualizado)
-          const confirmacion = `✅ ¡Listo! He actualizado tu plan teniendo en cuenta: ${pendingAdjust.descripcion}. Los cambios ya están disponibles en tu plan semanal.`
-          await saveMessage(userId, 'assistant', confirmacion)
-          setMessages([...updatedMessages, { role: 'assistant', content: confirmacion }])
-        } else {
-          const errorMsg = 'No pude actualizar el plan. Inténtalo de nuevo o usa el botón de ajuste manual.'
-          await saveMessage(userId, 'assistant', errorMsg)
-          setMessages([...updatedMessages, { role: 'assistant', content: errorMsg }])
-        }
-      } catch {
-        setMessages((prev) => [...prev, { role: 'assistant', content: 'Hubo un error al actualizar el plan. Inténtalo de nuevo.' }])
-      } finally {
-        setPendingAdjust(null)
-        setLoading(false)
-      }
-      return
-    }
-
-    // ── Flujo normal: llamar a Claude ─────────────────────────────────────────
     const canSend = await canSendMessage(profile)
     if (!canSend) {
       setMessages((prev) => [...prev, { role: 'assistant', content: '⚠️ Has alcanzado el límite de 25 mensajes diarios del plan Free. Actualiza a Pro para mensajes ilimitados.' }])
@@ -65,6 +64,7 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
 
     setInput('')
     setLoading(true)
+    setAdjustApplied(false)
 
     try {
       await saveMessage(userId, 'user', userMessage)
@@ -96,16 +96,7 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
       }
 
       const data = await response.json()
-      const rawMessage = data.content?.[0]?.text || 'Error al responder'
-
-      // Extraer marcador de ajuste propuesto y limpiar el mensaje
-      const markerMatch = rawMessage.match(/\[AJUSTE_PROPUESTO:([^:]+):([^\]]+)\]/)
-      if (markerMatch) {
-        setPendingAdjust({ motivo: markerMatch[1].trim(), descripcion: markerMatch[2].trim() })
-      } else {
-        setPendingAdjust(null)
-      }
-      const assistantMessage = rawMessage.replace(/\[AJUSTE_PROPUESTO:[^\]]+\]/g, '').trim()
+      const assistantMessage = data.content?.[0]?.text || 'Error al responder'
 
       await saveMessage(userId, 'assistant', assistantMessage)
 
@@ -201,6 +192,8 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
   const remaining = esFree ? (25 - messagesHoy) : (150 - messagesHoy)
   const showCounter = !limitAlcanzado && (esFree ? remaining < 8 : remaining < 20)
 
+  const lastAssistantIdx = messages.reduce((last, m, i) => m.role === 'assistant' ? i : last, -1)
+
   return (
     <div style={{
       display: 'flex',
@@ -208,6 +201,28 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
       height: 'calc(100vh - 64px)',
       background: 'var(--background)',
     }}>
+      {/* Adjust toast */}
+      {adjustToast && (
+        <div style={{
+          position: 'fixed',
+          top: 16,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: adjustToast.type === 'success' ? 'oklch(0.45 0.2 140)' : 'var(--destructive)',
+          color: '#fff',
+          borderRadius: 'var(--radius)',
+          padding: '10px 20px',
+          fontWeight: 600,
+          fontSize: 14,
+          zIndex: 200,
+          fontFamily: 'var(--font-sans)',
+          boxShadow: '0 4px 20px oklch(0 0 0 / 0.3)',
+          whiteSpace: 'nowrap',
+        }}>
+          {adjustToast.msg}
+        </div>
+      )}
+
       {/* Header */}
       <div style={{
         background: 'var(--background)',
@@ -314,6 +329,35 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
                 }}>
                   {msg.content}
                 </span>
+                {/* Botón aplicar cambio al plan */}
+                {plan?.id
+                  && i === lastAssistantIdx
+                  && msg.role === 'assistant'
+                  && !adjustApplied
+                  && !loading
+                  && AJUSTE_RE.test(msg.content)
+                  && (
+                  <div style={{ marginTop: 8, marginLeft: 4 }}>
+                    <button
+                      onClick={handleApplyAdjust}
+                      disabled={adjustLoading}
+                      style={{
+                        background: 'var(--card)',
+                        border: '1px solid var(--primary)',
+                        borderRadius: 20,
+                        color: 'var(--primary)',
+                        fontFamily: 'var(--font-sans)',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        padding: '6px 14px',
+                        cursor: adjustLoading ? 'not-allowed' : 'pointer',
+                        opacity: adjustLoading ? 0.7 : 1,
+                      }}
+                    >
+                      {adjustLoading ? '⏳ Aplicando...' : '🔄 Aplicar cambio al plan'}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}

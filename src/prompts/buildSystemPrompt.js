@@ -204,17 +204,8 @@ NATACIÓN:
 Cuando el usuario comparta resultados: calcula sus zonas, explícaselas de forma sencilla y dile que su próximo plan ya estará calibrado con estos datos.`
 
   const ajusteInstructions = plan ? `
-AJUSTE DE PLAN — INSTRUCCIÓN CRÍTICA:
-Cuando el usuario mencione lesión, dolor, viaje, cansancio, falta de tiempo o cualquier motivo para cambiar el plan:
-1. Propón el ajuste concreto
-2. Pregunta si quiere que lo actualices
-3. SIEMPRE incluye al final, en línea nueva, sin excepciones:
-   [AJUSTE_PROPUESTO:motivo:descripcion]
-   motivos válidos: lesion | viaje | dia_suelto | libre
-   descripcion: máx 60 caracteres
-
-IMPORTANTE: Si no incluyes el marcador, el sistema NO puede actualizar el plan. Sin marcador = el atleta no ve los cambios.
-Nunca omitas el marcador cuando propongas un ajuste.` : ''
+AJUSTE DE PLAN:
+Cuando el usuario pida cambiar el plan, propón el ajuste concreto explicando qué cambiarías y por qué. El sistema mostrará automáticamente un botón para aplicar el cambio.` : ''
 
   return `Eres un coach deportivo personal experto en ${deporteInfo[deporte] || deporte}.
 Tu nombre es ${nombreCoach}. El usuario te llama así.${natacionContext}
