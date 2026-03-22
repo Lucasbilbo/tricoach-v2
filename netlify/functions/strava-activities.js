@@ -261,7 +261,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers: { ...CORS, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ resumen: 'Sin actividades recientes', actividades: [] })
+      body: JSON.stringify({ sinStrava: false, resumen: 'Sin actividades recientes', actividades: [], sinDatos: true })
     };
   }
 

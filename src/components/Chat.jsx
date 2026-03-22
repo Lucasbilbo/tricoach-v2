@@ -161,7 +161,7 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
           resumen: data.resumen,
           numActividades: data.actividades?.length ?? 0,
         })
-        if (!data.sinStrava && !data.error) setStravaData(data)
+        if (!data.error) setStravaData(data.sinStrava ? null : data)
       })
       .catch(err => console.error('[Chat] Error strava-activities:', err))
   }, [userId])

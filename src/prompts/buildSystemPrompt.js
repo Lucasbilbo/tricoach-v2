@@ -67,10 +67,12 @@ PROTOCOLO DE SEGURIDAD: Si el atleta menciona dolor, molestias, pinchazos o cual
         .join('\n')
     : ''
 
+  const sinDatos = actividades && actividades.sinDatos === true
+
   const actividadesSection = tieneActividades
     ? `\nDATOS REALES DE STRAVA (sincronizados automáticamente): ${actividades.resumen}${detalleActividades ? '\nDetalle por actividad:\n' + detalleActividades : ''}\nEstos datos son reales y actualizados. Úsalos con confianza cuando el atleta pregunte por sus entrenamientos recientes.${alertaZona2}`
-    : actividades
-      ? '\nEl atleta tiene Strava conectado pero no hay actividades recientes.'
+    : sinDatos
+      ? '\nEl atleta tiene Strava conectado pero no hay actividades recientes. NO inventes datos de entrenamientos.'
       : ''
 
   const completadaLabel = (s) => {
@@ -205,7 +207,9 @@ Cuando el usuario comparta resultados: calcula sus zonas, explícaselas de forma
 
   const ajusteInstructions = plan ? `
 AJUSTE DE PLAN:
-Cuando el usuario pida cambiar el plan, propón el ajuste concreto explicando qué cambiarías y por qué. El sistema mostrará automáticamente un botón para aplicar el cambio.` : ''
+Cuando el usuario pida cambiar el plan, propón el ajuste concreto explicando qué cambiarías y por qué. El sistema mostrará automáticamente un botón para aplicar el cambio.
+IMPORTANTE: Nunca generes un plan semanal completo en el chat. Si el atleta pide un plan nuevo, dile que vaya a la pestaña Plan y pulse 'Generar plan'. En el chat solo puedes ajustar sesiones concretas del plan existente usando el botón 'Aplicar cambio al plan'.` : `
+IMPORTANTE: Nunca generes un plan semanal completo en el chat. Si el atleta pide un plan nuevo, dile que vaya a la pestaña Plan y pulse 'Generar plan'.`
 
   return `Eres un coach deportivo personal experto en ${deporteInfo[deporte] || deporte}.
 Tu nombre es ${nombreCoach}. El usuario te llama así.${natacionContext}
