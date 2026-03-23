@@ -1,12 +1,14 @@
 export default {
   testDir: './src/test/e2e',
   testMatch: '**/*.spec.js',
+  timeout: 30000,
   use: {
-    baseURL: 'http://localhost:8888',
+    baseURL: 'http://localhost:5173',
   },
   webServer: {
-    command: 'netlify dev',
-    url: 'http://localhost:8888',
+    command: 'npm run dev',
+    url: 'http://localhost:5173/app/',
     reuseExistingServer: true,
+    timeout: 60000,
   }
 }

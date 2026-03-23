@@ -120,6 +120,7 @@ async function setupMockedApp(page, opts = {}) {
   // 1. Inyectar sesión de Supabase en localStorage antes de que cargue la app
   await page.addInitScript((session) => {
     localStorage.setItem('sb-luqpjgzpydquqturgjmt-auth-token', JSON.stringify(session))
+    localStorage.setItem('cookies_accepted', 'true')
   }, fakeSession)
 
   // 2. Mock endpoints de auth de Supabase
@@ -217,9 +218,9 @@ async function setupMockedApp(page, opts = {}) {
   }
 
   // 7. Navegar a la app y esperar a que cargue
-  await page.goto('/app')
+  await page.goto('http://localhost:5173/app/')
   // Esperar a la barra de navegación como señal de que la app está lista
-  await expect(page.getByText('Plan')).toBeVisible({ timeout: 15000 })
+  await expect(page.getByText('Plan').first()).toBeVisible({ timeout: 15000 })
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -238,10 +239,10 @@ test.describe('Sincronización coach-calendario', () => {
     await setupMockedApp(page, { claudeResponses: [coachReply] })
 
     // Navegar al plan semanal
-    await page.getByText('Plan').click()
+    await page.getByText('Plan').first().click()
 
     // Verificar que el calendario muestra HOY con Correr
-    await expect(page.getByText('HOY')).toBeVisible({ timeout: 5000 })
+    await expect(page.getByText('HOY', { exact: true }).first()).toBeVisible({ timeout: 5000 })
     // La sesión de hoy debe mostrar el tipo "Correr"
     const todayLabel = page.getByText(today).first()
     await expect(todayLabel).toBeVisible()
@@ -249,7 +250,7 @@ test.describe('Sincronización coach-calendario', () => {
     await expect(page.getByText('Correr').first()).toBeVisible()
 
     // Navegar al chat con el coach
-    await page.getByText('Coach').click()
+    await page.getByText('Coach').first().click()
 
     // Preguntar al coach qué hay hoy
     await page.getByPlaceholder('Escribe un mensaje...').fill('¿qué tengo hoy?')
@@ -272,8 +273,8 @@ test.describe('Sincronización coach-calendario', () => {
     await setupMockedApp(page, { claudeResponses: [coachReply] })
 
     // Ir al plan semanal
-    await page.getByText('Plan').click()
-    await expect(page.getByText('HOY')).toBeVisible({ timeout: 5000 })
+    await page.getByText('Plan').first().click()
+    await expect(page.getByText('HOY', { exact: true }).first()).toBeVisible({ timeout: 5000 })
 
     // Abrir el modal de completar para la sesión de hoy
     // El botón "Completar" aparece junto a la sesión no completada
@@ -287,10 +288,10 @@ test.describe('Sincronización coach-calendario', () => {
 
     // Verificar que el tick de completado aparece inmediatamente (optimistic UI)
     // El componente muestra "✓" o "✓ RPE 5" cuando completada=true
-    await expect(page.getByText(/✓/)).toBeVisible({ timeout: 500 })
+    await expect(page.getByText(/✓/).first()).toBeVisible({ timeout: 500 })
 
     // Navegar al chat y preguntar qué sesiones se han completado
-    await page.getByText('Coach').click()
+    await page.getByText('Coach').first().click()
     await page.getByPlaceholder('Escribe un mensaje...').fill('¿qué sesiones he completado hoy?')
     await page.getByRole('button', { name: 'Enviar' }).click()
 
@@ -317,8 +318,8 @@ test.describe('Sincronización coach-calendario', () => {
       ),
     }
 
-    // Primera respuesta del coach: propone el ajuste con marcador
-    const propuestaCoach = `Claro, puedo cambiar ${tomorrow} de Bici a descanso. ¿Confirmas el cambio? [AJUSTE_PROPUESTO:dia_concreto:cambiar ${tomorrow} de Bici a Descanso]`
+    // Respuesta del coach: propone el ajuste
+    const propuestaCoach = `Claro, puedo cambiar ${tomorrow} de Bici a Descanso. Veo que necesitas recuperarte. ¿Te parece bien el ajuste?`
 
     await setupMockedApp(page, {
       plan: originalPlan,
@@ -327,29 +328,29 @@ test.describe('Sincronización coach-calendario', () => {
     })
 
     // 1. Verificar en el calendario que mañana tiene Bici
-    await page.getByText('Plan').click()
+    await page.getByText('Plan').first().click()
     await expect(page.getByText(tomorrow)).toBeVisible({ timeout: 5000 })
     // Al menos un "Bici" debe ser visible (la sesión de mañana)
     await expect(page.getByText('Bici').first()).toBeVisible()
 
     // 2. Ir al chat y pedir el ajuste
-    await page.getByText('Coach').click()
+    await page.getByText('Coach').first().click()
     await page.getByPlaceholder('Escribe un mensaje...').fill('cambia la sesión de mañana por descanso')
     await page.getByRole('button', { name: 'Enviar' }).click()
 
-    // El coach propone el cambio (sin el marcador, que se extrae internamente)
-    await expect(page.getByText(/confirmas el cambio/i)).toBeVisible({ timeout: 10000 })
+    // El coach propone el cambio y aparece el botón para aplicarlo
+    await expect(page.getByText(/cambiar/i)).toBeVisible({ timeout: 10000 })
+    await expect(page.getByRole('button', { name: /aplicar cambio al plan/i })).toBeVisible({ timeout: 5000 })
 
-    // 3. Confirmar el ajuste
-    await page.getByPlaceholder('Escribe un mensaje...').fill('si')
-    await page.getByRole('button', { name: 'Enviar' }).click()
+    // 3. Aplicar el ajuste con el botón
+    await page.getByRole('button', { name: /aplicar cambio al plan/i }).click()
 
-    // Esperar confirmación del coach
-    await expect(page.getByText(/¡Listo!/i)).toBeVisible({ timeout: 10000 })
+    // Esperar confirmación del toast
+    await expect(page.getByText(/plan actualizado/i)).toBeVisible({ timeout: 5000 })
 
     // 4. Navegar al calendario y verificar que mañana ahora muestra Descanso
     const start = Date.now()
-    await page.getByText('Plan').click()
+    await page.getByRole('button', { name: 'Plan', exact: true }).click()
     await expect(page.getByText('Descanso — ajuste de coach')).toBeVisible({ timeout: 1000 })
     const elapsed = Date.now() - start
     // El update del calendario debe reflejarse en menos de 1 segundo

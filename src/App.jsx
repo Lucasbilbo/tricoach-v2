@@ -66,10 +66,10 @@ function App() {
   }, [])
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session)
       if (session) {
-        loadOrCreateProfile(session.user)
+        await loadOrCreateProfile(session.user)
         getPlanActual(session.user.id).then(p => { setPlan(p); setPlanLoading(false) }).catch(() => setPlanLoading(false))
         getPlanProximaSemana(session.user.id).then(setPlanProximaSemana).catch(() => {})
         getHistorialPlanes(session.user.id).then(setHistorialPlanes).catch(() => {})
