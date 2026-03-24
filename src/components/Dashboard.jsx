@@ -77,6 +77,12 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
   const [showMovilidad, setShowMovilidad] = useState(false)
   const [syncToast, setSyncToast] = useState(null)
   const syncedRef = useRef(false)
+  const [showPwaBanner, setShowPwaBanner] = useState(() => {
+    const esMovil = /iPhone|iPad|Android/i.test(navigator.userAgent)
+    const esStandalone = window.matchMedia?.('(display-mode: standalone)').matches ?? false
+    const yaVisto = localStorage.getItem('pwa_banner_visto')
+    return esMovil && !esStandalone && !yaVisto
+  })
 
   useEffect(() => {
     if (!userId || !plan || !profile?.strava_token || syncedRef.current) return
@@ -149,6 +155,45 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
           whiteSpace: 'nowrap',
         }}>
           {syncToast}
+        </div>
+      )}
+
+      {/* PWA install banner */}
+      {showPwaBanner && (
+        <div style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 60,
+          background: '#FF6B2B',
+          color: '#fff',
+          padding: '10px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          fontSize: 13,
+          fontFamily: 'var(--font-sans)',
+        }}>
+          <span>📲 Instala TriCoach en tu móvil — pulsa <strong>⎙</strong> → <strong>Añadir a pantalla de inicio</strong></span>
+          <button
+            onClick={() => {
+              localStorage.setItem('pwa_banner_visto', 'true')
+              setShowPwaBanner(false)
+            }}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#fff',
+              fontSize: 18,
+              cursor: 'pointer',
+              lineHeight: 1,
+              padding: '0 4px',
+              flexShrink: 0,
+            }}
+            aria-label="Cerrar"
+          >
+            ✕
+          </button>
         </div>
       )}
 
