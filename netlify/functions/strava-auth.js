@@ -31,11 +31,24 @@ function supabaseGet(hostname, path, key) {
   });
 }
 
+const FUNCTION_SECRET = process.env.TRICOACH_SECRET;
+
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS, body: 'Method Not Allowed' };
 
-  const { code, userId } = JSON.parse(event.body || '{}');
+  const secret = event.headers['x-tricoach-secret'];
+  if (FUNCTION_SECRET && secret !== FUNCTION_SECRET) {
+    return { statusCode: 401, headers: CORS, body: JSON.stringify({ error: 'Unauthorized' }) };
+  }
+
+  let parsedBody;
+  try {
+    parsedBody = JSON.parse(event.body || '{}');
+  } catch {
+    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'JSON inválido' }) };
+  }
+  const { code, userId } = parsedBody;
   if (!code) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'code requerido' }) };
 
   // Validar que el usuario es Pro
@@ -112,13 +125,6 @@ exports.handler = async (event) => {
       strava_token_expires_at: stravaData.body.expires_at,
     };
 
-    console.log('STRAVA_AUTH PATCH payload', JSON.stringify({
-      userId,
-      tokenInicio: patchPayload.strava_token?.substring(0, 8),
-      refresh: patchPayload.strava_refresh_token?.substring(0, 8),
-      expiresAt: patchPayload.strava_token_expires_at,
-    }));
-
     const patchBody = JSON.stringify(patchPayload);
     const patchResult = await new Promise((resolve) => {
       const options = {
@@ -142,8 +148,6 @@ exports.handler = async (event) => {
       req.write(patchBody);
       req.end();
     });
-
-    console.log('STRAVA_AUTH PATCH result', JSON.stringify({ status: patchResult.status, body: patchResult.body }));
 
     if (patchResult.status >= 300) {
       console.error('STRAVA_AUTH: PATCH fallido', JSON.stringify(patchResult));

@@ -34,7 +34,6 @@ ${lastMessages}
 Genera la ficha técnica actualizada (máximo 150 palabras, sin paja):`
         }
       ],
-      model: 'claude-sonnet-4-20250514',
       max_tokens: 200
     })
   })
@@ -43,8 +42,9 @@ Genera la ficha técnica actualizada (máximo 150 palabras, sin paja):`
   const nuevoContexto = data.content?.[0]?.text
   if (!nuevoContexto) return
 
-  await supabase
+  const { error } = await supabase
     .from('profiles')
     .update({ contexto: nuevoContexto })
     .eq('id', userId)
+  if (error) console.error('[context] Error guardando contexto:', error.message)
 }

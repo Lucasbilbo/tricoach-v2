@@ -144,14 +144,6 @@ exports.handler = async (event) => {
     req.end();
   });
 
-  console.log('STRAVA_DEBUG', JSON.stringify({
-    tieneToken: !!profileData?.strava_token,
-    tokenInicio: profileData?.strava_token?.substring(0, 8),
-    expiresAt: profileData?.strava_token_expires_at,
-    now: Math.floor(Date.now() / 1000),
-    estaExpirado: profileData?.strava_token_expires_at < Math.floor(Date.now() / 1000)
-  }));
-
   if (!profileData || !profileData.strava_token) {
     return {
       statusCode: 200,
@@ -194,7 +186,7 @@ exports.handler = async (event) => {
       req.end();
     });
 
-    if (!refreshResult || !refreshResult.access_token) {
+    if (!refreshResult?.access_token) {
       return {
         statusCode: 200,
         headers: { ...CORS, 'Content-Type': 'application/json' },
@@ -202,38 +194,36 @@ exports.handler = async (event) => {
       };
     }
 
-    if (refreshResult && refreshResult.access_token) {
-      accessToken = refreshResult.access_token;
+    accessToken = refreshResult.access_token;
 
-      // Save new token to Supabase
-      const updateBody = JSON.stringify({
-        strava_token: refreshResult.access_token,
-        strava_refresh_token: refreshResult.refresh_token,
-        strava_token_expires_at: refreshResult.expires_at
-      });
+    // Save new token to Supabase
+    const updateBody = JSON.stringify({
+      strava_token: refreshResult.access_token,
+      strava_refresh_token: refreshResult.refresh_token,
+      strava_token_expires_at: refreshResult.expires_at
+    });
 
-      await new Promise((resolve) => {
-        const path = `/rest/v1/profiles?id=eq.${userId}`;
-        const options = {
-          hostname: new URL(supabaseUrl).hostname,
-          path,
-          method: 'PATCH',
-          headers: {
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${supabaseKey}`,
-            'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(updateBody)
-          }
-        };
-        const req = https.request(options, (r) => {
-          r.on('data', () => {});
-          r.on('end', resolve);
-        });
-        req.on('error', resolve);
-        req.write(updateBody);
-        req.end();
+    await new Promise((resolve) => {
+      const path = `/rest/v1/profiles?id=eq.${userId}`;
+      const options = {
+        hostname: new URL(supabaseUrl).hostname,
+        path,
+        method: 'PATCH',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(updateBody)
+        }
+      };
+      const req = https.request(options, (r) => {
+        r.on('data', () => {});
+        r.on('end', resolve);
       });
-    }
+      req.on('error', resolve);
+      req.write(updateBody);
+      req.end();
+    });
   }
 
   // Fetch activities from Strava

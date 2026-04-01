@@ -169,6 +169,7 @@ Instrucción: devuelve SOLO un JSON válido, sin texto adicional, sin markdown, 
   const deporteInfo = {
     triatlon: 'triatlón olímpico',
     running: 'running',
+    natacion: 'natación',
     hyrox: 'Hyrox',
   };
 

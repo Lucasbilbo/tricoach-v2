@@ -19,8 +19,25 @@ Freemium: Free (10 msg/día, plan básico) / Pro (9,99€/mes, Strava + plan ada
 ### Netlify Functions
 - CommonJS SIEMPRE: `const x = require('x')` y `exports.handler = async (event) => {}`
 - NO usar @supabase/supabase-js — usar REST API con https nativo
-- Validar siempre el header `x-tricoach-secret` contra `process.env.TRICOACH_SECRET`
-- El modelo de Claude está fijo: `CLAUDE_MODEL = 'claude-sonnet-4-20250514'` en claude.js — nunca viene del frontend
+- Validar siempre el header `x-tricoach-secret` contra `process.env.TRICOACH_SECRET` — **TODAS las funciones sin excepción**
+- El modelo de Claude está fijo: `CLAUDE_MODEL = 'claude-sonnet-4-20250514'` en claude.js — nunca viene del frontend; el backend filtra `model` y `max_tokens` del body
+- No usar console.log en producción — solo console.error para errores reales
+
+Template mínimo para nueva función:
+```javascript
+const FUNCTION_SECRET = process.env.TRICOACH_SECRET;
+const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, x-tricoach-secret', 'Access-Control-Allow-Methods': 'POST, OPTIONS' };
+
+exports.handler = async (event) => {
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' };
+  if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS, body: 'Method Not Allowed' };
+  const secret = event.headers['x-tricoach-secret'];
+  if (FUNCTION_SECRET && secret !== FUNCTION_SECRET) return { statusCode: 401, headers: CORS, body: JSON.stringify({ error: 'Unauthorized' }) };
+  let parsed;
+  try { parsed = JSON.parse(event.body || '{}'); } catch { return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'JSON inválido' }) }; }
+  // ...
+};
+```
 
 ### Supabase desde Functions
 Patrón estándar para GET:

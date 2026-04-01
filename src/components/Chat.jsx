@@ -94,7 +94,6 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
       setMessages(updatedMessages)
 
       const systemPrompt = buildSystemPrompt(profile, profile.personalidad || 'cercano', stravaData, plan, planProximaSemana, historialPlanes || [])
-      console.log('[Chat] System prompt (primeros 200 chars):', systemPrompt.substring(0, 200))
 
       const response = await fetch('/.netlify/functions/claude', {
         method: 'POST',
@@ -143,25 +142,22 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
 
   useEffect(() => {
     if (!userId) return
-    console.log('[Chat] Llamando strava-activities para userId:', userId)
+    const controller = new AbortController()
     fetch('/.netlify/functions/strava-activities', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-tricoach-secret': import.meta.env.VITE_TRICOACH_SECRET || ''
       },
-      body: JSON.stringify({ userId })
+      body: JSON.stringify({ userId }),
+      signal: controller.signal,
     })
       .then(r => r.json())
       .then(data => {
-        console.log('[Chat] Respuesta strava-activities:', {
-          sinStrava: data.sinStrava,
-          resumen: data.resumen,
-          numActividades: data.actividades?.length ?? 0,
-        })
         if (!data.error) setStravaData(data.sinStrava ? null : data)
       })
-      .catch(err => console.error('[Chat] Error strava-activities:', err))
+      .catch(err => { if (err.name !== 'AbortError') console.error('[Chat] strava-activities error:', err) })
+    return () => controller.abort()
   }, [userId])
 
   useEffect(() => {
