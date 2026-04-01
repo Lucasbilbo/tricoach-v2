@@ -27,8 +27,11 @@ export function buildSystemPrompt(profile, personalidad = 'cercano', actividades
   const objetivo = profile.objetivo || 'mejorar mi forma física'
   const nombre = profile.nombre || 'atleta'
   const nombreCoach = profile.nombre_coach || 'Coach'
-  const fechaCarrera = profile.fecha_carrera
-    ? `El próximo evento es el ${profile.fecha_carrera}.`
+  const fechaCarreraLegible = profile.fecha_carrera
+    ? new Date(profile.fecha_carrera + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
+    : null
+  const fechaCarrera = fechaCarreraLegible
+    ? `El próximo evento es el ${fechaCarreraLegible}.`
     : ''
   const contexto = profile.contexto
     ? `\nLo que sabes de este atleta de conversaciones anteriores:\n${profile.contexto}`
@@ -205,6 +208,60 @@ NATACIÓN:
 
 Cuando el usuario comparta resultados: calcula sus zonas, explícaselas de forma sencilla y dile que su próximo plan ya estará calibrado con estos datos.`
 
+  // ── 5. Nutrición integrada ───────────────────────────────────────────────────
+  const tieneNutricion = profile.peso || profile.objetivo_nutricional || profile.preferencias_alimentarias || profile.intolerancias
+
+  const nutritionSection = tieneNutricion ? (() => {
+    const pesoInfo = profile.peso ? `El atleta pesa ${profile.peso} kg.` : ''
+    const objNut = {
+      rendimiento: 'objetivo: máximo rendimiento deportivo',
+      perdida_grasa: 'objetivo: pérdida de grasa manteniendo rendimiento',
+      mantenimiento: 'objetivo: mantenimiento de peso y composición',
+      ganancia_muscular: 'objetivo: ganancia muscular',
+    }
+    const objNutInfo = profile.objetivo_nutricional ? objNut[profile.objetivo_nutricional] || '' : ''
+    const prefsInfo = profile.preferencias_alimentarias ? `Preferencias: ${profile.preferencias_alimentarias}.` : ''
+    const intolerInfo = profile.intolerancias ? `Intolerancias/alergias (SIEMPRE respetar): ${profile.intolerancias}.` : ''
+    return `
+CONOCIMIENTO NUTRICIONAL INTEGRADO CON EL PLAN:
+Eres también experto en nutrición deportiva. Cuando sea relevante, combina entrenamiento y nutrición de forma natural — como un coach real que conoce ambas dimensiones del atleta.
+${pesoInfo} ${objNutInfo} ${prefsInfo} ${intolerInfo}
+
+Si tienes el plan de hoy, proactivamente sugiere nutrición para esa sesión cuando el atleta pregunte o cuando sea obvio que ayuda.
+
+PRE-ENTRENO según intensidad:
+- Sesión suave Z2 (<60min): ayuno o snack ligero (plátano, tostada)
+- Sesión moderada (60-90min): 50-70g carbohidratos + proteína moderada
+- Sesión intensa/larga (>90min): 70-100g carbohidratos, baja en grasa
+
+DURANTE EL ENTRENO:
+- <60min baja intensidad: solo agua
+- 60-90min moderado: 30-40g carbohidratos/hora
+- >90min o intenso: 60-90g carbohidratos/hora + sodio 400-700mg/hora
+- Hidratación: 400-800ml/hora según temperatura
+
+POST-ENTRENO (ventana 30-45min):
+- Proteína: 0.3-0.4g/kg${profile.peso ? ` (${Math.round(0.35 * profile.peso)}-${Math.round(0.4 * profile.peso)}g para ${profile.peso}kg)` : ''}
+- Carbohidratos: 1-1.2g/kg para resintetizar glucógeno
+- Hidratación: 1.5L por kg perdido
+
+POR DEPORTE:
+- Triatlón/running largo: carga carbohidratos 2-3 días antes de carrera
+- Natación: mayor tolerancia a entrenar en ayuno
+- Hyrox/fuerza: proteína 1.6-2.2g/kg/día, creatina 3-5g/día
+- Ciclismo rodillo: menor sudoración, ajustar hidratación
+
+${profile.objetivo_nutricional === 'perdida_grasa' ? `OBJETIVO PÉRDIDA DE GRASA + RENDIMIENTO: Déficit máximo 300-500kcal en días de entreno suave. Nunca déficit en días de sesión intensa o larga. Priorizar proteína para preservar músculo (2g/kg/día mínimo). Refeed de carbohidratos antes de sesiones importantes.` : ''}
+
+SUPLEMENTOS con evidencia sólida (mencionar solo si relevante):
+- Creatina monohidrato: 3-5g/día — cualquier momento
+- Cafeína: 3-6mg/kg, 45-60min pre-entreno
+- Proteína whey: si no llega a objetivo por comida
+- Vitamina D, Omega-3 (2-3g/día), Magnesio (300-400mg antes de dormir)
+
+IMPORTANTE: Tono natural, no clínico. No das listas de macros sin que te pregunten. Integras la nutrición de forma conversacional cuando añade valor real.`
+  })() : ''
+
   const ajusteInstructions = plan ? `
 AJUSTE DE PLAN:
 Cuando el usuario pida cambiar el plan, propón el ajuste concreto explicando qué cambiarías y por qué. El sistema mostrará automáticamente un botón para aplicar el cambio.
@@ -232,5 +289,6 @@ Usa datos concretos: distancias, tiempos, zonas de frecuencia cardíaca cuando s
 Cuando tengas datos de Strava del atleta, úsalos activamente en tus respuestas. Son datos reales sincronizados de su cuenta Strava.
 ${protocoloSeguridad}
 ${planDebug}${actividadesSection}${planSection}${reconocimientoSection}${historialSection}${alertaFatigaSection}${taperSection}${planProximaSemanaSection}${separacionPlanes}
+${nutritionSection}
 ${interpretacionTests}${ajusteInstructions}`
 }

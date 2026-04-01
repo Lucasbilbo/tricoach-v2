@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { generatePlan } from '../lib/plans'
 import StravaConnect from './StravaConnect'
 
 // ─── Datos estáticos ──────────────────────────────────────────────────────────
@@ -254,6 +255,7 @@ export default function Onboarding({ userId, onComplete }) {
   const [nuevaCarrera, setNuevaCarrera] = useState({ nombre: '', tipo: '', dia: '', mes: '', anio: '' })
   const [mostrarFormCarrera, setMostrarFormCarrera] = useState(true)
   const [submitted, setSubmitted] = useState(false)
+  const [generando, setGenerando] = useState(false)
   const [otroEquipamiento, setOtroEquipamiento] = useState('')
   const [sinCarrera, setSinCarrera] = useState(false)
   const [errores, setErrores] = useState({ nombre: '', deporte: '', nivel: '', carreras: '', historial: '', disponibilidad: '', equipamiento: '' })
@@ -341,7 +343,9 @@ export default function Onboarding({ userId, onComplete }) {
       console.error('Exception en handleSubmit:', e)
     }
     setSubmitted(true)
-    onComplete()
+    setGenerando(true)
+    const generatedPlan = await generatePlan(userId).catch(() => null)
+    onComplete(generatedPlan)
   }
 
   const heading = (text) => (
@@ -365,6 +369,36 @@ export default function Onboarding({ userId, onComplete }) {
     }}>
       {text}
     </p>
+  )
+
+  if (generando) return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'var(--background)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 20,
+      padding: 32,
+    }}>
+      <div style={{ fontSize: 48 }}>🏃</div>
+      <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 24, fontWeight: 700, textAlign: 'center' }}>
+        Creando tu plan personalizado...
+      </h2>
+      <p style={{ color: 'var(--muted-foreground)', fontSize: 15, textAlign: 'center' }}>
+        Tu coach está diseñando los entrenamientos perfectos para ti
+      </p>
+      <div style={{
+        width: 40,
+        height: 40,
+        border: '3px solid var(--border)',
+        borderTopColor: 'var(--primary)',
+        borderRadius: '50%',
+        animation: 'spin 0.8s linear infinite',
+      }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+    </div>
   )
 
   return (

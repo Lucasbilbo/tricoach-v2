@@ -300,7 +300,7 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
               alignItems: 'center',
               textAlign: 'center',
             }}>
-              <div style={{ fontSize: 64, marginBottom: 16 }}>
+              <div style={{ fontSize: 80, marginBottom: 20 }}>
                 {ICONOS[sesionHoy.tipo] || '🏋️'}
               </div>
 
@@ -355,7 +355,7 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
                   )}
                   <h2 style={{
                     fontFamily: 'var(--font-serif)',
-                    fontSize: 28,
+                    fontSize: 34,
                     fontWeight: 700,
                     marginBottom: 8,
                     color: sesionHoy.completada ? 'var(--success)' : 'var(--foreground)',
@@ -453,12 +453,13 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
                       background: 'var(--primary)',
                       color: 'var(--primary-foreground)',
                       border: 'none',
-                      borderRadius: 24,
-                      padding: '14px 32px',
+                      borderRadius: 28,
+                      padding: '16px 44px',
                       fontFamily: 'var(--font-sans)',
-                      fontSize: 16,
-                      fontWeight: 600,
+                      fontSize: 18,
+                      fontWeight: 700,
                       cursor: 'pointer',
+                      letterSpacing: '0.01em',
                     }}
                   >
                     ✓ Completar sesión
@@ -466,6 +467,34 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
                 )
               )}
             </div>
+
+            {/* Week progress bar */}
+            {(() => {
+              const sesionesActivas = plan.sesiones?.filter(s => s.tipo?.toLowerCase() !== 'descanso' && s.tipo?.toLowerCase() !== 'rest') || []
+              const completadas = sesionesActivas.filter(s => s.completada).length
+              const total = sesionesActivas.length
+              if (total === 0) return null
+              const pct = Math.round((completadas / total) * 100)
+              return (
+                <div style={{ marginBottom: 16, padding: '14px 16px', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{ fontSize: 13, color: 'var(--muted-foreground)', fontFamily: 'var(--font-sans)' }}>Progreso esta semana</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: completadas === total ? 'var(--success)' : 'var(--foreground)', fontFamily: 'var(--font-sans)' }}>
+                      {completadas} de {total} sesiones
+                    </span>
+                  </div>
+                  <div style={{ background: 'var(--border)', borderRadius: 99, height: 8, overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%',
+                      width: `${pct}%`,
+                      background: completadas === total ? 'var(--success)' : 'var(--primary)',
+                      borderRadius: 99,
+                      transition: 'width 0.4s ease',
+                    }} />
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* TCX download button */}
             {!esDescanso && (

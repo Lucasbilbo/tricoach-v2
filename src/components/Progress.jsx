@@ -265,7 +265,11 @@ export default function Progress({ userId, profile, onNavigate }) {
           }}>
             <div>
               <p style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 2 }}>Cuenta atrás a la carrera</p>
-              <p style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>{profile?.fecha_carrera}</p>
+              <p style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>
+                {profile?.fecha_carrera
+                  ? new Date(profile.fecha_carrera + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
+                  : ''}
+              </p>
             </div>
             <div style={{ textAlign: 'right' }}>
               <span style={{ fontFamily: 'var(--font-serif)', fontSize: 32, fontWeight: 700, color: 'var(--primary)' }}>

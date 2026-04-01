@@ -129,10 +129,14 @@ function App() {
     return (
       <Onboarding
         userId={session.user.id}
-        onComplete={async () => {
+        onComplete={async (generatedPlan) => {
           await loadOrCreateProfile(session.user)
-          const newPlan = await generatePlan(session.user.id).catch(() => null)
-          if (newPlan) setPlan(newPlan)
+          if (generatedPlan?.sesiones) {
+            setPlan(generatedPlan)
+          } else {
+            const newPlan = await generatePlan(session.user.id).catch(() => null)
+            if (newPlan) setPlan(newPlan)
+          }
         }}
       />
     )

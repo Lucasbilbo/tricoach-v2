@@ -29,7 +29,7 @@ describe('System Prompt dinámico', () => {
   it('incluye la fecha de carrera si existe', () => {
     const profile = { nombre: 'Lucas', deporte: 'triatlon', nivel: 'principiante', objetivo: 'terminar', fecha_carrera: '2026-07-23' }
     const prompt = buildSystemPrompt(profile)
-    expect(prompt).toContain('2026-07-23')
+    expect(prompt).toContain('23 de julio de 2026')
   })
 
   it('funciona sin fecha de carrera', () => {

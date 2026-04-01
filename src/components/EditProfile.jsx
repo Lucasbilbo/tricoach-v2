@@ -89,6 +89,11 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
   const [personalidad, setPersonalidad] = useState(profile.personalidad || 'cercano')
   const [edad, setEdad] = useState(profile.edad || '')
   const [fcMaxima, setFcMaxima] = useState(profile.fc_maxima || '')
+  // Nutrición
+  const [peso, setPeso] = useState(profile.peso || '')
+  const [objetivoNutricional, setObjetivoNutricional] = useState(profile.objetivo_nutricional || '')
+  const [preferenciasAlimentarias, setPreferenciasAlimentarias] = useState(profile.preferencias_alimentarias || '')
+  const [intolerancias, setIntolerancias] = useState(profile.intolerancias || '')
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -116,6 +121,10 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
         personalidad,
         edad: edad !== '' ? parseInt(edad) : null,
         fc_maxima: fcMaxima !== '' ? parseInt(fcMaxima) : null,
+        peso: peso !== '' ? parseFloat(peso) : null,
+        objetivo_nutricional: objetivoNutricional || null,
+        preferencias_alimentarias: preferenciasAlimentarias || null,
+        intolerancias: intolerancias || null,
         // pass-through jsonb fields unchanged
         equipamiento: profile.equipamiento ?? null,
         carreras: profile.carreras ?? null,
@@ -326,6 +335,48 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
         <p style={{ fontSize: 12, color: 'var(--muted-foreground)', marginBottom: 20, marginTop: 0 }}>
           Opcional. Si no la conoces, la estimamos con tu edad.
         </p>
+
+        {/* Nutrición */}
+        <p style={{ fontSize: 13, color: 'var(--muted-foreground)', fontWeight: 600, marginBottom: 14, marginTop: 4, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+          🥗 Nutrición
+        </p>
+
+        <label style={labelStyle}>Peso actual (kg)</label>
+        <input
+          type="number"
+          min={30}
+          max={200}
+          step={0.1}
+          style={inputStyle}
+          value={peso}
+          onChange={e => setPeso(e.target.value)}
+          placeholder="Ej: 72.5 — para personalizar gramos"
+        />
+
+        <label style={labelStyle}>Objetivo nutricional</label>
+        <select style={inputStyle} value={objetivoNutricional} onChange={e => setObjetivoNutricional(e.target.value)}>
+          <option value="">Sin preferencia</option>
+          <option value="rendimiento">Rendimiento deportivo</option>
+          <option value="perdida_grasa">Pérdida de grasa + rendimiento</option>
+          <option value="mantenimiento">Mantenimiento</option>
+          <option value="ganancia_muscular">Ganancia muscular</option>
+        </select>
+
+        <label style={labelStyle}>Preferencias alimentarias</label>
+        <textarea
+          style={{ ...inputStyle, resize: 'vertical', minHeight: 56 }}
+          value={preferenciasAlimentarias}
+          onChange={e => setPreferenciasAlimentarias(e.target.value)}
+          placeholder="Ej: mediterránea, vegetariana, no me gusta el picante..."
+        />
+
+        <label style={labelStyle}>Intolerancias / alergias</label>
+        <textarea
+          style={{ ...inputStyle, resize: 'vertical', minHeight: 56, marginBottom: 20 }}
+          value={intolerancias}
+          onChange={e => setIntolerancias(e.target.value)}
+          placeholder="Ej: intolerante al gluten, alérgico a los frutos secos..."
+        />
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button
