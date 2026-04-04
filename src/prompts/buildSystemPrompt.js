@@ -22,16 +22,36 @@ export function buildSystemPrompt(profile, personalidad = 'cercano', actividades
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
     timeZone: 'Europe/Madrid'
   })
-  const deporte = profile.deporte || 'deporte de resistencia'
-  const nivel = profile.nivel || 'principiante'
+  // Deportes: multi-deporte o single
+  const deportesArr = Array.isArray(profile.deportes) && profile.deportes.length > 0
+    ? profile.deportes
+    : profile.deporte ? [{ deporte: profile.deporte, nivel: profile.nivel }] : []
+  const deporte = deportesArr[0]?.deporte || profile.deporte || 'deporte de resistencia'
+  const nivel = deportesArr[0]?.nivel || profile.nivel || 'principiante'
   const objetivo = profile.objetivo || 'mejorar mi forma física'
   const nombre = profile.nombre || 'atleta'
   const nombreCoach = profile.nombre_coach || 'Coach'
-  const fechaCarreraLegible = profile.fecha_carrera
-    ? new Date(profile.fecha_carrera + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
+
+  // Carreras: array o legacy fecha_carrera
+  const carrerasArr = Array.isArray(profile.carreras) && profile.carreras.length > 0
+    ? profile.carreras
+    : profile.fecha_carrera ? [{ nombre: 'Carrera objetivo', tipo: '', fecha: profile.fecha_carrera }] : []
+  const hoy = new Date()
+  const carrerasFuturas = carrerasArr.filter(c => {
+    if (!c.fecha) return false
+    const f = new Date(c.fecha)
+    return !isNaN(f.getTime()) && f > hoy
+  }).sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
+  const carreraProxima = carrerasFuturas[0] || null
+
+  const fechaCarreraLegible = carreraProxima?.fecha
+    ? (() => {
+        const d = new Date(carreraProxima.fecha + 'T12:00:00')
+        return isNaN(d.getTime()) ? carreraProxima.fecha : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
+      })()
     : null
   const fechaCarrera = fechaCarreraLegible
-    ? `El próximo evento es el ${fechaCarreraLegible}.`
+    ? `El próximo evento es "${carreraProxima.nombre || carreraProxima.tipo}" el ${fechaCarreraLegible}.`
     : ''
   const contexto = profile.contexto
     ? `\nLo que sabes de este atleta de conversaciones anteriores:\n${profile.contexto}`
@@ -43,6 +63,21 @@ export function buildSystemPrompt(profile, personalidad = 'cercano', actividades
     natacion: 'natación (piscina y aguas abiertas)',
     hyrox: 'Hyrox (carrera funcional con estaciones de fitness)',
   }
+
+  // Multi-deporte section
+  const multiDeporteSection = deportesArr.length > 1
+    ? `\nDEPORTES DEL ATLETA:\n${deportesArr.map(d => `- ${deporteInfo[d.deporte] || d.deporte}: nivel ${d.nivel || 'principiante'}`).join('\n')}\nEl atleta entrena múltiples disciplinas. Al diseñar o ajustar planes, distribuye las sesiones entre todos sus deportes.`
+    : ''
+
+  // Todas las carreras futuras
+  const todasCarrerasSection = carrerasFuturas.length > 1
+    ? `\nTODAS LAS CARRERAS OBJETIVO (ordenadas por fecha):\n${carrerasFuturas.map(c => {
+        const d = new Date(c.fecha + 'T12:00:00')
+        const legible = isNaN(d.getTime()) ? c.fecha : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
+        const diasRestantes = Math.ceil((d - hoy) / (1000 * 60 * 60 * 24))
+        return `- "${c.nombre || c.tipo}" (${c.tipo}) — ${legible}${diasRestantes > 0 ? ` (en ${diasRestantes} días)` : ''}`
+      }).join('\n')}\nOrganiza el entrenamiento priorizando la carrera más próxima sin descuidar las siguientes.`
+    : ''
 
   const natacionContext = deporte === 'natacion'
     ? `\nContexto técnico natación: trabaja estilo crol como base. Incluye ejercicios de técnica (patada tabla, pull con paletas, drills de brazada) si el nivel es principiante o intermedio. Para series: especifica estilo, distancia, tiempo de descanso y referencia de ritmo por 100m.`
@@ -272,7 +307,7 @@ IMPORTANTE: Nunca generes un plan semanal completo en el chat. Si el atleta pide
 Tu nombre es ${nombreCoach}. El usuario te llama así.${natacionContext}
 HOY ES: ${ahora}. Nunca preguntes al usuario qué día es.
 Tu atleta se llama ${nombre}, tiene nivel ${nivel} y su objetivo es: ${objetivo}.
-${fechaCarrera}
+${fechaCarrera}${multiDeporteSection}${todasCarrerasSection}
 ${contexto}
 
 ${estiloPersonalidad}

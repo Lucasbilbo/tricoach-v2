@@ -82,6 +82,30 @@ const RUTINA_MOVILIDAD = [
   { nombre: 'Respiración y relajación', duracion: '4 min' },
 ]
 
+const TIPO_SPORT_CARRERA = {
+  Correr: ['5K', '10K', 'Media Maratón', 'Maratón', 'Trail', 'running'],
+  Nadar: ['100m', '200m', '400m', '800m', '1500m', 'Aguas abiertas 1km', 'Aguas abiertas 3km', 'Aguas abiertas 5km', 'natacion'],
+  Bici: ['Sprint', 'Olímpico', '70.3', 'Ironman', 'triatlon'],
+  Brick: ['Sprint', 'Olímpico', '70.3', 'Ironman', 'triatlon'],
+  Fuerza: ['Hyrox Individual', 'Hyrox Dobles', 'hyrox'],
+}
+
+function getCarreraBadge(sesion, profile) {
+  if (!sesion || !sesion.tipo || sesion.tipo.toLowerCase() === 'descanso') return null
+  const carrerasArr = Array.isArray(profile?.carreras) ? profile.carreras : []
+  const hoy = new Date()
+  const futuras = carrerasArr
+    .filter(c => c.fecha && new Date(c.fecha) > hoy)
+    .sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
+  if (futuras.length === 0) return null
+  const tiposRelacionados = TIPO_SPORT_CARRERA[sesion.tipo] || []
+  const carreraRelacionada = futuras.find(c =>
+    tiposRelacionados.some(t => (c.tipo || '').toLowerCase().includes(t.toLowerCase()) || t.toLowerCase().includes((c.tipo || '').toLowerCase()))
+  ) || futuras[0]
+  if (!carreraRelacionada) return null
+  return carreraRelacionada.nombre || carreraRelacionada.tipo || null
+}
+
 export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate, onNavigate }) {
   const [completando, setCompletando] = useState(false)
   const [rpe, setRpe] = useState(6)
@@ -386,6 +410,25 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
                       📊 Sesión Test
                     </div>
                   )}
+                  {(() => {
+                    const badge = getCarreraBadge(sesionHoy, profile)
+                    if (!badge) return null
+                    return (
+                      <div style={{
+                        background: 'var(--secondary)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 99,
+                        padding: '3px 12px',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        marginBottom: 14,
+                        color: 'var(--muted-foreground)',
+                        letterSpacing: '0.04em',
+                      }}>
+                        🎯 Para tu {badge}
+                      </div>
+                    )
+                  })()}
                   <h2 style={{
                     fontFamily: 'var(--font-serif)',
                     fontSize: 36,

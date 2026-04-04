@@ -286,10 +286,10 @@ exports.handler = async (event) => {
   const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
   const hostname = new URL(supabaseUrl).hostname;
 
-  // Obtener perfil del usuario (incluyendo campos de Strava)
+  // Obtener perfil del usuario (incluyendo campos de Strava y multi-deporte)
   const profiles = await supabaseGet(
     hostname,
-    `/rest/v1/profiles?id=eq.${userId}&select=deporte,nivel,objetivo,fecha_carrera,contexto,strava_token,strava_token_expires_at,plan,created_at`,
+    `/rest/v1/profiles?id=eq.${userId}&select=deporte,nivel,objetivo,fecha_carrera,contexto,strava_token,strava_token_expires_at,plan,created_at,deportes,carreras`,
     supabaseKey
   );
 
@@ -339,7 +339,22 @@ Prioridad: maximizar forma. Sesiones de alta intensidad controlada (Z4-Z5), simu
 Prioridad: llegar fresco al día de la carrera. Reduce volumen 30-50%, mantén alguna sesión corta de intensidad para no perder ritmo. Sin sesiones largas agotadoras. Descanso activo y recuperación.`,
   };
 
-  const metodo = calcularMetodo(profile.fecha_carrera, profile.nivel);
+  // Resolver deportes efectivos (multi-deporte o single)
+  const deportesEfectivos = Array.isArray(profile.deportes) && profile.deportes.length > 0
+    ? profile.deportes
+    : profile.deporte ? [{ deporte: profile.deporte, nivel: profile.nivel }] : [];
+  const deportePrimario = deportesEfectivos[0]?.deporte || profile.deporte || 'running';
+
+  // Carrera más próxima para determinar fase de entrenamiento
+  const carrerasArr = Array.isArray(profile.carreras) ? profile.carreras : [];
+  const hoyStr = getTodayDate();
+  const carrerasMasProximas = carrerasArr
+    .filter(c => c.fecha && new Date(c.fecha) > new Date())
+    .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+  const carreraProxima = carrerasMasProximas[0] || null;
+  const fechaCarreraEfectiva = carreraProxima?.fecha || profile.fecha_carrera;
+
+  const metodo = calcularMetodo(fechaCarreraEfectiva, profile.nivel);
 
   const weekStart = fechaInicio || getMondayOfCurrentWeek();
   const startDate = fechaInicio || getTodayDate();
@@ -376,21 +391,41 @@ Instrucción: devuelve SOLO un JSON válido, sin texto adicional, sin markdown, 
 
   let userMessage;
   if (necesitaDiagnostico) {
-    userMessage = buildDiagnosticoUserMessage(profile, weekStart, deporteInfo, dias);
+    const profileParaDiag = { ...profile, deporte: deportePrimario };
+    userMessage = buildDiagnosticoUserMessage(profileParaDiag, weekStart, deporteInfo, dias);
   } else {
     const stravaParaAnalisis = isPro ? stravaText : null;
     const analisisSection = planAnteriorEfectivo
       ? '\n\n' + buildAnalisisSemanaAnterior(planAnteriorEfectivo, stravaParaAnalisis, numeroDeSemana)
       : '';
     const semanaLabel = numeroDeSemana ? `Semana ${numeroDeSemana} del plan del atleta.` : '';
+
+    // Multi-deporte: construir descripción de deportes y carreras
+    const deportesTexto = deportesEfectivos.length > 1
+      ? deportesEfectivos.map(d => `${deporteInfo[d.deporte] || d.deporte} (nivel: ${d.nivel || 'principiante'})`).join(', ')
+      : deporteInfo[deportePrimario] || deportePrimario;
+    const nivelPrimario = deportesEfectivos[0]?.nivel || profile.nivel || 'principiante';
+
+    const carrerasTexto = carrerasMasProximas.length > 0
+      ? carrerasMasProximas.slice(0, 3).map(c => `${c.nombre} (${c.tipo}) — ${c.fecha}`).join('; ')
+      : (profile.fecha_carrera ? `Próximo evento: ${profile.fecha_carrera}` : '');
+
+    const distribucionDeportes = deportesEfectivos.length > 1 ? `
+DISTRIBUCIÓN DE SESIONES (multi-deporte):
+El atleta practica ${deportesEfectivos.length} deportes. Distribuye las sesiones semanales priorizando el deporte de la carrera más próxima (${carreraProxima ? carreraProxima.tipo + ' — ' + carreraProxima.fecha : 'sin carrera definida'}).
+${deportesEfectivos.map(d => `- ${deporteInfo[d.deporte] || d.deporte}: incluir al menos ${d.deporte === 'triatlon' ? '3-4' : '1-2'} sesiones`).join('\n')}
+Si el atleta hace triatlón, las sesiones de running del triatlón también sirven para carreras de running.
+Nunca más de 2 días seguidos del mismo deporte.` : '';
+
     userMessage = `Genera un plan de entrenamiento semanal para este atleta:
 
-Deporte: ${deporteInfo[profile.deporte] || profile.deporte || 'deporte de resistencia'}
-Nivel: ${profile.nivel || 'principiante'}
+Deportes: ${deportesTexto}
+Nivel: ${nivelPrimario}
 Objetivo: ${profile.objetivo || 'mejorar forma física'}
-${profile.fecha_carrera ? `Próximo evento: ${profile.fecha_carrera}` : ''}
+${carrerasTexto ? `Carreras/eventos próximos: ${carrerasTexto}` : ''}
 ${semanaLabel}
 ${profile.contexto ? `Contexto del atleta: ${profile.contexto}` : ''}${analisisSection}
+${distribucionDeportes}
 
 El plan empieza el ${weekStart}. Los días en orden son: ${dias.join(', ')}.
 

@@ -76,9 +76,24 @@ const labelStyle = {
   fontWeight: 500,
 }
 
+const DEPORTES_EDIT = [
+  { value: 'triatlon', label: '🏊 Triatlón' },
+  { value: 'running', label: '🏃 Running' },
+  { value: 'natacion', label: '🏊 Natación' },
+  { value: 'hyrox', label: '💪 Hyrox' },
+]
+
+function initDeportesSeleccionados(profile) {
+  if (profile.deportes && profile.deportes.length > 0) {
+    return profile.deportes.map(d => d.deporte || d)
+  }
+  return profile.deporte ? [profile.deporte] : []
+}
+
 export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade }) {
   const [nombre, setNombre] = useState(profile.nombre || '')
   const [deporte, setDeporte] = useState(profile.deporte || '')
+  const [deportesSeleccionados, setDeportesSeleccionados] = useState(() => initDeportesSeleccionados(profile))
   const [nivel, setNivel] = useState(profile.nivel || '')
   const [objetivo, setObjetivo] = useState(profile.objetivo || '')
   const [fechaCarrera, setFechaCarrera] = useState(profile.fecha_carrera || '')
@@ -106,11 +121,16 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
 
   async function handleSave() {
     setSaving(true)
+    const deportesParaGuardar = deportesSeleccionados.map(d => ({
+      deporte: d,
+      nivel: profile.deportes?.find(x => (x.deporte || x) === d)?.nivel || nivel,
+    }))
     const { data, error } = await supabase
       .from('profiles')
       .update({
         nombre,
-        deporte,
+        deporte: deportesSeleccionados[0] || deporte,
+        deportes: deportesParaGuardar.length > 0 ? deportesParaGuardar : null,
         nivel,
         objetivo,
         fecha_carrera: fechaCarrera,
@@ -255,12 +275,37 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
         <label style={labelStyle}>Nombre</label>
         <input style={inputStyle} value={nombre} onChange={e => setNombre(e.target.value)} />
 
-        <label style={labelStyle}>Deporte</label>
-        <select style={inputStyle} value={deporte} onChange={e => setDeporte(e.target.value)}>
-          <option value="triatlon">🏊 Triatlón</option>
-          <option value="running">🏃 Running</option>
-          <option value="hyrox">💪 Hyrox</option>
-        </select>
+        <label style={labelStyle}>Deportes</label>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
+          {DEPORTES_EDIT.map(({ value, label }) => {
+            const checked = deportesSeleccionados.includes(value)
+            return (
+              <label key={value} style={{
+                display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer',
+                padding: '8px 12px',
+                background: checked ? 'oklch(0.7 0.18 45 / 0.1)' : 'var(--secondary)',
+                border: `1px solid ${checked ? 'var(--primary)' : 'var(--border)'}`,
+                borderRadius: 8,
+              }}>
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={e => {
+                    const next = e.target.checked
+                      ? [...deportesSeleccionados, value]
+                      : deportesSeleccionados.filter(d => d !== value)
+                    setDeportesSeleccionados(next)
+                    if (next.length > 0) setDeporte(next[0])
+                  }}
+                  style={{ width: 16, height: 16, accentColor: 'var(--primary)', flexShrink: 0 }}
+                />
+                <span style={{ fontSize: 14, fontWeight: checked ? 600 : 400, color: checked ? 'var(--primary)' : 'var(--foreground)' }}>
+                  {label}
+                </span>
+              </label>
+            )
+          })}
+        </div>
 
         <label style={labelStyle}>Nivel</label>
         <select style={inputStyle} value={nivel} onChange={e => setNivel(e.target.value)}>

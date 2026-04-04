@@ -26,7 +26,7 @@ describe('Onboarding', () => {
     render(<Onboarding userId="123" onComplete={vi.fn()} />)
     fireEvent.change(screen.getByPlaceholderText('Tu nombre'), { target: { value: 'Lucas' } })
     fireEvent.click(screen.getByText('Siguiente'))
-    expect(screen.getByText('¿Qué deporte practicas?')).toBeDefined()
+    expect(screen.getByText('¿Qué deportes practicas?')).toBeDefined()
   })
 
   it('avanza al paso 3 al pulsar Siguiente con deporte seleccionado', () => {

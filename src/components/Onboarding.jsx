@@ -32,7 +32,15 @@ const TIPOS_CARRERA = {
   hyrox: ['Hyrox Individual', 'Hyrox Dobles'],
 }
 
-function getTipos(deporte) {
+function getTipos(deporte, deportesArr) {
+  if (deportesArr && deportesArr.length > 1) {
+    const todos = new Set()
+    deportesArr.forEach(d => {
+      const tipos = TIPOS_CARRERA[d] || []
+      tipos.forEach(t => todos.add(t))
+    })
+    return [...todos, 'Otro']
+  }
   const base = TIPOS_CARRERA[deporte]
     || [...TIPOS_CARRERA.running, ...TIPOS_CARRERA.triatlon, ...TIPOS_CARRERA.hyrox]
   return [...base, 'Otro']
@@ -249,6 +257,8 @@ export default function Onboarding({ userId, onComplete }) {
     lesiones: '',
     equipamiento: [],
   })
+  const [deportes, setDeportes] = useState([])
+  const [nivelesDeportes, setNivelesDeportes] = useState({})
   const [carreras, setCarreras] = useState([])
   const [disponibilidadSlots, setDisponibilidadSlots] = useState([])
   const [sinLesiones, setSinLesiones] = useState(false)
@@ -258,7 +268,7 @@ export default function Onboarding({ userId, onComplete }) {
   const [generando, setGenerando] = useState(false)
   const [otroEquipamiento, setOtroEquipamiento] = useState('')
   const [sinCarrera, setSinCarrera] = useState(false)
-  const [errores, setErrores] = useState({ nombre: '', deporte: '', nivel: '', carreras: '', historial: '', disponibilidad: '', equipamiento: '' })
+  const [errores, setErrores] = useState({ nombre: '', deportes: '', nivel: '', carreras: '', historial: '', disponibilidad: '', equipamiento: '' })
   const [erroresCarrera, setErroresCarrera] = useState({ nombre: '', tipo: '', fecha: '' })
 
   // Si volvemos del OAuth de Strava, saltar al paso de integraciones
@@ -271,6 +281,15 @@ export default function Onboarding({ userId, onComplete }) {
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
   const handleSelect = (field, value) => setForm({ ...form, [field]: value })
+
+  const toggleDeporte = (value) => {
+    const updated = deportes.includes(value)
+      ? deportes.filter(d => d !== value)
+      : [...deportes, value]
+    setDeportes(updated)
+    setForm(prev => ({ ...prev, deporte: updated[0] || '' }))
+    if (updated.length > 0) setErrores(prev => ({ ...prev, deportes: '' }))
+  }
 
   const toggleSlot = (slot) => {
     const nuevaDisponibilidad = disponibilidadSlots.includes(slot)
@@ -326,6 +345,10 @@ export default function Onboarding({ userId, onComplete }) {
       : form.equipamiento.filter(e => e !== 'otro')
 
     try {
+      const deportesConNivel = deportes.map(d => ({
+        deporte: d,
+        nivel: nivelesDeportes[d] || form.nivel || 'principiante',
+      }))
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -335,6 +358,7 @@ export default function Onboarding({ userId, onComplete }) {
           lesiones: sinLesiones ? 'Sin lesiones actuales' : form.lesiones,
           disponibilidad: disponibilidadSlots.join(', '),
           carreras,
+          deportes: deportesConNivel.length > 0 ? deportesConNivel : null,
         })
         .eq('id', userId)
 
@@ -442,32 +466,88 @@ export default function Onboarding({ userId, onComplete }) {
           </div>
         )}
 
-        {/* ── Paso 2: Deporte ─────────────────────────────────────────────── */}
+        {/* ── Paso 2: Deportes (multi-select) ─────────────────────────────── */}
         {step === 2 && (
           <div>
-            {heading('¿Qué deporte practicas?')}
-            {subheading('Tu coach se especializará en tu disciplina')}
+            {heading('¿Qué deportes practicas?')}
+            {subheading('Puedes seleccionar varios — el plan se adaptará a todos')}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
               {DEPORTES.map(d => (
                 <OptionCard
                   key={d.value}
-                  selected={form.deporte === d.value}
-                  onClick={() => { handleSelect('deporte', d.value); setErrores(prev => ({ ...prev, deporte: '' })) }}
+                  selected={deportes.includes(d.value)}
+                  onClick={() => toggleDeporte(d.value)}
                   emoji={d.emoji}
                   label={d.label}
                   desc={d.desc}
                 />
               ))}
             </div>
-            {errores.deporte && (
-              <p style={{ color: 'var(--destructive)', fontSize: 13, marginBottom: 8, textAlign: 'center' }}>{errores.deporte}</p>
+
+            {/* Per-sport nivel when multiple selected */}
+            {deportes.length > 1 && (
+              <div style={{ marginBottom: 16 }}>
+                <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 10, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Nivel por deporte
+                </p>
+                {deportes.map(dep => {
+                  const deporteObj = DEPORTES.find(d => d.value === dep)
+                  return (
+                    <div key={dep} style={{ marginBottom: 14 }}>
+                      <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
+                        {deporteObj?.emoji} {deporteObj?.label}
+                      </p>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        {NIVELES.map(n => (
+                          <button
+                            key={n.value}
+                            onClick={() => setNivelesDeportes(prev => ({ ...prev, [dep]: n.value }))}
+                            style={{
+                              flex: 1,
+                              background: nivelesDeportes[dep] === n.value ? 'oklch(0.7 0.18 45 / 0.12)' : 'var(--card)',
+                              border: `2px solid ${nivelesDeportes[dep] === n.value ? 'var(--primary)' : 'var(--border)'}`,
+                              borderRadius: 'var(--radius)',
+                              padding: '10px 8px',
+                              cursor: 'pointer',
+                              fontFamily: 'var(--font-sans)',
+                              fontSize: 13,
+                              fontWeight: nivelesDeportes[dep] === n.value ? 700 : 400,
+                              color: nivelesDeportes[dep] === n.value ? 'var(--primary)' : 'var(--muted-foreground)',
+                              textAlign: 'center',
+                              transition: 'all 0.15s',
+                            }}
+                          >
+                            {n.emoji} {n.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {errores.deportes && (
+              <p style={{ color: 'var(--destructive)', fontSize: 13, marginBottom: 8, textAlign: 'center' }}>{errores.deportes}</p>
             )}
             <button onClick={() => {
-              if (!form.deporte) {
-                setErrores(prev => ({ ...prev, deporte: 'Selecciona tu deporte para continuar' }))
+              if (deportes.length === 0) {
+                setErrores(prev => ({ ...prev, deportes: 'Selecciona al menos un deporte para continuar' }))
                 return
               }
-              setErrores(prev => ({ ...prev, deporte: '' }))
+              if (deportes.length > 1) {
+                const sinNivel = deportes.filter(d => !nivelesDeportes[d])
+                if (sinNivel.length > 0) {
+                  setErrores(prev => ({ ...prev, deportes: 'Indica tu nivel en cada deporte seleccionado' }))
+                  return
+                }
+                const primerNivel = nivelesDeportes[deportes[0]] || 'principiante'
+                setForm(prev => ({ ...prev, deporte: deportes[0], nivel: primerNivel }))
+                setErrores(prev => ({ ...prev, deportes: '' }))
+                setStep(4)
+                return
+              }
+              setErrores(prev => ({ ...prev, deportes: '' }))
               setStep(3)
             }} style={PRIMARY_BTN}>Siguiente</button>
             <button onClick={() => setStep(1)} style={BACK_BTN}>← Atrás</button>
@@ -562,7 +642,7 @@ export default function Onboarding({ userId, onComplete }) {
                     style={{ ...INPUT_STYLE, colorScheme: 'dark', borderColor: erroresCarrera.tipo ? 'var(--destructive)' : 'var(--border)' }}
                   >
                     <option value="">Tipo de carrera...</option>
-                    {getTipos(form.deporte).map(t => (
+                    {getTipos(deportes.length > 0 ? deportes[0] : form.deporte, deportes).map(t => (
                       <option key={t} value={t}>{t}</option>
                     ))}
                   </select>
@@ -658,7 +738,7 @@ export default function Onboarding({ userId, onComplete }) {
               setErrores(prev => ({ ...prev, carreras: '' }))
               setStep(5)
             }} style={PRIMARY_BTN}>Siguiente</button>
-            <button onClick={() => setStep(3)} style={BACK_BTN}>← Atrás</button>
+            <button onClick={() => setStep(deportes.length > 1 ? 2 : 3)} style={BACK_BTN}>← Atrás</button>
           </div>
         )}
 
