@@ -258,29 +258,42 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     const recognition = new SpeechRecognition()
     recognition.lang = 'es-ES'
-    recognition.continuous = false
+    recognition.continuous = true
     recognition.interimResults = true
+    recognition.onstart = () => {
+      console.log('[Voz] Iniciando...')
+    }
     recognition.onresult = (event) => {
       const transcript = Array.from(event.results)
         .map(r => r[0].transcript)
         .join('')
+      console.log('[Voz] Resultado:', transcript)
       transcriptRef.current = transcript
       setInput(transcript)
     }
+    recognition.onerror = (event) => {
+      console.error('[Voz] Error:', event.error)
+      if (event.error === 'not-allowed') {
+        alert('Necesitas permitir el acceso al micrófono en tu navegador')
+      }
+      setEscuchando(false)
+      transcriptRef.current = ''
+    }
     recognition.onend = () => {
+      console.log('[Voz] Terminado')
       setEscuchando(false)
       if (transcriptRef.current.trim()) {
         setShouldAutoSend(true)
       }
     }
-    recognition.onerror = () => {
-      setEscuchando(false)
-      transcriptRef.current = ''
-    }
     recognitionRef.current = recognition
     transcriptRef.current = ''
-    recognition.start()
-    setEscuchando(true)
+    try {
+      recognition.start()
+      setEscuchando(true)
+    } catch (e) {
+      console.error('[Voz] Error al iniciar:', e)
+    }
   }
 
   return (
