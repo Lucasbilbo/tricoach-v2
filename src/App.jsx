@@ -220,63 +220,105 @@ function App() {
       )}
 
       {currentScreen === 'profile' && (
-        <div style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 16px))', minHeight: '100vh', overflowY: 'auto' }}>
+        <div className="screen-enter" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 16px))', minHeight: '100vh', overflowY: 'auto' }}>
+          {/* Profile header with gradient */}
           <div style={{
-            background: 'var(--background)',
+            background: 'radial-gradient(ellipse at 0% 0%, rgba(255,107,43,0.1) 0%, transparent 60%), var(--background)',
             backdropFilter: 'blur(12px)',
             WebkitBackdropFilter: 'blur(12px)',
             borderBottom: '1px solid var(--border)',
-            padding: '16px 20px',
+            padding: '20px 20px 18px',
             position: 'sticky',
             top: 0,
             zIndex: 50,
           }}>
-            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 22, fontWeight: 600 }}>Perfil</h2>
+            <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: '50%',
+                background: 'var(--primary)',
+                color: 'var(--primary-foreground)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: 'var(--font-serif)',
+                fontSize: 20, fontWeight: 700, flexShrink: 0,
+              }}>
+                {(profile?.nombre?.[0] || session.user.email?.[0] || 'U').toUpperCase()}
+              </div>
+              <div>
+                <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 700, lineHeight: 1.2 }}>
+                  {profile?.nombre || 'Mi perfil'}
+                </h2>
+                <p style={{ fontSize: 12, color: 'var(--muted-foreground)', marginTop: 2 }}>
+                  {profile?.plan === 'pro' ? '✦ Plan Pro' : 'Plan Free'}
+                  {profile?.deporte ? ` · ${profile.deporte}` : ''}
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div style={{ padding: '16px 16px 0' }}>
-            <div style={{
-              background: 'var(--card)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius)',
-              padding: 16,
-              marginBottom: 12,
-            }}>
-              <p style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 8 }}>Estilo del coach</p>
-              <select
-                value={profile?.personalidad || 'cercano'}
-                onChange={handlePersonalidadChange}
-                style={{
-                  width: '100%',
-                  background: 'var(--input)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 8,
-                  color: 'var(--foreground)',
-                  padding: '8px 12px',
-                  fontFamily: 'var(--font-sans)',
-                  fontSize: 14,
-                }}
-              >
-                <option value="cercano">😊 Cercano</option>
-                <option value="estricto">💪 Estricto</option>
-                <option value="gracioso">😄 Gracioso</option>
-                <option value="motivador">🔥 Motivador</option>
-              </select>
+          <div style={{ maxWidth: 640, margin: '0 auto', padding: '16px 16px 0' }}>
+            {/* Coach style section */}
+            <div style={{ marginBottom: 8 }}>
+              <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted-foreground)', fontWeight: 600, marginBottom: 10, paddingLeft: 2 }}>
+                Estilo del coach
+              </p>
+              <div style={{
+                background: 'var(--card)',
+                border: '1px solid var(--border)',
+                borderRadius: 12,
+                padding: '4px',
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 4,
+              }}>
+                {[
+                  { value: 'cercano', label: '😊 Cercano' },
+                  { value: 'estricto', label: '💪 Estricto' },
+                  { value: 'gracioso', label: '😄 Gracioso' },
+                  { value: 'motivador', label: '🔥 Motivador' },
+                ].map(({ value, label }) => {
+                  const isActive = (profile?.personalidad || 'cercano') === value
+                  return (
+                    <button
+                      key={value}
+                      onClick={() => handlePersonalidadChange({ target: { value } })}
+                      style={{
+                        background: isActive ? 'var(--primary)' : 'transparent',
+                        border: 'none',
+                        borderRadius: 8,
+                        color: isActive ? 'var(--primary-foreground)' : 'var(--muted-foreground)',
+                        fontFamily: 'var(--font-sans)',
+                        fontSize: 14,
+                        fontWeight: isActive ? 700 : 400,
+                        padding: '10px 12px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
 
-            <div style={{
-              background: 'var(--card)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius)',
-              padding: 16,
-              marginBottom: 12,
-            }}>
-              <StravaConnect
-                userId={session.user.id}
-                plan={profile?.plan}
-                onConnected={() => loadOrCreateProfile(session.user)}
-                onShowUpgrade={() => setShowUpgradeModal(true)}
-              />
+            <div style={{ marginBottom: 8 }}>
+              <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted-foreground)', fontWeight: 600, marginBottom: 10, paddingLeft: 2 }}>
+                Integraciones
+              </p>
+              <div style={{
+                background: 'var(--card)',
+                border: '1px solid var(--border)',
+                borderRadius: 12,
+                padding: 16,
+              }}>
+                <StravaConnect
+                  userId={session.user.id}
+                  plan={profile?.plan}
+                  onConnected={() => loadOrCreateProfile(session.user)}
+                  onShowUpgrade={() => setShowUpgradeModal(true)}
+                />
+              </div>
             </div>
           </div>
 
@@ -287,19 +329,22 @@ function App() {
             onShowUpgrade={() => setShowUpgradeModal(true)}
           />
 
-          <div style={{ padding: '0 16px 16px', textAlign: 'center' }}>
+          <div style={{ maxWidth: 640, margin: '0 auto', padding: '8px 16px 16px', textAlign: 'center' }}>
             <button
               onClick={() => supabase.auth.signOut()}
               style={{
-                background: 'none',
+                background: 'transparent',
                 border: '1px solid var(--border)',
-                borderRadius: 8,
+                borderRadius: 99,
                 color: 'var(--muted-foreground)',
-                padding: '8px 20px',
+                padding: '10px 28px',
                 cursor: 'pointer',
                 fontFamily: 'var(--font-sans)',
                 fontSize: 14,
+                transition: 'border-color 0.2s, color 0.2s',
               }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--destructive)'; e.currentTarget.style.color = 'var(--foreground)' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--muted-foreground)' }}
             >
               Cerrar sesión
             </button>

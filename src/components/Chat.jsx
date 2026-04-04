@@ -36,6 +36,13 @@ const DEPORTE_LABELS = {
   hyrox: '💪 Hyrox',
 }
 
+const SendIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 2L11 13"/>
+    <path d="M22 2L15 22 11 13 2 9l20-7z"/>
+  </svg>
+)
+
 export default function Chat({ userId, profile, plan, planProximaSemana, historialPlanes, personalidad, onPersonalidadChange, onShowUpgrade, onPlanUpdate, prefillMessage }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
@@ -179,8 +186,10 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
 
   const lastAssistantIdx = messages.reduce((last, m, i) => m.role === 'assistant' ? i : last, -1)
 
+  const coachInitial = (nombreCoach[0] || 'C').toUpperCase()
+
   return (
-    <div style={{
+    <div className="screen-enter" style={{
       display: 'flex',
       flexDirection: 'column',
       height: 'calc(100vh - 64px)',
@@ -291,13 +300,29 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
           )}
           {messages.map((msg, i) => (
             <div key={i} className="message-enter" style={{
-              marginBottom: 12,
+              marginBottom: 14,
               display: 'flex',
               justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
+              alignItems: 'flex-end',
+              gap: 8,
             }}>
+              {msg.role === 'assistant' && (
+                <div style={{
+                  width: 28, height: 28,
+                  borderRadius: '50%',
+                  background: 'var(--primary)',
+                  color: 'var(--primary-foreground)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 11, fontWeight: 700,
+                  flexShrink: 0,
+                  marginBottom: 2,
+                }}>
+                  {coachInitial}
+                </div>
+              )}
               <div style={{ maxWidth: '80%' }}>
                 {msg.role === 'assistant' && (
-                  <div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginBottom: 3, marginLeft: 4 }}>
+                  <div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginBottom: 4, marginLeft: 2 }}>
                     {nombreCoach}
                   </div>
                 )}
@@ -307,24 +332,24 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
                       background: 'var(--secondary)',
                       color: 'var(--foreground)',
                       border: '1px solid var(--border)',
-                      padding: '10px 14px',
-                      borderRadius: '18px 18px 18px 4px',
+                      padding: '11px 14px',
+                      borderRadius: '4px 18px 18px 18px',
                       display: 'inline-block',
                       fontSize: 15,
-                      lineHeight: 1.5,
+                      lineHeight: 1.55,
                     }}
                     dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
                   />
                 ) : (
                   <span style={{
-                    background: 'var(--primary)',
-                    color: 'var(--primary-foreground)',
-                    border: 'none',
-                    padding: '10px 14px',
+                    background: 'rgba(255, 107, 43, 0.12)',
+                    color: 'var(--foreground)',
+                    border: '1px solid rgba(255, 107, 43, 0.2)',
+                    padding: '11px 14px',
                     borderRadius: '18px 18px 4px 18px',
                     display: 'inline-block',
                     fontSize: 15,
-                    lineHeight: 1.5,
+                    lineHeight: 1.55,
                     whiteSpace: 'pre-wrap',
                   }}>
                     {msg.content}
@@ -425,24 +450,27 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
 
       {/* Input */}
       <div style={{
-        background: 'var(--card)',
+        background: 'oklch(0.15 0.01 60 / 0.95)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
         borderTop: showCounter ? 'none' : '1px solid var(--border)',
         padding: '12px 16px',
         flexShrink: 0,
       }}>
-        <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', gap: 8 }}>
+        <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', gap: 8, alignItems: 'center' }}>
           <input
             style={{
               flex: 1,
-              background: 'var(--input)',
+              background: 'var(--secondary)',
               border: '1px solid var(--border)',
               borderRadius: 24,
               color: 'var(--foreground)',
               fontFamily: 'var(--font-sans)',
               fontSize: 15,
-              padding: '10px 16px',
+              padding: '11px 18px',
               outline: 'none',
               opacity: loading ? 0.6 : 1,
+              transition: 'border-color 0.2s',
             }}
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -452,22 +480,23 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
           />
           <button
             onClick={sendMessage}
-            disabled={loading}
+            disabled={loading || !input.trim()}
             style={{
-              background: loading ? 'var(--muted)' : 'var(--primary)',
-              color: 'var(--primary-foreground)',
-              border: 'none',
-              borderRadius: 24,
-              padding: '10px 20px',
-              fontFamily: 'var(--font-sans)',
-              fontSize: 15,
-              fontWeight: 600,
-              cursor: loading ? 'not-allowed' : 'pointer',
-              transition: 'background 0.2s',
+              width: 44, height: 44,
+              background: loading || !input.trim() ? 'var(--secondary)' : 'var(--primary)',
+              color: loading || !input.trim() ? 'var(--muted-foreground)' : 'var(--primary-foreground)',
+              border: loading || !input.trim() ? '1px solid var(--border)' : 'none',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: loading || !input.trim() ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s',
               flexShrink: 0,
+              boxShadow: !loading && input.trim() ? '0 0 16px rgba(255,107,43,0.25)' : 'none',
             }}
           >
-            Enviar
+            <SendIcon />
           </button>
         </div>
       </div>

@@ -42,6 +42,17 @@ const ICONOS = {
   Descanso: '😴',
 }
 
+const SPORT_COLORS = {
+  Correr: '#FF6B2B',
+  Nadar: '#0EA5E9',
+  Bici: '#10B981',
+  Fuerza: '#8B5CF6',
+  Brick: '#FF8C42',
+  Descanso: '#374151',
+}
+
+const DOT_LABELS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
+
 const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 const DIAS_ORDEN = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
@@ -130,8 +141,10 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
     }
   }
 
+  const sportColor = SPORT_COLORS[sesionHoy?.tipo] || '#374151'
+
   return (
-    <div style={{
+    <div className="screen-enter" style={{
       height: 'calc(100vh - 64px)',
       overflowY: 'auto',
       background: 'var(--background)',
@@ -286,12 +299,14 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
         {!loading && sesionHoy && (
           <>
             <div style={{
-              background: 'var(--card)',
+              background: sesionHoy.completada
+                ? `radial-gradient(ellipse at 80% 10%, oklch(0.7 0.14 180 / 0.08) 0%, transparent 55%), var(--card)`
+                : `radial-gradient(ellipse at 80% 10%, ${sportColor}18 0%, transparent 55%), var(--card)`,
               border: sesionHoy.completada
-                ? '1px solid oklch(0.7 0.14 180 / 0.35)'
-                : '2px solid var(--primary)',
-              borderRadius: 'var(--radius)',
-              padding: '24px 20px',
+                ? '1px solid oklch(0.7 0.14 180 / 0.3)'
+                : `1px solid ${sportColor}30`,
+              borderRadius: 16,
+              padding: '32px 20px',
               marginBottom: 16,
               minHeight: '55vh',
               display: 'flex',
@@ -299,8 +314,24 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
               justifyContent: 'center',
               alignItems: 'center',
               textAlign: 'center',
+              position: 'relative',
+              overflow: 'hidden',
             }}>
-              <div style={{ fontSize: 80, marginBottom: 20 }}>
+              {/* Sport color accent line at top */}
+              {!sesionHoy.completada && (
+                <div style={{
+                  position: 'absolute', top: 0, left: 0, right: 0,
+                  height: 3,
+                  background: `linear-gradient(90deg, ${sportColor}80, transparent)`,
+                  borderRadius: '16px 16px 0 0',
+                }} />
+              )}
+              <div style={{
+                fontSize: 96,
+                marginBottom: 20,
+                lineHeight: 1,
+                filter: `drop-shadow(0 8px 24px ${sportColor}55)`,
+              }}>
                 {ICONOS[sesionHoy.tipo] || '🏋️'}
               </div>
 
@@ -341,37 +372,70 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
                 <>
                   {esSesionTest && (
                     <div style={{
-                      background: 'var(--primary)',
-                      color: 'var(--primary-foreground)',
-                      borderRadius: 6,
-                      padding: '3px 10px',
-                      fontSize: 12,
+                      background: `${sportColor}22`,
+                      color: sportColor,
+                      border: `1px solid ${sportColor}44`,
+                      borderRadius: 99,
+                      padding: '3px 12px',
+                      fontSize: 11,
                       fontWeight: 700,
-                      marginBottom: 12,
-                      letterSpacing: '0.05em',
+                      marginBottom: 14,
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
                     }}>
-                      📊 TEST
+                      📊 Sesión Test
                     </div>
                   )}
                   <h2 style={{
                     fontFamily: 'var(--font-serif)',
-                    fontSize: 34,
+                    fontSize: 36,
                     fontWeight: 700,
-                    marginBottom: 8,
+                    marginBottom: 12,
                     color: sesionHoy.completada ? 'var(--success)' : 'var(--foreground)',
+                    letterSpacing: '-0.5px',
                   }}>
                     {sesionHoy.tipo}
                   </h2>
                   {sesionHoy.duracion_min > 0 && (
-                    <p style={{ color: 'var(--muted-foreground)', fontSize: 15, marginBottom: 4 }}>
-                      {sesionHoy.duracion_min} min · {sesionHoy.intensidad}
-                    </p>
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
+                      <span style={{
+                        background: 'var(--secondary)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 99,
+                        padding: '4px 12px',
+                        fontSize: 13,
+                        color: 'var(--foreground)',
+                        fontWeight: 600,
+                      }}>
+                        ⏱ {sesionHoy.duracion_min} min
+                      </span>
+                      {sesionHoy.intensidad && (
+                        <span style={{
+                          background: `${sportColor}15`,
+                          border: `1px solid ${sportColor}30`,
+                          borderRadius: 99,
+                          padding: '4px 12px',
+                          fontSize: 13,
+                          color: sportColor,
+                          fontWeight: 600,
+                        }}>
+                          {sesionHoy.intensidad}
+                        </span>
+                      )}
+                    </div>
                   )}
-                  <p style={{ color: 'var(--muted-foreground)', fontSize: 14, lineHeight: 1.5, marginBottom: esSesionTest ? 8 : 24, padding: '0 8px', maxWidth: 340 }}>
+                  <p style={{
+                    color: 'var(--muted-foreground)',
+                    fontSize: 14,
+                    lineHeight: 1.6,
+                    marginBottom: esSesionTest ? 8 : 28,
+                    padding: '0 8px',
+                    maxWidth: 320,
+                  }}>
                     {sesionHoy.descripcion}
                   </p>
                   {esSesionTest && (
-                    <p style={{ color: 'var(--primary)', fontSize: 13, fontWeight: 600, marginBottom: 24, textAlign: 'center' }}>
+                    <p style={{ color: sportColor, fontSize: 13, fontWeight: 600, marginBottom: 24, textAlign: 'center' }}>
                       Anota tu resultado para compartirlo con el coach
                     </p>
                   )}
@@ -393,56 +457,62 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
 
               {!sesionHoy.completada && !esDescanso && (
                 completando ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
-                    <p style={{ fontSize: 14, color: 'var(--muted-foreground)' }}>¿Cómo fue el esfuerzo? (RPE 1-10)</p>
-                    <select
-                      value={rpe}
-                      onChange={e => setRpe(Number(e.target.value))}
-                      style={{
-                        background: 'var(--input)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 8,
-                        color: 'var(--foreground)',
-                        fontFamily: 'var(--font-sans)',
-                        fontSize: 16,
-                        padding: '6px 12px',
-                      }}
-                    >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center', width: '100%', maxWidth: 320 }}>
+                    <p style={{ fontSize: 13, color: 'var(--muted-foreground)', letterSpacing: '0.02em' }}>
+                      Esfuerzo percibido (RPE)
+                    </p>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
                       {[1,2,3,4,5,6,7,8,9,10].map(n => (
-                        <option key={n} value={n}>{n}</option>
+                        <button
+                          key={n}
+                          onClick={() => setRpe(n)}
+                          style={{
+                            width: 38, height: 38,
+                            borderRadius: '50%',
+                            background: rpe === n ? sportColor : 'var(--secondary)',
+                            border: rpe === n ? 'none' : '1px solid var(--border)',
+                            color: rpe === n ? '#fff' : 'var(--muted-foreground)',
+                            fontSize: 14,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            transition: 'all 0.15s',
+                            flexShrink: 0,
+                          }}
+                        >{n}</button>
                       ))}
-                    </select>
-                    <div style={{ display: 'flex', gap: 8 }}>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, width: '100%' }}>
                       <button
                         onClick={handleCompletar}
                         style={{
+                          flex: 1,
                           background: 'var(--success)',
                           color: 'oklch(0.13 0.01 60)',
                           border: 'none',
-                          borderRadius: 24,
-                          padding: '10px 24px',
+                          borderRadius: 99,
+                          padding: '13px 24px',
                           fontFamily: 'var(--font-sans)',
-                          fontSize: 14,
-                          fontWeight: 600,
+                          fontSize: 15,
+                          fontWeight: 700,
                           cursor: 'pointer',
                         }}
                       >
-                        Guardar
+                        ✓ Guardar
                       </button>
                       <button
                         onClick={() => setCompletando(false)}
                         style={{
                           background: 'var(--secondary)',
                           border: '1px solid var(--border)',
-                          borderRadius: 24,
+                          borderRadius: 99,
                           color: 'var(--muted-foreground)',
-                          padding: '10px 16px',
+                          padding: '13px 18px',
                           fontSize: 13,
                           cursor: 'pointer',
                           fontFamily: 'var(--font-sans)',
                         }}
                       >
-                        Cancelar
+                        ✕
                       </button>
                     </div>
                   </div>
@@ -450,16 +520,28 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
                   <button
                     onClick={() => setCompletando(true)}
                     style={{
-                      background: 'var(--primary)',
-                      color: 'var(--primary-foreground)',
+                      background: sportColor,
+                      color: '#fff',
                       border: 'none',
-                      borderRadius: 28,
-                      padding: '16px 44px',
+                      borderRadius: 99,
+                      padding: '17px 0',
+                      width: '100%',
+                      maxWidth: 320,
                       fontFamily: 'var(--font-sans)',
-                      fontSize: 18,
+                      fontSize: 17,
                       fontWeight: 700,
                       cursor: 'pointer',
                       letterSpacing: '0.01em',
+                      boxShadow: `0 0 32px ${sportColor}44, 0 4px 16px ${sportColor}30`,
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.boxShadow = `0 0 48px ${sportColor}66, 0 6px 20px ${sportColor}44`
+                      e.currentTarget.style.transform = 'translateY(-1px)'
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.boxShadow = `0 0 32px ${sportColor}44, 0 4px 16px ${sportColor}30`
+                      e.currentTarget.style.transform = 'translateY(0)'
                     }}
                   >
                     ✓ Completar sesión
@@ -468,29 +550,68 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
               )}
             </div>
 
-            {/* Week progress bar */}
-            {(() => {
-              const sesionesActivas = plan.sesiones?.filter(s => s.tipo?.toLowerCase() !== 'descanso' && s.tipo?.toLowerCase() !== 'rest') || []
-              const completadas = sesionesActivas.filter(s => s.completada).length
-              const total = sesionesActivas.length
-              if (total === 0) return null
-              const pct = Math.round((completadas / total) * 100)
+            {/* 7-dot week tracker */}
+            {plan.sesiones && (() => {
+              const sesionesActivas = DIAS_ORDEN.filter(d => {
+                const s = plan.sesiones.find(x => x.dia === d)
+                return s && s.tipo?.toLowerCase() !== 'descanso' && s.tipo?.toLowerCase() !== 'rest'
+              })
+              const completadas = sesionesActivas.filter(d => {
+                const s = plan.sesiones.find(x => x.dia === d)
+                return s?.completada
+              }).length
               return (
-                <div style={{ marginBottom: 16, padding: '14px 16px', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <span style={{ fontSize: 13, color: 'var(--muted-foreground)', fontFamily: 'var(--font-sans)' }}>Progreso esta semana</span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: completadas === total ? 'var(--success)' : 'var(--foreground)', fontFamily: 'var(--font-sans)' }}>
-                      {completadas} de {total} sesiones
+                <div style={{ marginBottom: 16, padding: '16px', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                    <span style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted-foreground)', fontWeight: 600 }}>
+                      Esta semana
+                    </span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: completadas === sesionesActivas.length && sesionesActivas.length > 0 ? 'var(--success)' : 'var(--foreground)' }}>
+                      {completadas} / {sesionesActivas.length}
                     </span>
                   </div>
-                  <div style={{ background: 'var(--border)', borderRadius: 99, height: 8, overflow: 'hidden' }}>
-                    <div style={{
-                      height: '100%',
-                      width: `${pct}%`,
-                      background: completadas === total ? 'var(--success)' : 'var(--primary)',
-                      borderRadius: 99,
-                      transition: 'width 0.4s ease',
-                    }} />
+                  <div style={{ display: 'flex', gap: 6, justifyContent: 'space-between' }}>
+                    {DIAS_ORDEN.map((dia, i) => {
+                      const sesion = plan.sesiones.find(s => s.dia === dia)
+                      const isHoy = dia === today
+                      const isDescanso = !sesion || sesion.tipo?.toLowerCase() === 'descanso' || sesion.tipo?.toLowerCase() === 'rest'
+                      const color = SPORT_COLORS[sesion?.tipo] || '#374151'
+                      return (
+                        <div key={dia} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                          <div
+                            className={isHoy && !sesion?.completada && !isDescanso ? 'dot-pulse' : ''}
+                            style={{
+                              width: isDescanso ? 8 : 14,
+                              height: isDescanso ? 8 : 14,
+                              borderRadius: '50%',
+                              background: sesion?.completada
+                                ? color
+                                : isHoy && !isDescanso
+                                  ? 'transparent'
+                                  : isDescanso
+                                    ? 'var(--secondary)'
+                                    : 'var(--secondary)',
+                              border: isHoy && !isDescanso && !sesion?.completada
+                                ? `2px solid ${color}`
+                                : sesion?.completada
+                                  ? 'none'
+                                  : '1px solid var(--border)',
+                              transition: 'all 0.3s ease',
+                              marginTop: isDescanso ? 3 : 0,
+                              boxShadow: sesion?.completada ? `0 0 8px ${color}66` : 'none',
+                            }}
+                          />
+                          <span style={{
+                            fontSize: 10,
+                            color: isHoy ? 'var(--primary)' : 'var(--muted-foreground)',
+                            fontWeight: isHoy ? 700 : 400,
+                            letterSpacing: '0.04em',
+                          }}>
+                            {DOT_LABELS[i]}
+                          </span>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               )
@@ -502,17 +623,20 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
                 onClick={() => generarTCX(sesionHoy)}
                 style={{
                   width: '100%',
-                  background: 'var(--secondary)',
+                  background: 'transparent',
                   border: '1px solid var(--border)',
-                  borderRadius: 24,
-                  color: 'var(--foreground)',
+                  borderRadius: 99,
+                  color: 'var(--muted-foreground)',
                   fontFamily: 'var(--font-sans)',
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: 500,
                   padding: '11px',
                   cursor: 'pointer',
                   marginBottom: 8,
+                  transition: 'border-color 0.2s, color 0.2s',
                 }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--foreground)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--muted-foreground)' }}
               >
                 ⬇ Descargar para el reloj (.TCX)
               </button>
@@ -523,16 +647,19 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
               onClick={() => onNavigate('coach')}
               style={{
                 width: '100%',
-                background: 'var(--secondary)',
+                background: 'transparent',
                 border: '1px solid var(--border)',
-                borderRadius: 24,
+                borderRadius: 99,
                 color: 'var(--foreground)',
                 fontFamily: 'var(--font-sans)',
                 fontSize: 15,
-                fontWeight: 500,
-                padding: '12px',
+                fontWeight: 600,
+                padding: '13px',
                 cursor: 'pointer',
+                transition: 'border-color 0.2s, background 0.2s',
               }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.background = 'oklch(0.7 0.18 45 / 0.05)' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'transparent' }}
             >
               💬 Hablar con el coach
             </button>

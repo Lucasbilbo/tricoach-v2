@@ -17,6 +17,15 @@ const ICONOS = {
   Descanso: '😴',
 }
 
+const SPORT_COLORS = {
+  Correr: '#FF6B2B',
+  Nadar: '#0EA5E9',
+  Bici: '#10B981',
+  Fuerza: '#8B5CF6',
+  Brick: '#FF8C42',
+  Descanso: '#374151',
+}
+
 const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
 function getTodayStr() {
@@ -46,6 +55,15 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
   const [mesInicio, setMesInicio] = useState(MESES[_todayDate.getMonth()])
   const [anioInicio, setAnioInicio] = useState(String(_todayDate.getFullYear()))
   const [coachIntro, setCoachIntro] = useState(null)
+  const [expandedDias, setExpandedDias] = useState(new Set())
+
+  function toggleDesc(dia) {
+    setExpandedDias(prev => {
+      const next = new Set(prev)
+      next.has(dia) ? next.delete(dia) : next.add(dia)
+      return next
+    })
+  }
 
   useEffect(() => {
     if (!errorToast) return
@@ -315,7 +333,7 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
   const puedeVerSiguiente = esJuevesODespues && plan?.semana !== getNextWeekStart()
 
   return (
-    <div style={{
+    <div className="screen-enter" style={{
       height: 'calc(100vh - 64px)',
       overflowY: 'auto',
       background: 'var(--background)',
@@ -655,72 +673,94 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
         {/* Sessions */}
         {(!viendoProxima || (viendoProxima && displayedPlan)) && !loadingProxima && displayedPlan?.sesiones?.map((sesion) => {
           const esHoy = sesion.dia === today && !esSemanaPasada && !esPlanFuturo && !viendoProxima
+          const sportColor = SPORT_COLORS[sesion.tipo] || '#374151'
+          const leftBorderColor = sesion.completada ? 'oklch(0.7 0.14 180)' : sportColor
+          const expanded = expandedDias.has(sesion.dia) || esHoy
           return (
             <div
               key={sesion.dia}
               style={{
-                background: sesion.completada
-                  ? 'oklch(0.7 0.14 180 / 0.06)'
-                  : 'var(--card)',
-                border: `1px solid ${sesion.completada
-                  ? 'oklch(0.7 0.14 180 / 0.35)'
-                  : esHoy
-                    ? 'var(--primary)'
-                    : 'var(--border)'}`,
-                borderRadius: 'var(--radius)',
+                background: esHoy && !sesion.completada
+                  ? `${sportColor}08`
+                  : sesion.completada
+                    ? 'oklch(0.7 0.14 180 / 0.04)'
+                    : 'var(--card)',
+                border: '1px solid var(--border)',
+                borderLeft: `3px solid ${leftBorderColor}`,
+                borderRadius: 12,
                 padding: '14px 16px',
                 marginBottom: 8,
-                boxShadow: esHoy && !sesion.completada ? '0 0 0 2px oklch(0.7 0.18 45 / 0.2)' : 'none',
+                transition: 'background 0.2s',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 20 }}>{ICONOS[sesion.tipo] || '🏋️'}</span>
-                    <div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 18 }}>{ICONOS[sesion.tipo] || '🏋️'}</span>
+                    <span style={{
+                      fontWeight: 700,
+                      fontSize: 15,
+                      color: esHoy && !sesion.completada ? sportColor : 'var(--foreground)',
+                    }}>
+                      {sesion.dia}
+                    </span>
+                    {esHoy && !sesion.completada && (
                       <span style={{
-                        fontWeight: 600,
-                        fontSize: 15,
-                        color: esHoy && !sesion.completada ? 'var(--primary)' : 'var(--foreground)',
+                        fontSize: 10,
+                        background: `${sportColor}22`,
+                        color: sportColor,
+                        border: `1px solid ${sportColor}44`,
+                        borderRadius: 99,
+                        padding: '1px 7px',
+                        fontWeight: 700,
+                        letterSpacing: '0.06em',
+                        textTransform: 'uppercase',
                       }}>
-                        {sesion.dia}
+                        HOY
                       </span>
-                      {esDiagnostico && sesion.tipo !== 'Descanso' && (
-                        <span style={{
-                          marginLeft: 6,
-                          fontSize: 10,
-                          background: 'var(--primary)',
-                          color: 'var(--primary-foreground)',
-                          borderRadius: 4,
-                          padding: '1px 5px',
-                          fontWeight: 700,
-                          letterSpacing: '0.05em',
-                        }}>
-                          📊 TEST
-                        </span>
-                      )}
-                      {esHoy && !sesion.completada && (
-                        <span style={{
-                          marginLeft: 6,
-                          fontSize: 11,
-                          background: 'var(--primary)',
-                          color: 'var(--primary-foreground)',
-                          borderRadius: 4,
-                          padding: '1px 6px',
-                          fontWeight: 600,
-                        }}>
-                          HOY
-                        </span>
-                      )}
-                    </div>
-                    <span style={{ color: 'var(--muted-foreground)', fontSize: 14 }}>{sesion.tipo}</span>
+                    )}
+                    {esDiagnostico && sesion.tipo !== 'Descanso' && (
+                      <span style={{
+                        fontSize: 10,
+                        background: 'var(--primary)',
+                        color: 'var(--primary-foreground)',
+                        borderRadius: 99,
+                        padding: '1px 7px',
+                        fontWeight: 700,
+                        letterSpacing: '0.05em',
+                      }}>
+                        TEST
+                      </span>
+                    )}
+                    <span style={{ color: 'var(--muted-foreground)', fontSize: 13 }}>{sesion.tipo}</span>
                     {sesion.duracion_min > 0 && (
-                      <span style={{ color: 'var(--muted-foreground)', fontSize: 13 }}>· {sesion.duracion_min} min</span>
+                      <span style={{ color: 'var(--muted-foreground)', fontSize: 12 }}>· {sesion.duracion_min} min</span>
                     )}
                   </div>
-                  <p style={{ color: 'var(--muted-foreground)', fontSize: 13, lineHeight: 1.4 }}>
-                    {sesion.descripcion}
-                  </p>
+                  {sesion.descripcion && (
+                    expanded ? (
+                      <div>
+                        <p style={{ color: 'var(--muted-foreground)', fontSize: 13, lineHeight: 1.5, marginTop: 6 }}>
+                          {sesion.descripcion}
+                        </p>
+                        {sesion.tipo !== 'Descanso' && (
+                          <button
+                            onClick={() => toggleDesc(sesion.dia)}
+                            style={{ background: 'none', border: 'none', color: 'var(--muted-foreground)', fontSize: 12, cursor: 'pointer', padding: '4px 0', fontFamily: 'var(--font-sans)' }}
+                          >
+                            ∧ Ocultar
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => toggleDesc(sesion.dia)}
+                        style={{ background: 'none', border: 'none', color: 'var(--muted-foreground)', fontSize: 12, cursor: 'pointer', padding: '4px 0', fontFamily: 'var(--font-sans)', marginTop: 2 }}
+                      >
+                        ∨ Ver descripción
+                      </button>
+                    )
+                  )}
                 </div>
 
                 <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>

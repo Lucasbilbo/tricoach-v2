@@ -92,35 +92,39 @@ function GraficoSemana({ plan }) {
     <div style={{
       background: 'var(--card)',
       border: '1px solid var(--border)',
-      borderRadius: 'var(--radius)',
-      padding: '16px',
-      marginBottom: 16,
+      borderRadius: 12,
+      padding: '18px 16px',
+      marginBottom: 10,
     }}>
-      <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--foreground)', marginBottom: 12 }}>
+      <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, color: 'var(--muted-foreground)', marginBottom: 16 }}>
         Esta semana
       </p>
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: maxH + 20 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: maxH + 24 }}>
         {barras.map((b, i) => (
-          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
             <div style={{ width: '100%', height: maxH, display: 'flex', alignItems: 'flex-end' }}>
               <div style={{
                 width: '100%',
-                height: `${Math.max(b.pct, 0) * maxH / 100}px`,
-                background: b.pct > 20
-                  ? 'linear-gradient(180deg, var(--primary) 0%, transparent 100%)'
-                  : b.pct > 0
-                    ? 'var(--secondary)'
-                    : 'transparent',
-                borderRadius: '3px 3px 0 0',
-                border: b.isHoy ? '1px solid var(--primary)' : 'none',
-                minHeight: b.isHoy ? 3 : 0,
-                transition: 'height 0.4s ease',
+                height: `${Math.max(b.pct > 0 ? Math.max(b.pct, 12) : 0, 0) * maxH / 100}px`,
+                background: b.completada
+                  ? `linear-gradient(180deg, #FF6B2B 0%, rgba(255,107,43,0.3) 100%)`
+                  : b.isHoy && b.pct > 0
+                    ? 'oklch(0.7 0.18 45 / 0.2)'
+                    : b.pct > 0
+                      ? 'var(--secondary)'
+                      : 'transparent',
+                borderRadius: '4px 4px 0 0',
+                border: b.isHoy && !b.completada ? '1px solid rgba(255,107,43,0.4)' : 'none',
+                minHeight: b.isHoy && b.pct > 0 ? 4 : 0,
+                transition: 'height 0.5s ease',
+                boxShadow: b.completada ? '0 -2px 8px rgba(255,107,43,0.25)' : 'none',
               }} />
             </div>
             <span style={{
               fontSize: 11,
               color: b.isHoy ? 'var(--primary)' : 'var(--muted-foreground)',
               fontWeight: b.isHoy ? 700 : 400,
+              letterSpacing: '0.04em',
             }}>
               {b.label}
             </span>
@@ -187,7 +191,7 @@ export default function Progress({ userId, profile, onNavigate }) {
   const vacio = planes !== null && semanas === 0
 
   return (
-    <div style={{
+    <div className="screen-enter" style={{
       height: 'calc(100vh - 64px)',
       overflowY: 'auto',
       background: 'var(--background)',
@@ -254,29 +258,48 @@ export default function Progress({ userId, profile, onNavigate }) {
         {/* Countdown */}
         {dias !== null && (
           <div style={{
-            background: 'var(--card)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius)',
-            padding: '16px',
+            background: 'radial-gradient(ellipse at 50% 50%, rgba(255,107,43,0.08) 0%, transparent 65%), var(--card)',
+            border: '1px solid rgba(255,107,43,0.2)',
+            borderRadius: 16,
+            padding: '28px 20px',
             marginBottom: 16,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
+            textAlign: 'center',
+            position: 'relative',
+            overflow: 'hidden',
           }}>
-            <div>
-              <p style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 2 }}>Cuenta atrás a la carrera</p>
-              <p style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>
-                {profile?.fecha_carrera
-                  ? new Date(profile.fecha_carrera + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
-                  : ''}
+            <div style={{
+              position: 'absolute', top: 0, left: 0, right: 0, height: 3,
+              background: 'linear-gradient(90deg, transparent, rgba(255,107,43,0.5) 50%, transparent)',
+            }} />
+            <p style={{
+              fontSize: 11,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: 'var(--muted-foreground)',
+              marginBottom: 8,
+              fontWeight: 600,
+            }}>
+              Próxima carrera
+            </p>
+            <div style={{
+              fontFamily: 'var(--font-serif)',
+              fontSize: 72,
+              fontWeight: 700,
+              color: 'var(--primary)',
+              lineHeight: 1,
+              marginBottom: 8,
+              textShadow: '0 0 40px rgba(255,107,43,0.25)',
+            }}>
+              {dias}
+            </div>
+            <p style={{ fontSize: 15, color: 'var(--muted-foreground)', marginBottom: 4, fontWeight: 600 }}>
+              días
+            </p>
+            {profile?.fecha_carrera && (
+              <p style={{ fontSize: 12, color: 'var(--muted-foreground)', opacity: 0.7 }}>
+                {new Date(profile.fecha_carrera + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
               </p>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <span style={{ fontFamily: 'var(--font-serif)', fontSize: 32, fontWeight: 700, color: 'var(--primary)' }}>
-                {dias}
-              </span>
-              <p style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>días</p>
-            </div>
+            )}
           </div>
         )}
 
@@ -300,41 +323,34 @@ export default function Progress({ userId, profile, onNavigate }) {
           </div>
         )}
 
-        {/* Metrics */}
+        {/* Metrics grid */}
         {!vacio && planes !== null && (
-          <div style={{
-            background: 'var(--card)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius)',
-            padding: '20px 16px',
-            marginBottom: 16,
-          }}>
-            <BarraProgreso
-              valor={consistencia}
-              label="Consistencia"
-              sublabel="Sesiones completadas en las últimas semanas"
-            />
-            <BarraProgreso
-              valor={adherencia}
-              label="Adherencia al esfuerzo"
-              sublabel="Sesiones completadas con RPE ≤ 7 (esfuerzo sostenible)"
-            />
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+              <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '18px 14px' }}>
+                <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted-foreground)', marginBottom: 10, fontWeight: 600 }}>Consistencia</p>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 38, fontWeight: 700, color: 'var(--primary)', lineHeight: 1, marginBottom: 6 }}>
+                  {consistencia !== null ? `${consistencia}%` : '–'}
+                </div>
+                <p style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>sesiones completadas</p>
+              </div>
+              <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '18px 14px' }}>
+                <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted-foreground)', marginBottom: 10, fontWeight: 600 }}>Adherencia</p>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 38, fontWeight: 700, color: 'var(--primary)', lineHeight: 1, marginBottom: 6 }}>
+                  {adherencia !== null ? `${adherencia}%` : '–'}
+                </div>
+                <p style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>RPE sostenible</p>
+              </div>
+            </div>
             {variacionVolumen !== null && (
-              <div style={{ marginTop: 8 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 14, color: 'var(--muted-foreground)' }}>Volumen vs hace {semanas > 1 ? semanas : ''} semanas</span>
-                  <span style={{
-                    fontFamily: 'var(--font-serif)',
-                    fontSize: 22,
-                    fontWeight: 700,
-                    color: variacionVolumen >= 0 ? 'var(--success)' : 'var(--destructive)',
-                  }}>
-                    {variacionVolumen >= 0 ? '+' : ''}{variacionVolumen}%
-                  </span>
+              <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 14px', marginBottom: 10 }}>
+                <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted-foreground)', marginBottom: 8, fontWeight: 600 }}>Volumen vs semanas anteriores</p>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 38, fontWeight: 700, color: variacionVolumen >= 0 ? 'var(--success)' : 'var(--destructive)', lineHeight: 1 }}>
+                  {variacionVolumen >= 0 ? '+' : ''}{variacionVolumen}%
                 </div>
               </div>
             )}
-          </div>
+          </>
         )}
 
         {/* Weekly bar chart */}
@@ -360,15 +376,20 @@ export default function Progress({ userId, profile, onNavigate }) {
           <div style={{
             background: 'var(--card)',
             border: '1px solid var(--border)',
-            borderRadius: 'var(--radius)',
-            padding: '16px',
+            borderRadius: 12,
+            padding: '18px 16px',
+            marginTop: 6,
           }}>
-            <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--foreground)', marginBottom: 12 }}>
-              Mis actividades
+            <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, color: 'var(--muted-foreground)', marginBottom: 14 }}>
+              Actividades Strava
             </p>
 
             {loadingActividades && (
-              <p style={{ fontSize: 13, color: 'var(--muted-foreground)' }}>Cargando actividades...</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[1,2,3].map(i => (
+                  <div key={i} style={{ height: 52, background: 'var(--secondary)', borderRadius: 8, animation: 'pulse 1.5s ease-in-out infinite' }} />
+                ))}
+              </div>
             )}
 
             {!loadingActividades && actividades !== null && actividades.length === 0 && (
@@ -378,54 +399,54 @@ export default function Progress({ userId, profile, onNavigate }) {
             )}
 
             {!loadingActividades && actividades && actividades.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {actividades.map((act, i) => (
-                  <div key={i} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    background: 'var(--secondary)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius)',
-                    padding: '10px 12px',
-                  }}>
-                    <span style={{ fontSize: 22, flexShrink: 0 }}>
-                      {ICONOS_STRAVA[act.tipo_deporte || act.tipo] || '🎾'}
-                    </span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--foreground)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {act.tipo_deporte || act.tipo}
-                        </span>
-                        <span style={{ fontSize: 12, color: 'var(--muted-foreground)', flexShrink: 0, marginLeft: 8 }}>
-                          {formatFecha(act.fecha)}
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                        {act.distancia_km > 0 && (
-                          <span style={{ fontSize: 12, color: 'var(--primary)', fontWeight: 600 }}>
-                            {act.distancia_km} km
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {actividades.map((act, i) => {
+                  const icon = ICONOS_STRAVA[act.tipo_deporte || act.tipo] || '🎾'
+                  return (
+                    <div key={i} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '10px 12px',
+                      background: 'var(--secondary)',
+                      borderRadius: 8,
+                    }}>
+                      <span style={{ fontSize: 20, flexShrink: 0, lineHeight: 1 }}>{icon}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--foreground)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {act.tipo_deporte || act.tipo}
                           </span>
-                        )}
-                        {act.duracion_min > 0 && (
-                          <span style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>
-                            {act.duracion_min} min
+                          <span style={{ fontSize: 11, color: 'var(--muted-foreground)', flexShrink: 0, marginLeft: 8 }}>
+                            {formatFecha(act.fecha)}
                           </span>
-                        )}
-                        {act.fc_media && (
-                          <span style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>
-                            ♥ {act.fc_media} bpm
-                          </span>
-                        )}
-                        {act.desnivel > 0 && (
-                          <span style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>
-                            ↑ {act.desnivel}m
-                          </span>
-                        )}
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          {act.distancia_km > 0 && (
+                            <span style={{ fontSize: 12, color: 'var(--primary)', fontWeight: 700 }}>
+                              {act.distancia_km} km
+                            </span>
+                          )}
+                          {act.duracion_min > 0 && (
+                            <span style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>
+                              {act.duracion_min} min
+                            </span>
+                          )}
+                          {act.fc_media && (
+                            <span style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>
+                              ♥ {act.fc_media}
+                            </span>
+                          )}
+                          {act.desnivel > 0 && (
+                            <span style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>
+                              ↑ {act.desnivel}m
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>
