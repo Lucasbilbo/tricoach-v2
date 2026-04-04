@@ -247,7 +247,7 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
     window.speechSynthesis.speak(utterance)
   }
 
-  function toggleMic() {
+  async function toggleMic() {
     if (!soportaVoz) return
     if (escuchando) {
       recognitionRef.current?.stop()
@@ -255,6 +255,16 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
       return
     }
     window.speechSynthesis?.cancel()
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      stream.getTracks().forEach(t => t.stop())
+    } catch (err) {
+      console.error('[Voz] Permiso denegado:', err)
+      alert('Necesitas permitir el acceso al micrófono en tu navegador')
+      return
+    }
+
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     const recognition = new SpeechRecognition()
     recognition.lang = 'es-ES'
