@@ -43,6 +43,17 @@ const SendIcon = () => (
   </svg>
 )
 
+const MicIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+    <line x1="12" y1="19" x2="12" y2="23"/>
+    <line x1="8" y1="23" x2="16" y2="23"/>
+  </svg>
+)
+
+const soportaVoz = typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)
+
 export default function Chat({ userId, profile, plan, planProximaSemana, historialPlanes, personalidad, onPersonalidadChange, onShowUpgrade, onPlanUpdate, prefillMessage }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
@@ -51,7 +62,13 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
   const [adjustLoading, setAdjustLoading] = useState(false)
   const [adjustApplied, setAdjustApplied] = useState(false)
   const [adjustToast, setAdjustToast] = useState(null)
+  const [escuchando, setEscuchando] = useState(false)
+  const [shouldAutoSend, setShouldAutoSend] = useState(false)
+  const [vozActiva, setVozActiva] = useState(() => localStorage.getItem('tricoach_voz_activa') !== 'false')
   const bottomRef = useRef(null)
+  const recognitionRef = useRef(null)
+  const transcriptRef = useRef('')
+  const vozActivaRef = useRef(vozActiva)
 
   function showAdjustToast(msg, type) {
     setAdjustToast({ msg, type })
@@ -130,6 +147,7 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
 
       const finalMessages = [...updatedMessages, { role: 'assistant', content: assistantMessage }]
       setMessages(finalMessages)
+      leerEnVoz(assistantMessage)
 
       updateContext(userId, finalMessages, profile.contexto).catch(() => {})
 
@@ -175,6 +193,21 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
     if (prefillMessage) setInput(prefillMessage)
   }, [prefillMessage])
 
+  useEffect(() => {
+    if (shouldAutoSend && input.trim() && !loading) {
+      setShouldAutoSend(false)
+      transcriptRef.current = ''
+      sendMessage()
+    }
+  }, [shouldAutoSend, input])
+
+  useEffect(() => {
+    return () => {
+      recognitionRef.current?.stop()
+      window.speechSynthesis?.cancel()
+    }
+  }, [])
+
 
   const messagesHoy = profile?.messages_today || 0
   const esFree = !profile?.plan || profile?.plan === 'free'
@@ -187,6 +220,68 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
   const lastAssistantIdx = messages.reduce((last, m, i) => m.role === 'assistant' ? i : last, -1)
 
   const coachInitial = (nombreCoach[0] || 'C').toUpperCase()
+
+  function toggleVoz() {
+    const next = !vozActiva
+    setVozActiva(next)
+    vozActivaRef.current = next
+    localStorage.setItem('tricoach_voz_activa', next ? 'true' : 'false')
+    if (!next) window.speechSynthesis?.cancel()
+  }
+
+  function leerEnVoz(texto) {
+    if (!window.speechSynthesis || !vozActivaRef.current) return
+    window.speechSynthesis.cancel()
+    const textoLimpio = texto
+      .replace(/\*\*/g, '')
+      .replace(/\*/g, '')
+      .replace(/#{1,6} /g, '')
+      .replace(/^- /gm, '')
+      .replace(/<[^>]+>/g, '')
+      .trim()
+    if (!textoLimpio) return
+    const utterance = new SpeechSynthesisUtterance(textoLimpio)
+    utterance.lang = 'es-ES'
+    utterance.rate = 1.1
+    utterance.pitch = 1
+    window.speechSynthesis.speak(utterance)
+  }
+
+  function toggleMic() {
+    if (!soportaVoz) return
+    if (escuchando) {
+      recognitionRef.current?.stop()
+      setEscuchando(false)
+      return
+    }
+    window.speechSynthesis?.cancel()
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    const recognition = new SpeechRecognition()
+    recognition.lang = 'es-ES'
+    recognition.continuous = false
+    recognition.interimResults = true
+    recognition.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map(r => r[0].transcript)
+        .join('')
+      transcriptRef.current = transcript
+      setInput(transcript)
+    }
+    recognition.onend = () => {
+      setEscuchando(false)
+      if (transcriptRef.current.trim()) {
+        setShouldAutoSend(true)
+      }
+    }
+    recognition.onerror = () => {
+      setEscuchando(false)
+      transcriptRef.current = ''
+    }
+    recognitionRef.current = recognition
+    transcriptRef.current = ''
+    recognition.start()
+    setEscuchando(true)
+  }
 
   return (
     <div className="screen-enter" style={{
@@ -239,6 +334,26 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {soportaVoz && (
+              <button
+                onClick={toggleVoz}
+                title={vozActiva ? 'Silenciar respuestas' : 'Activar respuestas en voz'}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: 18,
+                  lineHeight: 1,
+                  padding: '4px 6px',
+                  borderRadius: 6,
+                  opacity: vozActiva ? 1 : 0.35,
+                  transition: 'opacity 0.2s',
+                  flexShrink: 0,
+                }}
+              >
+                {vozActiva ? '🔊' : '🔇'}
+              </button>
+            )}
             {esFree && onShowUpgrade && (
               <button
                 onClick={onShowUpgrade}
@@ -457,47 +572,99 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
         padding: '12px 16px',
         flexShrink: 0,
       }}>
-        <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', gap: 8, alignItems: 'center' }}>
-          <input
-            style={{
-              flex: 1,
-              background: 'var(--secondary)',
-              border: '1px solid var(--border)',
-              borderRadius: 24,
-              color: 'var(--foreground)',
-              fontFamily: 'var(--font-sans)',
-              fontSize: 15,
-              padding: '11px 18px',
-              outline: 'none',
-              opacity: loading ? 0.6 : 1,
-              transition: 'border-color 0.2s',
-            }}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && !loading && sendMessage()}
-            placeholder="Escribe un mensaje..."
-            disabled={loading}
-          />
-          <button
-            onClick={sendMessage}
-            disabled={loading || !input.trim()}
-            style={{
-              width: 44, height: 44,
-              background: loading || !input.trim() ? 'var(--secondary)' : 'var(--primary)',
-              color: loading || !input.trim() ? 'var(--muted-foreground)' : 'var(--primary-foreground)',
-              border: loading || !input.trim() ? '1px solid var(--border)' : 'none',
-              borderRadius: '50%',
+        <div style={{ maxWidth: 640, margin: '0 auto' }}>
+          {escuchando && (
+            <div style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              cursor: loading || !input.trim() ? 'not-allowed' : 'pointer',
-              transition: 'all 0.2s',
-              flexShrink: 0,
-              boxShadow: !loading && input.trim() ? '0 0 16px rgba(255,107,43,0.25)' : 'none',
-            }}
-          >
-            <SendIcon />
-          </button>
+              gap: 7,
+              marginBottom: 8,
+              paddingLeft: 4,
+            }}>
+              <span style={{
+                display: 'inline-block',
+                width: 8, height: 8,
+                borderRadius: '50%',
+                background: 'rgb(239,68,68)',
+                animation: 'dotPulse 1s ease-in-out infinite',
+                flexShrink: 0,
+              }} />
+              <span style={{
+                fontSize: 13,
+                color: 'rgb(239,68,68)',
+                fontFamily: 'var(--font-sans)',
+                fontWeight: 500,
+              }}>
+                Escuchando...
+              </span>
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {soportaVoz && (
+              <button
+                onClick={toggleMic}
+                disabled={loading}
+                title={escuchando ? 'Detener grabación' : 'Hablar con el coach'}
+                style={{
+                  width: 44, height: 44,
+                  background: escuchando ? 'rgba(239,68,68,0.12)' : 'var(--secondary)',
+                  border: escuchando ? '1px solid rgba(239,68,68,0.45)' : '1px solid var(--border)',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  flexShrink: 0,
+                  transition: 'all 0.2s',
+                  color: escuchando ? 'rgb(239,68,68)' : 'var(--muted-foreground)',
+                  opacity: loading ? 0.4 : 1,
+                  animation: escuchando ? 'dotPulse 1.5s ease-in-out infinite' : 'none',
+                }}
+              >
+                <MicIcon />
+              </button>
+            )}
+            <input
+              style={{
+                flex: 1,
+                background: escuchando ? 'rgba(239,68,68,0.04)' : 'var(--secondary)',
+                border: escuchando ? '1px solid rgba(239,68,68,0.3)' : '1px solid var(--border)',
+                borderRadius: 24,
+                color: 'var(--foreground)',
+                fontFamily: 'var(--font-sans)',
+                fontSize: 15,
+                padding: '11px 18px',
+                outline: 'none',
+                opacity: loading ? 0.6 : 1,
+                transition: 'border-color 0.2s, background 0.2s',
+              }}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && !loading && !escuchando && sendMessage()}
+              placeholder={escuchando ? '🎙 Escuchando tu voz...' : 'Escribe un mensaje...'}
+              disabled={loading}
+            />
+            <button
+              onClick={sendMessage}
+              disabled={loading || !input.trim()}
+              style={{
+                width: 44, height: 44,
+                background: loading || !input.trim() ? 'var(--secondary)' : 'var(--primary)',
+                color: loading || !input.trim() ? 'var(--muted-foreground)' : 'var(--primary-foreground)',
+                border: loading || !input.trim() ? '1px solid var(--border)' : 'none',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: loading || !input.trim() ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s',
+                flexShrink: 0,
+                boxShadow: !loading && input.trim() ? '0 0 16px rgba(255,107,43,0.25)' : 'none',
+              }}
+            >
+              <SendIcon />
+            </button>
+          </div>
         </div>
       </div>
     </div>
