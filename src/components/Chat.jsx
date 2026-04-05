@@ -438,7 +438,7 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
           )}
           {messages.map((msg, i) => (
             <div key={i} className="message-enter" style={{
-              marginBottom: 14,
+              marginBottom: 16,
               display: 'flex',
               justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
               alignItems: 'flex-end',
@@ -460,7 +460,7 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
               )}
               <div style={{ maxWidth: '80%' }}>
                 {msg.role === 'assistant' && (
-                  <div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginBottom: 4, marginLeft: 2 }}>
+                  <div style={{ fontSize: 10, color: 'var(--muted-foreground)', marginBottom: 3, marginLeft: 2, letterSpacing: '0.04em', opacity: 0.7 }}>
                     {nombreCoach}
                   </div>
                 )}
@@ -470,24 +470,24 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
                       background: 'var(--secondary)',
                       color: 'var(--foreground)',
                       border: '1px solid var(--border)',
-                      padding: '11px 14px',
-                      borderRadius: '4px 18px 18px 18px',
+                      padding: '9px 13px',
+                      borderRadius: '4px 16px 16px 16px',
                       display: 'inline-block',
-                      fontSize: 15,
-                      lineHeight: 1.55,
+                      fontSize: 14,
+                      lineHeight: 1.6,
                     }}
                     dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
                   />
                 ) : (
                   <span style={{
-                    background: 'rgba(255, 107, 43, 0.12)',
+                    background: 'rgba(255, 107, 43, 0.1)',
                     color: 'var(--foreground)',
-                    border: '1px solid rgba(255, 107, 43, 0.2)',
-                    padding: '11px 14px',
-                    borderRadius: '18px 18px 4px 18px',
+                    border: '1px solid rgba(255, 107, 43, 0.18)',
+                    padding: '9px 13px',
+                    borderRadius: '16px 16px 4px 16px',
                     display: 'inline-block',
-                    fontSize: 15,
-                    lineHeight: 1.55,
+                    fontSize: 14,
+                    lineHeight: 1.6,
                     whiteSpace: 'pre-wrap',
                   }}>
                     {msg.content}

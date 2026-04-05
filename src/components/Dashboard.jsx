@@ -439,15 +439,15 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
           <>
             <div style={{
               background: sesionHoy.completada
-                ? `radial-gradient(ellipse at 80% 10%, oklch(0.7 0.14 180 / 0.08) 0%, transparent 55%), var(--card)`
-                : `radial-gradient(ellipse at 80% 10%, ${sportColor}18 0%, transparent 55%), var(--card)`,
+                ? `radial-gradient(ellipse at 70% 0%, oklch(0.7 0.14 180 / 0.05) 0%, transparent 60%), var(--card)`
+                : `radial-gradient(ellipse at 70% 0%, ${sportColor}10 0%, transparent 60%), var(--card)`,
               border: sesionHoy.completada
-                ? '1px solid oklch(0.7 0.14 180 / 0.3)'
-                : `1px solid ${sportColor}30`,
+                ? '1px solid oklch(0.7 0.14 180 / 0.2)'
+                : `1px solid ${sportColor}22`,
               borderRadius: 16,
-              padding: '32px 20px',
+              padding: '28px 20px',
               marginBottom: 16,
-              minHeight: '55vh',
+              minHeight: '50vh',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
@@ -460,8 +460,8 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
               {!sesionHoy.completada && (
                 <div style={{
                   position: 'absolute', top: 0, left: 0, right: 0,
-                  height: 3,
-                  background: `linear-gradient(90deg, ${sportColor}80, transparent)`,
+                  height: 2,
+                  background: `linear-gradient(90deg, ${sportColor}70, transparent)`,
                   borderRadius: '16px 16px 0 0',
                 }} />
               )}
@@ -585,8 +585,8 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
                   <p style={{
                     color: 'var(--muted-foreground)',
                     fontSize: 14,
-                    lineHeight: 1.6,
-                    marginBottom: esSesionTest ? 8 : 28,
+                    lineHeight: 1.75,
+                    marginBottom: esSesionTest ? 8 : 24,
                     padding: '0 8px',
                     maxWidth: 320,
                   }}>
@@ -682,24 +682,24 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
                       color: '#fff',
                       border: 'none',
                       borderRadius: 99,
-                      padding: '17px 0',
+                      padding: '14px 0',
                       width: '100%',
-                      maxWidth: 320,
+                      maxWidth: 300,
                       fontFamily: 'var(--font-sans)',
-                      fontSize: 17,
-                      fontWeight: 700,
+                      fontSize: 15,
+                      fontWeight: 600,
                       cursor: 'pointer',
                       letterSpacing: '0.01em',
-                      boxShadow: `0 0 32px ${sportColor}44, 0 4px 16px ${sportColor}30`,
-                      transition: 'all 0.2s ease',
+                      boxShadow: `0 0 24px ${sportColor}38`,
+                      transition: 'opacity 0.15s ease, box-shadow 0.15s ease',
                     }}
                     onMouseEnter={e => {
-                      e.currentTarget.style.boxShadow = `0 0 48px ${sportColor}66, 0 6px 20px ${sportColor}44`
-                      e.currentTarget.style.transform = 'translateY(-1px)'
+                      e.currentTarget.style.opacity = '0.9'
+                      e.currentTarget.style.boxShadow = `0 0 32px ${sportColor}55`
                     }}
                     onMouseLeave={e => {
-                      e.currentTarget.style.boxShadow = `0 0 32px ${sportColor}44, 0 4px 16px ${sportColor}30`
-                      e.currentTarget.style.transform = 'translateY(0)'
+                      e.currentTarget.style.opacity = '1'
+                      e.currentTarget.style.boxShadow = `0 0 24px ${sportColor}38`
                     }}
                   >
                     ✓ Completar sesión
@@ -793,7 +793,7 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
                   marginBottom: 8,
                   transition: 'border-color 0.2s, color 0.2s',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--foreground)' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'oklch(0.32 0.02 60)'; e.currentTarget.style.color = 'var(--foreground)' }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--muted-foreground)' }}
               >
                 ⬇ Descargar para el reloj (.TCX)
@@ -843,8 +843,8 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
                 cursor: 'pointer',
                 transition: 'border-color 0.2s, background 0.2s',
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.background = 'oklch(0.7 0.18 45 / 0.05)' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'transparent' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'oklch(0.32 0.02 60)' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)' }}
             >
               💬 Hablar con el coach
             </button>
