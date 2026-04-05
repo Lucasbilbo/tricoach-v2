@@ -277,7 +277,7 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'JSON inválido' }) };
   }
 
-  const { userId, planAnterior, fechaInicio } = parsed;
+  const { userId, planAnterior, fechaInicio, contexto_semana } = parsed;
   if (!userId) {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId requerido' }) };
   }
@@ -417,6 +417,10 @@ ${deportesEfectivos.map(d => `- ${deporteInfo[d.deporte] || d.deporte}: incluir 
 Si el atleta hace triatlón, las sesiones de running del triatlón también sirven para carreras de running.
 Nunca más de 2 días seguidos del mismo deporte.` : '';
 
+    const contextoSemanaSection = contexto_semana
+      ? `\n\nCONTEXTO ESPECIAL ESTA SEMANA (tiene prioridad):\n${contexto_semana}\nAdapta el plan teniendo en cuenta esta información.`
+      : '';
+
     userMessage = `Genera un plan de entrenamiento semanal para este atleta:
 
 Deportes: ${deportesTexto}
@@ -425,7 +429,7 @@ Objetivo: ${profile.objetivo || 'mejorar forma física'}
 ${carrerasTexto ? `Carreras/eventos próximos: ${carrerasTexto}` : ''}
 ${semanaLabel}
 ${profile.contexto ? `Contexto del atleta: ${profile.contexto}` : ''}${analisisSection}
-${distribucionDeportes}
+${distribucionDeportes}${contextoSemanaSection}
 
 El plan empieza el ${weekStart}. Los días en orden son: ${dias.join(', ')}.
 

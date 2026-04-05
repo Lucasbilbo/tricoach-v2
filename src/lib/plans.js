@@ -94,7 +94,7 @@ export async function getPlanForWeek(userId, semana) {
   return data
 }
 
-export async function generatePlan(userId, planAnterior = null, fechaInicio = null) {
+export async function generatePlan(userId, planAnterior = null, fechaInicio = null, contextoSemana = null) {
   const secret = import.meta.env.VITE_TRICOACH_SECRET || ''
   const res = await fetch('/.netlify/functions/generate-plan', {
     method: 'POST',
@@ -103,7 +103,7 @@ export async function generatePlan(userId, planAnterior = null, fechaInicio = nu
       'Accept': 'application/json',
       'x-tricoach-secret': secret
     },
-    body: JSON.stringify({ userId, planAnterior, fechaInicio })
+    body: JSON.stringify({ userId, planAnterior, fechaInicio, contexto_semana: contextoSemana || undefined })
   })
   return res.json()
 }
