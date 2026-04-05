@@ -255,3 +255,6 @@ Validación Free/Pro siempre en **backend** (claude.js, generate-plan.js) — nu
 - refactoring-ui — mejorar UI existente
 - ux-heuristics — auditoría de usabilidad
 - jobs-to-be-done — entender qué quiere el usuario
+
+## Referencia de diseño
+Lee DESIGN.md para el sistema de diseño de referencia (Linear.app).
