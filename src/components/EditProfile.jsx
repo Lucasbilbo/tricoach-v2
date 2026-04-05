@@ -109,6 +109,12 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
   const [objetivoNutricional, setObjetivoNutricional] = useState(profile.objetivo_nutricional || '')
   const [preferenciasAlimentarias, setPreferenciasAlimentarias] = useState(profile.preferencias_alimentarias || '')
   const [intolerancias, setIntolerancias] = useState(profile.intolerancias || '')
+  // Intervals.icu
+  const [intervalsAthleteId, setIntervalsAthleteId] = useState(profile.intervals_athlete_id || '')
+  const [intervalsApiKey, setIntervalsApiKey] = useState(profile.intervals_api_key || '')
+  const [showIntervalsKey, setShowIntervalsKey] = useState(false)
+  const [intervalsSaving, setIntervalsSaving] = useState(false)
+  const [intervalsConnected, setIntervalsConnected] = useState(!!(profile.intervals_athlete_id && profile.intervals_api_key))
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -183,6 +189,36 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
       console.error('Error borrando cuenta:', error)
     } finally {
       setDeleting(false)
+    }
+  }
+
+  async function handleSaveIntervals() {
+    setIntervalsSaving(true)
+    const { error } = await supabase
+      .from('profiles')
+      .update({ intervals_athlete_id: intervalsAthleteId || null, intervals_api_key: intervalsApiKey || null })
+      .eq('id', profile.id)
+    setIntervalsSaving(false)
+    if (error) {
+      showToast('Error al guardar. Inténtalo de nuevo.', 'error')
+      return
+    }
+    setIntervalsConnected(!!(intervalsAthleteId && intervalsApiKey))
+    showToast('Intervals.icu guardado', 'success')
+  }
+
+  async function handleDisconnectIntervals() {
+    setIntervalsSaving(true)
+    const { error } = await supabase
+      .from('profiles')
+      .update({ intervals_athlete_id: null, intervals_api_key: null })
+      .eq('id', profile.id)
+    setIntervalsSaving(false)
+    if (!error) {
+      setIntervalsAthleteId('')
+      setIntervalsApiKey('')
+      setIntervalsConnected(false)
+      showToast('Intervals.icu desconectado', 'success')
     }
   }
 
@@ -463,6 +499,103 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
       {/* Strava disconnect */}
       {profile.strava_token && (
         <StravaDisconnect userId={profile.id} onDisconnected={() => {}} />
+      )}
+
+      {/* Intervals.icu — solo Pro */}
+      {!esFree && (
+        <div style={{
+          background: 'var(--card)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)',
+          padding: 16,
+          marginBottom: 12,
+        }}>
+          <p style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 14, fontWeight: 600 }}>
+            ⌚ Intervals.icu
+          </p>
+          {intervalsConnected ? (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 14, color: '#10B981', fontWeight: 600 }}>
+                ✓ Intervals conectado
+              </span>
+              <button
+                onClick={handleDisconnectIntervals}
+                disabled={intervalsSaving}
+                style={{
+                  background: 'none',
+                  border: '1px solid var(--border)',
+                  borderRadius: 6,
+                  color: 'var(--muted-foreground)',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 13,
+                  padding: '6px 14px',
+                  cursor: intervalsSaving ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {intervalsSaving ? '...' : 'Desconectar'}
+              </button>
+            </div>
+          ) : (
+            <>
+              <label style={labelStyle}>Athlete ID</label>
+              <input
+                style={inputStyle}
+                value={intervalsAthleteId}
+                onChange={e => setIntervalsAthleteId(e.target.value)}
+                placeholder="Ej: i524242"
+              />
+              <label style={labelStyle}>API Key</label>
+              <div style={{ position: 'relative', marginBottom: 4 }}>
+                <input
+                  type={showIntervalsKey ? 'text' : 'password'}
+                  style={{ ...inputStyle, marginBottom: 0, paddingRight: 44 }}
+                  value={intervalsApiKey}
+                  onChange={e => setIntervalsApiKey(e.target.value)}
+                  placeholder="Tu API key de Intervals.icu"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowIntervalsKey(v => !v)}
+                  style={{
+                    position: 'absolute',
+                    right: 10,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: 15,
+                    color: 'var(--muted-foreground)',
+                    padding: 4,
+                  }}
+                >
+                  {showIntervalsKey ? '🙈' : '👁'}
+                </button>
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--muted-foreground)', marginBottom: 14, marginTop: 6 }}>
+                Encuéntralo en intervals.icu → Settings → API
+              </p>
+              <button
+                onClick={handleSaveIntervals}
+                disabled={intervalsSaving || !intervalsAthleteId || !intervalsApiKey}
+                style={{
+                  background: 'var(--primary)',
+                  border: 'none',
+                  borderRadius: 8,
+                  color: 'var(--primary-foreground)',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  padding: '8px 20px',
+                  cursor: (intervalsSaving || !intervalsAthleteId || !intervalsApiKey) ? 'not-allowed' : 'pointer',
+                  opacity: (!intervalsAthleteId || !intervalsApiKey) ? 0.5 : 1,
+                }}
+              >
+                {intervalsSaving ? 'Guardando...' : 'Guardar'}
+              </button>
+            </>
+          )}
+        </div>
       )}
 
       {/* Zona de peligro */}

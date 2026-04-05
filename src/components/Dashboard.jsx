@@ -111,6 +111,9 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
   const [rpe, setRpe] = useState(6)
   const [showMovilidad, setShowMovilidad] = useState(false)
   const [syncToast, setSyncToast] = useState(null)
+  const [stravaSyncLoading, setStravaSyncLoading] = useState(false)
+  const [intervalsLoading, setIntervalsLoading] = useState(false)
+  const [intervalsToast, setIntervalsToast] = useState(null)
   const syncedRef = useRef(false)
   const [showPwaBanner, setShowPwaBanner] = useState(() => {
     const esMovil = /iPhone|iPad|Android/i.test(navigator.userAgent)
@@ -153,6 +156,70 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
     return idx > todayIdx && s.tipo?.toLowerCase() !== 'descanso'
   }) || null
 
+  async function handleStravaSync() {
+    if (stravaSyncLoading) return
+    setStravaSyncLoading(true)
+    try {
+      const r = await fetch('/.netlify/functions/strava-sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-tricoach-secret': import.meta.env.VITE_TRICOACH_SECRET || '',
+        },
+        body: JSON.stringify({ userId }),
+      })
+      const data = await r.json()
+      if (data.sincronizadas > 0 && data.sesiones) {
+        onPlanUpdate({ ...plan, sesiones: data.sesiones })
+        setSyncToast(`✓ ${data.sincronizadas} sesión${data.sincronizadas > 1 ? 'es' : ''} sincronizada${data.sincronizadas > 1 ? 's' : ''} con Strava`)
+      } else {
+        setSyncToast('Todo al día ✓')
+      }
+      setTimeout(() => setSyncToast(null), 4000)
+    } catch {
+      setSyncToast('Error al sincronizar')
+      setTimeout(() => setSyncToast(null), 3000)
+    } finally {
+      setStravaSyncLoading(false)
+    }
+  }
+
+  async function handleEnviarIntervals(sesion) {
+    if (intervalsLoading) return
+    setIntervalsLoading(true)
+    const duracionSeg = (sesion.duracion_min || 30) * 60
+    const hoy = new Date().toISOString().split('T')[0]
+    try {
+      const r = await fetch('/.netlify/functions/intervals', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-tricoach-secret': import.meta.env.VITE_TRICOACH_SECRET || '',
+        },
+        body: JSON.stringify({
+          userId,
+          start_date_local: hoy,
+          type: 'Workout',
+          name: `${sesion.tipo} — TriCoach`,
+          description: sesion.descripcion || '',
+          duration: duracionSeg,
+          moving_time: duracionSeg,
+        }),
+      })
+      if (r.ok) {
+        setIntervalsToast('✓ Enviado a Intervals')
+      } else {
+        setIntervalsToast('Error al enviar')
+      }
+      setTimeout(() => setIntervalsToast(null), 4000)
+    } catch {
+      setIntervalsToast('Error al enviar')
+      setTimeout(() => setIntervalsToast(null), 3000)
+    } finally {
+      setIntervalsLoading(false)
+    }
+  }
+
   async function handleCompletar() {
     if (!plan?.id || !sesionHoy) return
     try {
@@ -173,6 +240,28 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
       overflowY: 'auto',
       background: 'var(--background)',
     }}>
+      {/* Intervals toast */}
+      {intervalsToast && (
+        <div style={{
+          position: 'fixed',
+          top: 16,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: intervalsToast.startsWith('Error') ? 'var(--destructive)' : 'oklch(0.45 0.2 140)',
+          color: '#fff',
+          borderRadius: 'var(--radius)',
+          padding: '10px 20px',
+          fontWeight: 600,
+          fontSize: 14,
+          zIndex: 200,
+          fontFamily: 'var(--font-sans)',
+          boxShadow: '0 4px 20px oklch(0 0 0 / 0.3)',
+          whiteSpace: 'nowrap',
+        }}>
+          {intervalsToast}
+        </div>
+      )}
+
       {/* Strava sync toast */}
       {syncToast && (
         <div style={{
@@ -245,13 +334,37 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
         top: 0,
         zIndex: 50,
       }}>
-        <div style={{ maxWidth: 640, margin: '0 auto' }}>
-          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 22, fontWeight: 600, marginBottom: 2 }}>
-            {getSaludo(profile?.nombre)}
-          </h2>
-          <p style={{ fontSize: 13, color: 'var(--muted-foreground)', textTransform: 'capitalize' }}>
-            {getFechaHoy()}
-          </p>
+        <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 22, fontWeight: 600, marginBottom: 2 }}>
+              {getSaludo(profile?.nombre)}
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--muted-foreground)', textTransform: 'capitalize' }}>
+              {getFechaHoy()}
+            </p>
+          </div>
+          {profile?.strava_token && (
+            <button
+              onClick={handleStravaSync}
+              disabled={stravaSyncLoading}
+              style={{
+                background: 'none',
+                border: '1px solid var(--border)',
+                borderRadius: 99,
+                color: stravaSyncLoading ? 'var(--muted-foreground)' : '#fc4c02',
+                fontFamily: 'var(--font-sans)',
+                fontSize: 12,
+                fontWeight: 500,
+                padding: '5px 12px',
+                cursor: stravaSyncLoading ? 'not-allowed' : 'pointer',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+                marginTop: 2,
+              }}
+            >
+              {stravaSyncLoading ? '⏳ Sincronizando...' : '🔄 Sincronizar Strava'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -682,6 +795,33 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
                 onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--muted-foreground)' }}
               >
                 ⬇ Descargar para el reloj (.TCX)
+              </button>
+            )}
+
+            {/* Enviar a Intervals */}
+            {!esDescanso && profile?.intervals_athlete_id && (
+              <button
+                onClick={() => handleEnviarIntervals(sesionHoy)}
+                disabled={intervalsLoading}
+                style={{
+                  width: '100%',
+                  background: 'transparent',
+                  border: '1px solid var(--border)',
+                  borderRadius: 99,
+                  color: intervalsLoading ? 'var(--muted-foreground)' : 'var(--foreground)',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  padding: '11px',
+                  cursor: intervalsLoading ? 'not-allowed' : 'pointer',
+                  marginBottom: 8,
+                  transition: 'border-color 0.2s, color 0.2s',
+                  opacity: intervalsLoading ? 0.6 : 1,
+                }}
+                onMouseEnter={e => { if (!intervalsLoading) { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--foreground)' } }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--foreground)' }}
+              >
+                {intervalsLoading ? '⏳ Enviando...' : '⌚ Enviar a Intervals'}
               </button>
             )}
 
