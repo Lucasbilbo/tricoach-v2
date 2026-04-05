@@ -243,3 +243,15 @@ Validación Free/Pro siempre en **backend** (claude.js, generate-plan.js) — nu
 ## Lecciones aprendidas
 - Después de cualquier corrección del usuario: actualizar tasks/lessons.md con el patrón del error
 - Revisar tasks/lessons.md al inicio de cada sesión
+
+## Skills disponibles
+- bencium-innovative-ux-designer — diseño creativo y bold
+- interface-design — sistema de diseño persistente
+- tricoach-stack — stack y patrones de este proyecto
+- systematic-debugging — cuando hay bugs complejos
+- test-driven-development — para nuevas features
+- lean-startup — validar ideas antes de construir
+- hooked-ux — psicología de retención de usuarios
+- refactoring-ui — mejorar UI existente
+- ux-heuristics — auditoría de usabilidad
+- jobs-to-be-done — entender qué quiere el usuario
