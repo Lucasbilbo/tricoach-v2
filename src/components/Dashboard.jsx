@@ -187,8 +187,6 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
   async function handleEnviarIntervals(sesion) {
     if (intervalsLoading) return
     setIntervalsLoading(true)
-    const duracionSeg = (sesion.duracion_min || 30) * 60
-    const hoy = new Date().toISOString().split('T')[0]
     try {
       const r = await fetch('/.netlify/functions/intervals', {
         method: 'POST',
@@ -198,12 +196,16 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
         },
         body: JSON.stringify({
           userId,
-          start_date_local: hoy,
-          type: 'Workout',
+          start_date_local: new Date().toISOString().slice(0, 19),
+          category: 'WORKOUT',
           name: `${sesion.tipo} — TriCoach`,
           description: sesion.descripcion || '',
-          duration: duracionSeg,
-          moving_time: duracionSeg,
+          moving_time: (sesion.duracion_min || 30) * 60,
+          type: sesion.tipo === 'Correr' ? 'Run'
+              : sesion.tipo === 'Bici' ? 'Ride'
+              : sesion.tipo === 'Nadar' ? 'Swim'
+              : sesion.tipo === 'Brick' ? 'Brick'
+              : 'WeightTraining',
         }),
       })
       if (r.ok) {
