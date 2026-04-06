@@ -54,7 +54,10 @@ exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS, body: 'Method Not Allowed' };
 
   const secret = event.headers['x-tricoach-secret'];
-  if (FUNCTION_SECRET && secret !== FUNCTION_SECRET) {
+  if (!FUNCTION_SECRET) {
+    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Server misconfigured' }) };
+  }
+  if (secret !== FUNCTION_SECRET) {
     return { statusCode: 401, headers: CORS, body: JSON.stringify({ error: 'Unauthorized' }) };
   }
 
@@ -100,6 +103,7 @@ exports.handler = async (event) => {
       const currentCount = profile.last_message_date === today ? (profile.messages_today || 0) : 0;
 
       if (currentCount >= limit) {
+        console.log('[RateLimit] Usuario bloqueado:', userId, 'plan:', plan, 'count:', currentCount, 'limit:', limit);
         return {
           statusCode: 429,
           headers: CORS,

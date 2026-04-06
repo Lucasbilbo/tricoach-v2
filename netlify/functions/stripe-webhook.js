@@ -135,6 +135,8 @@ exports.handler = async (event) => {
   const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
   const hostname = new URL(supabaseUrl).hostname;
 
+  console.log('[Stripe] Evento recibido:', stripeEvent.type);
+
   if (stripeEvent.type === 'checkout.session.completed') {
     const session = stripeEvent.data?.object;
     const userId = session?.metadata?.userId;
@@ -142,12 +144,17 @@ exports.handler = async (event) => {
     const customerEmail = session?.customer_email || session?.customer_details?.email;
 
     if (userId) {
-      await supabasePatch(
+      const patchResult = await supabasePatch(
         hostname,
         `/rest/v1/profiles?id=eq.${userId}`,
         supabaseKey,
         { plan: 'pro', stripe_customer_id: customerId || null }
       );
+      if (patchResult) {
+        console.log('[Stripe] Pro activado para userId:', userId);
+      } else {
+        console.error('[Stripe] FALLO activación Pro para userId:', userId);
+      }
 
       const RESEND_KEY = process.env.RESEND_API_KEY;
       if (RESEND_KEY && customerEmail) {
@@ -159,15 +166,14 @@ exports.handler = async (event) => {
           );
           const nombre = Array.isArray(profiles) ? profiles[0]?.nombre : null;
 
-          console.log('[stripe-webhook] Enviando email de bienvenida Pro a:', customerEmail, '| nombre:', nombre);
           const emailResult = await sendWelcomeEmail(RESEND_KEY, customerEmail, nombre);
-          console.log('[stripe-webhook] Resultado email Resend:', JSON.stringify(emailResult));
-
-          if (emailResult.status >= 300) {
-            console.error('[stripe-webhook] Email fallido — status:', emailResult.status, '| body:', emailResult.body);
+          if (emailResult.status < 300) {
+            console.log('[Stripe] Email enviado a:', customerEmail);
+          } else {
+            console.error('[Stripe] FALLO email — status:', emailResult.status, '| body:', emailResult.body);
           }
         } catch (emailErr) {
-          console.error('[stripe-webhook] Excepción al enviar email:', emailErr.message);
+          console.error('[Stripe] FALLO email — excepción:', emailErr.message);
           // El error de email NO bloquea la activación Pro
         }
       } else {

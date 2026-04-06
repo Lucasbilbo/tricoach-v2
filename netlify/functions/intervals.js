@@ -68,7 +68,10 @@ exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' }
 
   const secret = event.headers['x-tricoach-secret']
-  if (FUNCTION_SECRET && secret !== FUNCTION_SECRET) {
+  if (!FUNCTION_SECRET) {
+    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Server misconfigured' }) }
+  }
+  if (secret !== FUNCTION_SECRET) {
     return { statusCode: 401, headers: CORS, body: JSON.stringify({ error: 'Unauthorized' }) }
   }
 
