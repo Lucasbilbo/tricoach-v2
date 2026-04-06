@@ -14,6 +14,43 @@ const CORS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS'
 };
 
+function withTimeout(promise, ms, errorMsg) {
+  const timer = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error(errorMsg)), ms)
+  );
+  return Promise.race([promise, timer]);
+}
+
+function callClaude(apiKey, body) {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'api.anthropic.com',
+      path: '/v1/messages',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'Content-Length': Buffer.byteLength(body)
+      }
+    };
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        resolve({
+          statusCode: res.statusCode,
+          headers: { ...CORS, 'Content-Type': 'application/json' },
+          body: data
+        });
+      });
+    });
+    req.on('error', (e) => reject(e));
+    req.write(body);
+    req.end();
+  });
+}
+
 function supabaseGet(hostname, path, key) {
   return new Promise((resolve) => {
     const req = https.request({
@@ -133,36 +170,12 @@ exports.handler = async (event) => {
     max_tokens: CLAUDE_MAX_TOKENS,
   });
 
-  return new Promise((resolve) => {
-    const options = {
-      hostname: 'api.anthropic.com',
-      path: '/v1/messages',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_KEY,
-        'anthropic-version': '2023-06-01',
-        'Content-Length': Buffer.byteLength(body)
-      }
-    };
-
-    const req = https.request(options, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        resolve({
-          statusCode: res.statusCode,
-          headers: { ...CORS, 'Content-Type': 'application/json' },
-          body: data
-        });
-      });
-    });
-
-    req.on('error', (e) => {
-      resolve({ statusCode: 500, headers: CORS, body: JSON.stringify({ error: e.message }) });
-    });
-
-    req.write(body);
-    req.end();
-  });
+  try {
+    return await withTimeout(callClaude(ANTHROPIC_KEY, body), 25000, 'Claude timeout');
+  } catch (e) {
+    if (e.message === 'Claude timeout') {
+      return { statusCode: 408, headers: CORS, body: JSON.stringify({ error: 'El coach tardó demasiado en responder. Inténtalo de nuevo.' }) };
+    }
+    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: e.message }) };
+  }
 };

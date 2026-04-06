@@ -140,6 +140,11 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
         return
       }
 
+      if (response.status === 408) {
+        setMessages((prev) => [...prev, { role: 'assistant', content: 'El coach tardó demasiado. Pulsa enviar de nuevo.' }])
+        return
+      }
+
       const data = await response.json()
       const assistantMessage = data.content?.[0]?.text || 'Error al responder'
 

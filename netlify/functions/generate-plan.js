@@ -89,6 +89,13 @@ function supabasePost(hostname, path, key, body) {
   });
 }
 
+function withTimeout(promise, ms, errorMsg) {
+  const timer = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error(errorMsg)), ms)
+  );
+  return Promise.race([promise, timer]);
+}
+
 function callClaude(apiKey, systemPrompt, userMessage) {
   const body = JSON.stringify({
     model: CLAUDE_MODEL,
@@ -475,7 +482,16 @@ Ejemplo descripción running: "Cal 10min trote suave z1. Principal: 4x1000m a 5:
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'API key not configured' }) };
   }
 
-  const claudeResponse = await callClaude(ANTHROPIC_KEY, systemPrompt, userMessage);
+  let claudeResponse;
+  try {
+    claudeResponse = await withTimeout(
+      callClaude(ANTHROPIC_KEY, systemPrompt, userMessage),
+      30000,
+      'Claude timeout'
+    );
+  } catch (e) {
+    return { statusCode: 408, headers: CORS, body: JSON.stringify({ error: 'La generación del plan tardó demasiado. Inténtalo de nuevo.' }) };
+  }
 
   if (!claudeResponse || !claudeResponse.content?.[0]?.text) {
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Error al generar el plan' }) };

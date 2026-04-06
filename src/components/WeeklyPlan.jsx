@@ -142,12 +142,17 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
     setShowContextModal(false)
     try {
       const nuevoPlan = await generatePlan(userId, planAnteriorParaAnalisis, fechaInicio, contexto)
+      if (nuevoPlan?.error) {
+        setErrorToast(nuevoPlan.error)
+        return
+      }
       onPlanUpdate(nuevoPlan)
-      if (nuevoPlan && !nuevoPlan.error && planAnteriorParaAnalisis === null) {
+      if (planAnteriorParaAnalisis === null) {
         fetchCoachIntro(nuevoPlan)
       }
     } catch (e) {
       console.error('Error al generar plan:', e)
+      setErrorToast('La generación del plan tardó demasiado. Inténtalo de nuevo.')
     } finally {
       setGenerando(false)
     }
