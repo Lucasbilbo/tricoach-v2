@@ -87,6 +87,15 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
     setPlanSiguienteNoExiste(false)
   }, [planProximaSemana])
 
+  useEffect(() => {
+    if (!plan) return
+    if (!plan.sesiones || plan.sesiones.length === 0) return
+    const todasCompletadas = plan.sesiones.every(s => s.completada)
+    if (!todasCompletadas) return
+    if (planSiguiente) return
+    handleGenerarSiguiente()
+  }, [plan, planSiguiente])
+
   const today = DIAS_SEMANA[new Date().getDay()]
   const todayStr = getTodayStr()
   const planEndStr = plan ? (() => {
@@ -335,6 +344,113 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
           ) : 'Generar mi plan'}
           </button>
         </div>
+
+        {/* Modal contexto semana — necesario aquí para cuando no hay plan */}
+        {showContextModal && (
+          <div
+            onClick={() => setShowContextModal(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'oklch(0 0 0 / 0.65)',
+              zIndex: 200,
+              display: 'flex',
+              alignItems: 'flex-end',
+              justifyContent: 'center',
+            }}
+          >
+            <div
+              onClick={e => e.stopPropagation()}
+              style={{
+                background: 'var(--card)',
+                borderRadius: '16px 16px 0 0',
+                padding: '24px 20px',
+                paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))',
+                width: '100%',
+                maxWidth: 480,
+              }}
+            >
+              <h3 style={{
+                fontFamily: 'var(--font-serif)',
+                fontSize: 20,
+                fontWeight: 700,
+                marginBottom: 6,
+                color: 'var(--foreground)',
+              }}>
+                ¿Algo que tu coach deba saber esta semana?
+              </h3>
+              <p style={{
+                fontSize: 13,
+                color: 'var(--muted-foreground)',
+                marginBottom: 16,
+                lineHeight: 1.5,
+              }}>
+                Viajes, compromisos, cansancio acumulado...
+              </p>
+              <textarea
+                value={contextoSemana}
+                onChange={e => setContextoSemana(e.target.value)}
+                placeholder="Ej: El miércoles tengo viaje, el viernes llego tarde del trabajo, esta semana me noto cansado..."
+                rows={4}
+                style={{
+                  width: '100%',
+                  background: 'var(--input)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 10,
+                  color: 'var(--foreground)',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 14,
+                  padding: '10px 14px',
+                  resize: 'none',
+                  outline: 'none',
+                  lineHeight: 1.55,
+                  marginBottom: 16,
+                }}
+                autoFocus
+              />
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => handleGenerarPlan(null, pendingFechaInicio, null)}
+                  disabled={generando}
+                  style={{
+                    flex: 1,
+                    background: 'var(--secondary)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 10,
+                    color: 'var(--muted-foreground)',
+                    fontFamily: 'var(--font-sans)',
+                    fontSize: 13,
+                    fontWeight: 500,
+                    padding: '11px 8px',
+                    cursor: generando ? 'not-allowed' : 'pointer',
+                    opacity: generando ? 0.6 : 1,
+                  }}
+                >
+                  Generar sin contexto
+                </button>
+                <button
+                  onClick={() => handleGenerarPlan(null, pendingFechaInicio, contextoSemana.trim() || null)}
+                  disabled={generando}
+                  style={{
+                    flex: 2,
+                    background: 'var(--primary)',
+                    border: 'none',
+                    borderRadius: 10,
+                    color: 'var(--primary-foreground)',
+                    fontFamily: 'var(--font-sans)',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    padding: '11px 16px',
+                    cursor: generando ? 'not-allowed' : 'pointer',
+                    opacity: generando ? 0.7 : 1,
+                  }}
+                >
+                  {generando ? 'Generando...' : 'Generar con contexto →'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
