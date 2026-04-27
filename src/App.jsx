@@ -20,6 +20,7 @@ import WelcomeGuide from './components/WelcomeGuide'
 function App() {
   const [session, setSession] = useState(null)
   const [profile, setProfile] = useState(null)
+  const [activeCycle, setActiveCycle] = useState(null)
   const [plan, setPlan] = useState(null)
   const [planProximaSemana, setPlanProximaSemana] = useState(null)
   const [historialPlanes, setHistorialPlanes] = useState([])
@@ -38,6 +39,35 @@ function App() {
       profile = await createProfile(user)
     }
     setProfile(profile)
+    loadOrCreateCycle(user.id, profile)
+  }
+
+  async function loadOrCreateCycle(userId, profile) {
+    try {
+      if (profile?.active_cycle_id) {
+        // Ciclo ya existe — obtenerlo de Supabase
+        const { data } = await supabase
+          .from('training_cycles')
+          .select('*')
+          .eq('id', profile.active_cycle_id)
+          .maybeSingle()
+        if (data) setActiveCycle(data)
+      } else {
+        // Crear ciclo nuevo
+        const secret = import.meta.env.VITE_TRICOACH_SECRET || ''
+        const res = await fetch('/.netlify/functions/create-cycle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-tricoach-secret': secret },
+          body: JSON.stringify({ userId }),
+        })
+        if (res.ok) {
+          const { cycle } = await res.json()
+          if (cycle) setActiveCycle(cycle)
+        }
+      }
+    } catch (e) {
+      console.error('[App] loadOrCreateCycle error:', e)
+    }
   }
 
   function handleNavigate(screen) {
@@ -170,6 +200,7 @@ function App() {
             userId={session.user.id}
             plan={plan}
             profile={profile}
+            activeCycle={activeCycle}
             loading={planLoading}
             onPlanUpdate={setPlan}
             onNavigate={handleNavigate}
@@ -182,6 +213,7 @@ function App() {
           <Chat
             userId={session.user.id}
             profile={profile}
+            activeCycle={activeCycle}
             plan={plan}
             planProximaSemana={planProximaSemana}
             historialPlanes={historialPlanes}
@@ -214,6 +246,7 @@ function App() {
         <Progress
           userId={session.user.id}
           profile={profile}
+          activeCycle={activeCycle}
           plan={plan}
           onNavigate={handleNavigate}
         />
