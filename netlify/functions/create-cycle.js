@@ -155,8 +155,9 @@ exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS, body: 'Method Not Allowed' };
 
-  const secret = event.headers['x-tricoach-secret'];
-  if (FUNCTION_SECRET && secret !== FUNCTION_SECRET) {
+  const secret = (event.headers['x-tricoach-secret'] || '').trim();
+  const expected = (FUNCTION_SECRET || '').trim();
+  if (expected && secret !== expected) {
     return { statusCode: 401, headers: CORS, body: JSON.stringify({ error: 'Unauthorized' }) };
   }
 
