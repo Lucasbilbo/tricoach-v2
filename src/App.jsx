@@ -63,6 +63,9 @@ function App() {
         if (res.ok) {
           const { cycle } = await res.json()
           if (cycle) setActiveCycle(cycle)
+        } else {
+          const body = await res.json().catch(() => ({}))
+          console.error('[App] create-cycle failed:', res.status, body.error)
         }
       }
     } catch (e) {
