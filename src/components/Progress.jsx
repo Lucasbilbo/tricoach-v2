@@ -148,7 +148,108 @@ function formatFecha(fechaStr) {
   return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
 }
 
-export default function Progress({ userId, profile, onNavigate }) {
+const FASE_COLORS_PROGRESO = {
+  base:  '#10B981',
+  build: '#3B8BD4',
+  peak:  '#FF6B2B',
+  taper: '#8B5CF6',
+}
+
+function TimelineMacrociclo({ cycle }) {
+  if (!cycle || !Array.isArray(cycle.fases) || cycle.fases.length === 0) return null
+
+  const hoyStr = new Date().toISOString().split('T')[0]
+  const semanaActual = Math.max(1, Math.round((new Date(hoyStr) - new Date(cycle.fecha_inicio)) / (7 * 24 * 60 * 60 * 1000)) + 1)
+
+  return (
+    <div style={{
+      background: 'var(--card)',
+      border: '1px solid var(--border)',
+      borderRadius: 12,
+      padding: '16px 16px 12px',
+      marginBottom: 12,
+    }}>
+      <p style={{
+        fontSize: 11,
+        textTransform: 'uppercase',
+        letterSpacing: '0.08em',
+        fontWeight: 600,
+        color: 'var(--muted-foreground)',
+        marginBottom: 12,
+      }}>
+        Macrociclo · Semana {semanaActual} de {cycle.semanas_totales}
+      </p>
+
+      <div style={{ display: 'flex', gap: 3, marginBottom: 8 }}>
+        {cycle.fases.map((fase) => {
+          const semsInFase = fase.sem_fin - fase.sem_inicio + 1
+          const flexVal = semsInFase / cycle.semanas_totales
+          const isActual = semanaActual >= fase.sem_inicio && semanaActual <= fase.sem_fin
+          const isPasada = semanaActual > fase.sem_fin
+          const color = FASE_COLORS_PROGRESO[fase.nombre] || '#374151'
+
+          return (
+            <div
+              key={fase.nombre}
+              style={{
+                flex: flexVal,
+                position: 'relative',
+              }}
+            >
+              <div style={{
+                background: color,
+                opacity: isPasada ? 0.35 : 1,
+                borderRadius: 6,
+                padding: '8px 4px 7px',
+                textAlign: 'center',
+                border: isActual ? `2px solid ${color}` : '2px solid transparent',
+                boxShadow: isActual ? `0 0 10px ${color}40` : 'none',
+                transition: 'all 0.2s',
+              }}>
+                <div style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: '#fff',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  lineHeight: 1.2,
+                }}>
+                  {fase.nombre}
+                </div>
+                <div style={{
+                  fontSize: 9,
+                  color: 'rgba(255,255,255,0.75)',
+                  marginTop: 2,
+                }}>
+                  {semsInFase}s
+                </div>
+              </div>
+              {isActual && (
+                <div style={{
+                  textAlign: 'center',
+                  marginTop: 4,
+                  fontSize: 9,
+                  color: color,
+                  fontWeight: 700,
+                }}>
+                  ← aquí
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {cycle.carrera_nombre && (
+        <p style={{ fontSize: 11, color: 'var(--muted-foreground)', textAlign: 'right', marginTop: 2 }}>
+          🏁 {cycle.carrera_nombre}
+        </p>
+      )}
+    </div>
+  )
+}
+
+export default function Progress({ userId, profile, activeCycle, onNavigate }) {
   const [planes, setPlanes] = useState(null)
   const [actividades, setActividades] = useState(null) // null=no cargado, []= vacío, [...]= datos
   const [loadingActividades, setLoadingActividades] = useState(false)
@@ -254,6 +355,9 @@ export default function Progress({ userId, profile, onNavigate }) {
             )}
           </div>
         )}
+
+        {/* Macrocycle timeline */}
+        {activeCycle && <TimelineMacrociclo cycle={activeCycle} />}
 
         {/* Countdown */}
         {dias !== null && (

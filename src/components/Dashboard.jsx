@@ -106,7 +106,14 @@ function getCarreraBadge(sesion, profile) {
   return carreraRelacionada.nombre || carreraRelacionada.tipo || null
 }
 
-export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate, onNavigate }) {
+const FASE_COLORS = {
+  base: '#10B981',
+  build: '#3B8BD4',
+  peak: '#FF6B2B',
+  taper: '#8B5CF6',
+}
+
+export default function Dashboard({ userId, plan, profile, activeCycle, loading, onPlanUpdate, onNavigate }) {
   const [completando, setCompletando] = useState(false)
   const [rpe, setRpe] = useState(6)
   const [showMovilidad, setShowMovilidad] = useState(false)
@@ -433,6 +440,76 @@ export default function Dashboard({ userId, plan, profile, loading, onPlanUpdate
             </button>
           </div>
         )}
+
+        {/* Macrocycle bar */}
+        {!loading && activeCycle && (() => {
+          const semanaActual = Math.max(1, Math.round((new Date() - new Date(activeCycle.fecha_inicio)) / (7 * 24 * 60 * 60 * 1000)) + 1)
+          const faseActual = activeCycle.fases?.find(f => semanaActual >= f.sem_inicio && semanaActual <= f.sem_fin) || activeCycle.fases?.[0]
+          const esDescargaW = faseActual && faseActual.nombre !== 'taper' && semanaActual % 4 === 0
+          const semanasRestantes = Math.max(0, activeCycle.semanas_totales - semanaActual)
+          const pct = Math.min(100, Math.round((semanaActual / activeCycle.semanas_totales) * 100))
+          const faseColor = FASE_COLORS[faseActual?.nombre] || 'var(--primary)'
+
+          return (
+            <div style={{
+              background: 'var(--card)',
+              border: '1px solid var(--border)',
+              borderRadius: 12,
+              padding: '14px 16px',
+              marginBottom: 12,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>
+                  Semana {semanaActual} de {activeCycle.semanas_totales}
+                </span>
+                <span style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: faseColor,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                }}>
+                  Fase {faseActual?.nombre || '–'}
+                </span>
+              </div>
+              <div style={{
+                height: 6,
+                background: 'var(--secondary)',
+                borderRadius: 99,
+                overflow: 'hidden',
+                marginBottom: 8,
+              }}>
+                <div style={{
+                  height: '100%',
+                  width: `${pct}%`,
+                  background: faseColor,
+                  borderRadius: 99,
+                  transition: 'width 0.6s ease',
+                }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>
+                  {activeCycle.carrera_nombre
+                    ? `${semanasRestantes} semana${semanasRestantes !== 1 ? 's' : ''} para ${activeCycle.carrera_nombre}`
+                    : 'Ciclo general'}
+                </span>
+                {esDescargaW && (
+                  <span style={{
+                    fontSize: 10,
+                    background: 'rgba(249,115,22,0.15)',
+                    color: '#f97316',
+                    border: '1px solid rgba(249,115,22,0.3)',
+                    borderRadius: 99,
+                    padding: '2px 8px',
+                    fontWeight: 600,
+                  }}>
+                    Semana de descarga
+                  </span>
+                )}
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Today's session */}
         {!loading && sesionHoy && (

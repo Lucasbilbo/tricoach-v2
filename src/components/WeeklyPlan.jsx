@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { generatePlan, getPlanForWeek, getNextWeekStart, markSessionComplete, adjustPlan, analizarPlan } from '../lib/plans'
+import { generatePlan, getPlanForWeek, getNextWeekStart, adjustPlan, analizarPlan } from '../lib/plans'
+import ModalCompletarSesion from './ModalCompletarSesion'
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 
@@ -50,6 +51,7 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
   const [showCoachBadge, setShowCoachBadge] = useState(false)
   const [completando, setCompletando] = useState(null)
   const [rpe, setRpe] = useState(5)
+  const [sesionParaCompletar, setSesionParaCompletar] = useState(null)
   const [ajustando, setAjustando] = useState(false)
   const [diaInicio, setDiaInicio] = useState(String(_todayDate.getDate()))
   const [mesInicio, setMesInicio] = useState(MESES[_todayDate.getMonth()])
@@ -801,6 +803,42 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
           </div>
         )}
 
+        {/* Week objective header */}
+        {displayedPlan?.fase && (
+          <div style={{
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+            borderRadius: 10,
+            padding: '10px 14px',
+            marginBottom: 10,
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 10,
+          }}>
+            <span style={{
+              fontSize: 10,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              color: {
+                base: '#10B981',
+                build: '#3B8BD4',
+                peak: '#FF6B2B',
+                taper: '#8B5CF6',
+              }[displayedPlan.fase] || 'var(--primary)',
+              whiteSpace: 'nowrap',
+              paddingTop: 1,
+            }}>
+              {displayedPlan.numero_semana ? `Sem ${displayedPlan.numero_semana} ·` : ''} {displayedPlan.fase.toUpperCase()}
+            </span>
+            {displayedPlan.objetivo_semana && (
+              <span style={{ fontSize: 12, color: 'var(--muted-foreground)', lineHeight: 1.4 }}>
+                {displayedPlan.objetivo_semana}
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Sessions */}
         {(!viendoProxima || (viendoProxima && displayedPlan)) && !loadingProxima && displayedPlan?.sesiones?.map((sesion) => {
           const esHoy = sesion.dia === today && !esSemanaPasada && !esPlanFuturo && !viendoProxima
@@ -863,17 +901,73 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
                         TEST
                       </span>
                     )}
-                    <span style={{ color: 'var(--muted-foreground)', fontSize: 13 }}>{sesion.tipo}</span>
+                    <span style={{ color: 'var(--muted-foreground)', fontSize: 13 }}>
+                      {sesion.subtipo || sesion.tipo}
+                    </span>
                     {sesion.duracion_min > 0 && (
                       <span style={{ color: 'var(--muted-foreground)', fontSize: 12 }}>· {sesion.duracion_min} min</span>
                     )}
+                    {sesion.zona_objetivo && (
+                      <span style={{
+                        fontSize: 10,
+                        background: 'var(--secondary)',
+                        color: 'var(--muted-foreground)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 99,
+                        padding: '1px 7px',
+                        fontWeight: 600,
+                      }}>
+                        {sesion.zona_objetivo}
+                      </span>
+                    )}
+                    {sesion.intensidad && sesion.intensidad !== 'descanso' && (
+                      <span style={{
+                        fontSize: 10,
+                        background: `${sportColor}15`,
+                        color: sportColor,
+                        border: `1px solid ${sportColor}30`,
+                        borderRadius: 99,
+                        padding: '1px 7px',
+                        fontWeight: 600,
+                      }}>
+                        {sesion.intensidad}
+                      </span>
+                    )}
                   </div>
-                  {sesion.descripcion && (
+                  {(sesion.estructura || sesion.descripcion) && (
                     expanded ? (
                       <div>
-                        <p style={{ color: 'var(--muted-foreground)', fontSize: 13, lineHeight: 1.5, marginTop: 6 }}>
-                          {sesion.descripcion}
-                        </p>
+                        {sesion.estructura ? (
+                          <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {sesion.estructura.calentamiento && (
+                              <div style={{ fontSize: 12, color: 'var(--muted-foreground)', lineHeight: 1.5 }}>
+                                <span style={{ fontWeight: 600 }}>🔥 Calentamiento</span><br />
+                                {sesion.estructura.calentamiento}
+                              </div>
+                            )}
+                            {sesion.estructura.principal && (
+                              <div style={{ fontSize: 12, color: 'var(--foreground)', lineHeight: 1.5 }}>
+                                <span style={{ fontWeight: 600 }}>💪 Principal</span><br />
+                                {sesion.estructura.principal}
+                              </div>
+                            )}
+                            {sesion.estructura.vuelta_calma && (
+                              <div style={{ fontSize: 12, color: 'var(--muted-foreground)', lineHeight: 1.5 }}>
+                                <span style={{ fontWeight: 600 }}>🧘 Vuelta a la calma</span><br />
+                                {sesion.estructura.vuelta_calma}
+                              </div>
+                            )}
+                            {sesion.estructura.rpe_objetivo && (
+                              <div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginTop: 2 }}>
+                                RPE objetivo: <strong>{sesion.estructura.rpe_objetivo}</strong>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <p style={{ color: 'var(--muted-foreground)', fontSize: 13, lineHeight: 1.5, marginTop: 6 }}>
+                            {sesion.descripcion}
+                          </p>
+                        )}
                         {sesion.tipo !== 'Descanso' && (
                           <button
                             onClick={() => toggleDesc(sesion.dia)}
@@ -917,80 +1011,22 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
                       ✓{sesion.rpe ? ` RPE ${sesion.rpe}` : ''}
                     </span>
                   ) : sesion.tipo !== 'Descanso' && !esSemanaPasada && (
-                    completando === sesion.dia ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>RPE</span>
-                          <select
-                            value={rpe}
-                            onChange={e => setRpe(Number(e.target.value))}
-                            style={{
-                              background: 'var(--input)',
-                              border: '1px solid var(--border)',
-                              borderRadius: 6,
-                              color: 'var(--foreground)',
-                              fontFamily: 'var(--font-sans)',
-                              fontSize: 13,
-                              padding: '2px 6px',
-                            }}
-                          >
-                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
-                              <option key={n} value={n}>{n}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div style={{ display: 'flex', gap: 4 }}>
-                          <button
-                            onClick={() => handleCompletar(sesion.dia)}
-                            style={{
-                              background: 'var(--success)',
-                              color: 'var(--success-foreground)',
-                              border: 'none',
-                              borderRadius: 6,
-                              padding: '4px 10px',
-                              fontSize: 12,
-                              fontWeight: 600,
-                              cursor: 'pointer',
-                              fontFamily: 'var(--font-sans)',
-                            }}
-                          >
-                            Guardar
-                          </button>
-                          <button
-                            onClick={() => setCompletando(null)}
-                            style={{
-                              background: 'var(--secondary)',
-                              border: '1px solid var(--border)',
-                              borderRadius: 6,
-                              color: 'var(--muted-foreground)',
-                              padding: '4px 8px',
-                              fontSize: 12,
-                              cursor: 'pointer',
-                              fontFamily: 'var(--font-sans)',
-                            }}
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => { setRpe(5); setCompletando(sesion.dia) }}
-                        style={{
-                          background: 'var(--secondary)',
-                          border: '1px solid var(--border)',
-                          borderRadius: 8,
-                          color: 'var(--foreground)',
-                          fontSize: 12,
-                          padding: '5px 10px',
-                          cursor: 'pointer',
-                          fontFamily: 'var(--font-sans)',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        ✓ Completar
-                      </button>
-                    )
+                    <button
+                      onClick={() => setSesionParaCompletar(sesion)}
+                      style={{
+                        background: 'var(--secondary)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 8,
+                        color: 'var(--foreground)',
+                        fontSize: 12,
+                        padding: '5px 10px',
+                        cursor: 'pointer',
+                        fontFamily: 'var(--font-sans)',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      ✓ Completar
+                    </button>
                   )}
                 </div>
               </div>
@@ -1104,6 +1140,19 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
             </div>
           </div>
         </div>
+      )}
+
+      {sesionParaCompletar && displayedPlan?.id && (
+        <ModalCompletarSesion
+          sesion={sesionParaCompletar}
+          planId={displayedPlan.id}
+          profile={profile}
+          onClose={() => setSesionParaCompletar(null)}
+          onComplete={(updatedPlan) => {
+            if (updatedPlan) onPlanUpdate(updatedPlan)
+            setSesionParaCompletar(null)
+          }}
+        />
       )}
     </div>
   )
