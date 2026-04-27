@@ -258,3 +258,6 @@ Validación Free/Pro siempre en **backend** (claude.js, generate-plan.js) — nu
 
 ## Referencia de diseño
 Lee DESIGN.md para el sistema de diseño de referencia (Linear.app).
+
+## Documentación de arquitectura
+Lee SPEC.md antes de cualquier tarea relacionada con macrociclos, planes, sesiones o training_cycles.
