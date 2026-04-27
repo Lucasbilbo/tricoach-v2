@@ -144,4 +144,70 @@ describe('System Prompt dinámico', () => {
     const prompt = buildSystemPrompt(profile, 'cercano', null, null, null, historial)
     expect(prompt).not.toContain('ALERTA FATIGA')
   })
+
+  it('con cycle activo, el prompt incluye MACROCICLO', () => {
+    const profile = { nombre: 'Lucas', deporte: 'running', nivel: 'intermedio', objetivo: 'bajar de 50min' }
+    const cycle = {
+      fecha_inicio: '2026-01-05',
+      semanas_totales: 16,
+      carrera_nombre: 'Maratón Valencia',
+      fases: [
+        { nombre: 'base',  sem_inicio: 1,  sem_fin: 5,  objetivo: 'Construir base aeróbica' },
+        { nombre: 'build', sem_inicio: 6,  sem_fin: 11, objetivo: 'Desarrollar umbral' },
+        { nombre: 'peak',  sem_inicio: 12, sem_fin: 14, objetivo: 'Máxima intensidad' },
+        { nombre: 'taper', sem_inicio: 15, sem_fin: 16, objetivo: 'Reducir volumen' },
+      ],
+    }
+    const prompt = buildSystemPrompt(profile, 'cercano', null, null, null, [], cycle)
+    expect(prompt).toContain('MACROCICLO')
+    expect(prompt).toContain('Maratón Valencia')
+  })
+
+  it('con cycle en fase taper, el prompt incluye TAPER', () => {
+    const profile = { nombre: 'Lucas', deporte: 'running', nivel: 'intermedio', objetivo: 'bajar de 50min' }
+    // Set fecha_inicio so current week falls in taper (week 15-16 of 16)
+    const hoy = new Date()
+    const fechaInicioTaper = new Date(hoy)
+    fechaInicioTaper.setDate(hoy.getDate() - 14 * 7) // 14 weeks ago → we're at week 15
+    const cycle = {
+      fecha_inicio: fechaInicioTaper.toISOString().split('T')[0],
+      semanas_totales: 16,
+      carrera_nombre: 'Carrera test',
+      fases: [
+        { nombre: 'base',  sem_inicio: 1,  sem_fin: 5,  objetivo: 'Base' },
+        { nombre: 'build', sem_inicio: 6,  sem_fin: 11, objetivo: 'Build' },
+        { nombre: 'peak',  sem_inicio: 12, sem_fin: 14, objetivo: 'Peak' },
+        { nombre: 'taper', sem_inicio: 15, sem_fin: 16, objetivo: 'Taper' },
+      ],
+    }
+    const prompt = buildSystemPrompt(profile, 'cercano', null, null, null, [], cycle)
+    expect(prompt).toContain('TAPER')
+  })
+
+  it('con fc_maxima en perfil, el prompt incluye las zonas calculadas', () => {
+    const profile = {
+      nombre: 'Lucas', deporte: 'running', nivel: 'intermedio', objetivo: 'bajar de 50min',
+      fc_maxima: 180,
+    }
+    const cycle = {
+      fecha_inicio: '2026-01-05',
+      semanas_totales: 12,
+      carrera_nombre: null,
+      fases: [
+        { nombre: 'base',  sem_inicio: 1, sem_fin: 6,  objetivo: 'Base' },
+        { nombre: 'build', sem_inicio: 7, sem_fin: 10, objetivo: 'Build' },
+        { nombre: 'peak',  sem_inicio: 11, sem_fin: 11, objetivo: 'Peak' },
+        { nombre: 'taper', sem_inicio: 12, sem_fin: 12, objetivo: 'Taper' },
+      ],
+    }
+    const prompt = buildSystemPrompt(profile, 'cercano', null, null, null, [], cycle)
+    expect(prompt).toContain('180bpm')
+    expect(prompt).toContain('ZONAS DE ENTRENAMIENTO')
+  })
+
+  it('sin cycle, el prompt NO incluye MACROCICLO', () => {
+    const profile = { nombre: 'Lucas', deporte: 'running', nivel: 'intermedio', objetivo: 'bajar de 50min' }
+    const prompt = buildSystemPrompt(profile, 'cercano', null, null, null, [], null)
+    expect(prompt).not.toContain('MACROCICLO')
+  })
 })

@@ -1,3 +1,17 @@
+function calcularAdherencia(historialPlanes) {
+  const ultimas4 = historialPlanes.slice(0, 4)
+  if (!ultimas4.length) return null
+  const sesionesActivas = ultimas4.flatMap(p => (p.sesiones || []).filter(s => s.tipo !== 'Descanso' && s.intensidad !== 'descanso'))
+  const completadas = sesionesActivas.filter(s => s.completada)
+  const rpesValidos = completadas.filter(s => s.rpe_usuario != null)
+  return {
+    porcentaje: sesionesActivas.length ? Math.round(completadas.length / sesionesActivas.length * 100) : null,
+    completadas: completadas.length,
+    total: sesionesActivas.length,
+    rpeMedio: rpesValidos.length ? Math.round(rpesValidos.reduce((a, s) => a + s.rpe_usuario, 0) / rpesValidos.length * 10) / 10 : null,
+  }
+}
+
 const personalidades = {
   cercano: `Eres cercano, empático y motivador. Tratas al atleta como a un amigo.
 Usas un tono cálido y personal, celebras sus logros y le apoyas en los momentos difíciles.`,
@@ -17,7 +31,7 @@ Usas frases poderosas, referencias a grandes atletas y haces que el usuario sien
 Cada recomendación tiene una razón fisiológica. Usas métricas exactas: zonas de FC (Z1-Z5), ritmos por km, vatios, V̇O2max, velocidad crítica, umbrales. Cuando el atleta te da resultados de entrenamientos, los analizas numéricamente. No das motivación vacía — das datos, progresión medible y explicaciones de por qué cada sesión tiene sentido fisiológicamente. Hablas de forma precisa y directa. Cuando no tienes datos suficientes, lo dices y pides los que necesitas.`,
 }
 
-export function buildSystemPrompt(profile, personalidad = 'cercano', actividades = null, plan = null, planProximaSemana = null, historialPlanes = []) {
+export function buildSystemPrompt(profile, personalidad = 'cercano', actividades = null, plan = null, planProximaSemana = null, historialPlanes = [], cycle = null) {
   const ahora = new Date().toLocaleDateString('es-ES', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
     timeZone: 'Europe/Madrid'
@@ -297,6 +311,59 @@ SUPLEMENTOS con evidencia sólida (mencionar solo si relevante):
 IMPORTANTE: Tono natural, no clínico. No das listas de macros sin que te pregunten. Integras la nutrición de forma conversacional cuando añade valor real.`
   })() : ''
 
+  const macrocicloSection = cycle && Array.isArray(cycle.fases) && cycle.fases.length > 0 ? (() => {
+    const adherencia = calcularAdherencia(historialPlanes)
+    const planAnterior = historialPlanes[0]
+    const volumenAnterior = planAnterior
+      ? (planAnterior.volumen_real_min || planAnterior.volumen_planificado_min || 0)
+      : 0
+
+    const hoyStr = new Date().toISOString().split('T')[0]
+    const semanaActual = Math.max(1, Math.round((new Date(hoyStr) - new Date(cycle.fecha_inicio)) / (7 * 24 * 60 * 60 * 1000)) + 1)
+    const faseActual = cycle.fases.find(f => semanaActual >= f.sem_inicio && semanaActual <= f.sem_fin) || cycle.fases[0]
+    const semanasRestantes = cycle.semanas_totales - semanaActual
+    const esTaper = faseActual.nombre === 'taper'
+    const esDescarga = semanaActual % 4 === 0 && !esTaper
+
+    const fc = profile.fc_maxima
+    const zonasFC = fc
+      ? `FC máx: ${fc}bpm → Z1: <${Math.round(fc * 0.6)}bpm, Z2: ${Math.round(fc * 0.6)}-${Math.round(fc * 0.75)}bpm, Z3: ${Math.round(fc * 0.75)}-${Math.round(fc * 0.85)}bpm, Z4: ${Math.round(fc * 0.85)}-${Math.round(fc * 0.92)}bpm, Z5: >${Math.round(fc * 0.92)}bpm`
+      : ''
+
+    function sumarSegPace(pace, seg) {
+      if (!pace) return null
+      const [m, s] = pace.split(':').map(Number)
+      const total = m * 60 + s + seg
+      return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`
+    }
+    const p5k = profile.pace_5k
+    const zonasRun = p5k
+      ? `Pace 5K: ${p5k}/km → Z2: ${sumarSegPace(p5k, 80)}-${sumarSegPace(p5k, 100)}/km, Umbral: ${sumarSegPace(p5k, 30)}-${sumarSegPace(p5k, 45)}/km`
+      : ''
+    const ftp = profile.ftp_bici
+    const zonasBici = ftp
+      ? `FTP bici: ${ftp}W → Z2: ${Math.round(ftp * 0.55)}-${Math.round(ftp * 0.74)}W, Z4: ${Math.round(ftp * 0.84)}-${Math.round(ftp * 0.97)}W`
+      : ''
+
+    const zonasSection = zonasFC || zonasRun || zonasBici
+      ? `ZONAS DE ENTRENAMIENTO DEL ATLETA:\n${[zonasFC, zonasRun, zonasBici].filter(Boolean).join('\n')}`
+      : 'Sin datos de rendimiento calibrados aún. Puedes pedirle al atleta sus resultados de un test de 5K o su FC máxima para personalizar las zonas.'
+
+    return `\nMACROCICLO DEL ATLETA:
+Semana ${semanaActual} de ${cycle.semanas_totales} · Fase: ${faseActual.nombre.toUpperCase()}
+Objetivo de la fase: ${faseActual.objetivo}
+${esDescarga ? '⚠️ SEMANA DE DESCARGA: volumen reducido 15-20%, sin sesiones intensas.' : ''}${esTaper ? `⚠️ MODO TAPER: ${semanasRestantes} semana${semanasRestantes !== 1 ? 's' : ''} para la carrera. Prioriza frescura. El trabajo ya está hecho.` : `Semanas restantes del ciclo: ${semanasRestantes}`}
+${cycle.carrera_nombre ? `Carrera objetivo: ${cycle.carrera_nombre}` : 'Sin carrera objetivo (ciclo genérico)'}
+
+PROGRESIÓN:
+${adherencia ? `Adherencia últimas 4 semanas: ${adherencia.porcentaje}% (${adherencia.completadas}/${adherencia.total} sesiones)` : 'Sin historial suficiente aún.'}
+${adherencia?.rpeMedio ? `RPE medio último mes: ${adherencia.rpeMedio}/10` : ''}
+Volumen semana anterior: ${volumenAnterior ? `${volumenAnterior}min` : 'sin datos'}
+${plan ? `Volumen planificado esta semana: ${plan.volumen_planificado_min || 0}min` : ''}
+
+${zonasSection}`
+  })() : ''
+
   const ajusteInstructions = plan ? `
 AJUSTE DE PLAN:
 Cuando el usuario pida cambiar el plan, propón el ajuste concreto explicando qué cambiarías y por qué. El sistema mostrará automáticamente un botón para aplicar el cambio.
@@ -307,7 +374,7 @@ IMPORTANTE: Nunca generes un plan semanal completo en el chat. Si el atleta pide
 Tu nombre es ${nombreCoach}. El usuario te llama así.${natacionContext}
 HOY ES: ${ahora}. Nunca preguntes al usuario qué día es.
 Tu atleta se llama ${nombre}, tiene nivel ${nivel} y su objetivo es: ${objetivo}.
-${fechaCarrera}${multiDeporteSection}${todasCarrerasSection}
+${fechaCarrera}${multiDeporteSection}${todasCarrerasSection}${macrocicloSection}
 ${contexto}
 
 ${estiloPersonalidad}

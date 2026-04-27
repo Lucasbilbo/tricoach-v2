@@ -54,7 +54,7 @@ const MicIcon = () => (
 
 const soportaVoz = typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)
 
-export default function Chat({ userId, profile, plan, planProximaSemana, historialPlanes, personalidad, onPersonalidadChange, onShowUpgrade, onPlanUpdate, prefillMessage }) {
+export default function Chat({ userId, profile, activeCycle, plan, planProximaSemana, historialPlanes, personalidad, onPersonalidadChange, onShowUpgrade, onPlanUpdate, prefillMessage }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -117,7 +117,7 @@ export default function Chat({ userId, profile, plan, planProximaSemana, histori
       const updatedMessages = [...messages, { role: 'user', content: userMessage }]
       setMessages(updatedMessages)
 
-      const systemPrompt = buildSystemPrompt(profile, profile.personalidad || 'cercano', stravaData, plan, planProximaSemana, historialPlanes || [])
+      const systemPrompt = buildSystemPrompt(profile, profile.personalidad || 'cercano', stravaData, plan, planProximaSemana, historialPlanes || [], activeCycle || null)
 
       const response = await fetch('/.netlify/functions/claude', {
         method: 'POST',
