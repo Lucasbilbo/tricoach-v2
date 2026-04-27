@@ -64,7 +64,7 @@ function supabasePatch(hostname, path, key, body) {
 function callClaude(apiKey, systemPrompt, userMessage) {
   const body = JSON.stringify({
     model: CLAUDE_MODEL,
-    max_tokens: 1500,
+    max_tokens: 2500,
     system: systemPrompt,
     messages: [{ role: 'user', content: userMessage }]
   });
@@ -92,6 +92,26 @@ function callClaude(apiKey, systemPrompt, userMessage) {
     req.write(body);
     req.end();
   });
+}
+
+function migrarSesionAntigua(s) {
+  if (s.estructura) return s;
+  return {
+    ...s,
+    subtipo: s.tipo,
+    distancia_km: null,
+    zona_objetivo: s.intensidad === 'suave' ? 'Z1-Z2' : s.intensidad === 'moderada' ? 'Z3-Z4' : 'Z4-Z5',
+    estructura: {
+      calentamiento: 'Calentamiento general 10min.',
+      principal: s.descripcion,
+      vuelta_calma: 'Vuelta a la calma y estiramientos.',
+      rpe_objetivo: s.intensidad === 'suave' ? '4-5' : s.intensidad === 'moderada' ? '6-7' : '7-8',
+    },
+    tiempo_real_min: null,
+    distancia_real_km: null,
+    fc_media_real: null,
+    notas_usuario: null,
+  };
 }
 
 function buildMotivoPrompt(motivo, descripcion, pendientesStr) {
@@ -157,12 +177,10 @@ exports.handler = async (event) => {
 
   const sesiones = planActual.sesiones || [];
   const completadas = sesiones.filter(s => s.completada);
-  const pendientes = sesiones.filter(s => !s.completada && s.tipo?.toLowerCase() !== 'descanso');
+  const pendientes = sesiones
+    .filter(s => !s.completada && s.tipo?.toLowerCase() !== 'descanso')
+    .map(migrarSesionAntigua);
   const pendientesStr = pendientes.map(s => `${s.dia}: ${s.tipo} (${s.duracion_min}min)`).join(', ') || 'Ninguna pendiente';
-
-  const sesionesResumen = sesiones.map(s =>
-    `${s.dia}: ${s.tipo} ${s.duracion_min}min [${s.completada ? '✓ completada' : 'pendiente'}]`
-  ).join('\n');
 
   const motivoPrompt = buildMotivoPrompt(motivo, descripcion, pendientesStr);
 
@@ -176,10 +194,19 @@ Instrucción: devuelve SOLO un JSON válido, sin texto adicional, sin markdown, 
     hyrox: 'Hyrox',
   };
 
+  const sesionesResumenConEstructura = sesiones.map(s => {
+    const migrada = migrarSesionAntigua(s);
+    const base = `${migrada.dia}: ${migrada.tipo} ${migrada.duracion_min}min [${migrada.completada ? '✓ completada' : 'pendiente'}]`;
+    if (!migrada.completada && migrada.estructura) {
+      return `${base}\n  Principal: ${migrada.estructura.principal?.substring(0, 80)}`;
+    }
+    return base;
+  }).join('\n');
+
   const userMessage = `Ajusta el plan semanal de este atleta de ${deporteInfo[profile.deporte] || 'deporte de resistencia'} (nivel ${profile.nivel || 'principiante'}).
 
 Plan actual:
-${sesionesResumen}
+${sesionesResumenConEstructura}
 
 Sesiones ya completadas: ${completadas.length}
 
@@ -187,18 +214,32 @@ Situación: ${motivoPrompt}
 
 Devuelve el plan ajustado manteniendo las sesiones completadas tal como están (con completada: true) y ajustando solo las pendientes.
 
-El JSON debe tener esta estructura exacta (7 sesiones, Lunes a Domingo):
+El JSON debe tener esta estructura exacta (7 sesiones, Lunes a Domingo). El campo "estructura" es OBLIGATORIO para sesiones no-descanso ajustadas:
 {
   "semana": "${planActual.semana}",
   "sesiones": [
-    { "dia": "Lunes", "tipo": "Correr", "descripcion": "...", "duracion_min": 45, "intensidad": "suave" },
-    ...
+    {
+      "dia": "Lunes",
+      "tipo": "Correr",
+      "subtipo": "Rodaje Z2",
+      "duracion_min": 45,
+      "intensidad": "suave",
+      "distancia_km": 6,
+      "zona_objetivo": "Z1-Z2",
+      "estructura": {
+        "calentamiento": "10min trote suave Z1",
+        "principal": "30min rodaje Z2 a 5:45/km",
+        "vuelta_calma": "5min andar + estiramientos",
+        "rpe_objetivo": "5-6"
+      }
+    }
   ]
 }
 
 tipos posibles: "Correr", "Bici", "Nadar", "Fuerza", "Brick", "Descanso"
 intensidades posibles: "suave", "moderada", "fuerte", "descanso"
-Conserva el campo "completada: true" en las sesiones ya completadas.`;
+zona_objetivo posibles: "Z1-Z2", "Z2-Z3", "Z3-Z4", "Z4-Z5" (null para Descanso)
+Conserva el campo "completada: true" y TODOS los campos originales (incluyendo estructura) en las sesiones ya completadas.`;
 
   const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
   if (!ANTHROPIC_KEY) {

@@ -99,7 +99,7 @@ function withTimeout(promise, ms, errorMsg) {
 function callClaude(apiKey, systemPrompt, userMessage) {
   const body = JSON.stringify({
     model: CLAUDE_MODEL,
-    max_tokens: 2000,
+    max_tokens: 3000,
     system: systemPrompt,
     messages: [{ role: 'user', content: userMessage }]
   });
@@ -268,6 +268,22 @@ ${esSemanaDescarga
 - Si RPE medio < 5 y completadas >= ${activas.length}: se puede aumentar carga un 10%`;
 }
 
+// ─── Macrocycle helpers (inlined — cannot import from src/ in CommonJS) ───────
+
+function getNumeroSemanaInline(fechaInicio, fechaSemana) {
+  const diff = new Date(fechaSemana) - new Date(fechaInicio);
+  return Math.round(diff / (7 * 24 * 60 * 60 * 1000)) + 1;
+}
+
+function getFaseActualInline(fases, numeroSemana) {
+  return fases.find(f => numeroSemana >= f.sem_inicio && numeroSemana <= f.sem_fin) || fases[0];
+}
+
+function esSemanaDescargaInline(numeroSemana, fase) {
+  if (fase.nombre === 'taper') return false;
+  return numeroSemana % 4 === 0;
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS, body: 'Method Not Allowed' };
@@ -307,6 +323,14 @@ exports.handler = async (event) => {
   if (!profile) {
     return { statusCode: 404, headers: CORS, body: JSON.stringify({ error: 'Perfil no encontrado' }) };
   }
+
+  // Obtener ciclo de entrenamiento activo
+  const cycleRows = await supabaseGet(
+    hostname,
+    `/rest/v1/training_cycles?user_id=eq.${userId}&estado=eq.active&order=created_at.desc&limit=1`,
+    supabaseKey
+  );
+  const activeCycle = Array.isArray(cycleRows) && cycleRows[0] ? cycleRows[0] : null;
 
   const isPro = profile.plan === 'pro';
 
@@ -384,9 +408,27 @@ Prioridad: llegar fresco al día de la carrera. Reduce volumen 30-50%, mantén a
   // Plan anterior = plan más reciente anterior a la semana actual que se está generando
   const planAnteriorEfectivo = planesArr.find(p => p.semana < weekStart) || planAnterior || null;
 
-  // Número de semana desde el registro del usuario
-  const numeroDeSemana = profile.created_at
-    ? Math.max(1, Math.round((new Date(weekStart) - new Date(profile.created_at)) / (7 * 24 * 60 * 60 * 1000)) + 1)
+  // Número de semana y contexto de macrociclo
+  let numeroDeSemana = null;
+  let faseActual = null;
+  let esDescarga = false;
+  if (activeCycle && Array.isArray(activeCycle.fases) && activeCycle.fases.length > 0) {
+    numeroDeSemana = getNumeroSemanaInline(activeCycle.fecha_inicio, weekStart);
+    faseActual = getFaseActualInline(activeCycle.fases, numeroDeSemana);
+    esDescarga = esSemanaDescargaInline(numeroDeSemana, faseActual);
+  } else if (profile.created_at) {
+    numeroDeSemana = Math.max(1, Math.round((new Date(weekStart) - new Date(profile.created_at)) / (7 * 24 * 60 * 60 * 1000)) + 1);
+  }
+
+  // Adherencia últimas semanas (de los planes ya cargados)
+  const adherenciaStats = planesArr.reduce((acc, p) => {
+    const ses = p.sesiones || [];
+    const activas = ses.filter(s => s.tipo?.toLowerCase() !== 'descanso');
+    const completadas = ses.filter(s => s.completada);
+    return { completadas: acc.completadas + completadas.length, total: acc.total + activas.length };
+  }, { completadas: 0, total: 0 });
+  const adherenciaPct = adherenciaStats.total > 0
+    ? Math.round((adherenciaStats.completadas / adherenciaStats.total) * 100)
     : null;
 
   const deporteInfo = {
@@ -408,7 +450,6 @@ Instrucción: devuelve SOLO un JSON válido, sin texto adicional, sin markdown, 
     const analisisSection = planAnteriorEfectivo
       ? '\n\n' + buildAnalisisSemanaAnterior(planAnteriorEfectivo, stravaParaAnalisis, numeroDeSemana)
       : '';
-    const semanaLabel = numeroDeSemana ? `Semana ${numeroDeSemana} del plan del atleta.` : '';
 
     // Multi-deporte: construir descripción de deportes y carreras
     const deportesTexto = deportesEfectivos.length > 1
@@ -431,6 +472,19 @@ Nunca más de 2 días seguidos del mismo deporte.` : '';
       ? `\n\nCONTEXTO ESPECIAL ESTA SEMANA (tiene prioridad):\n${contexto_semana}\nAdapta el plan teniendo en cuenta esta información.`
       : '';
 
+    const macrocicloSection = activeCycle && faseActual ? `
+
+CONTEXTO DEL MACROCICLO:
+- Semana ${numeroDeSemana} de ${activeCycle.semanas_totales}
+- Fase: ${faseActual.nombre.toUpperCase()} — ${faseActual.objetivo}
+${esDescarga ? '⚠️ SEMANA DE DESCARGA: reducir volumen 20-30% respecto a semanas previas, mantener algo de intensidad corta, priorizar recuperación.' : ''}${adherenciaPct !== null ? `\n- Adherencia reciente: ${adherenciaPct}% de sesiones completadas${adherenciaPct < 70 ? ' — carga conservadora esta semana, no aumentar volumen' : ''}` : ''}
+- Carrera objetivo: ${activeCycle.carrera_nombre || 'Sin carrera definida'}${activeCycle.fecha_carrera ? ` — ${activeCycle.fecha_carrera}` : ''}
+
+DURACIONES RECOMENDADAS PARA FASE ${faseActual.nombre.toUpperCase()}:
+${faseActual.nombre === 'base' ? '- Sesiones activas: 35-75 min. Predomina Z1-Z2. Sin alta intensidad.' : ''}${faseActual.nombre === 'build' ? '- Sesiones activas: 40-90 min. Introduce Z3-Z4 en 1-2 sesiones. Volumen progresivo.' : ''}${faseActual.nombre === 'peak' ? '- Sesiones activas: 45-90 min. 2-3 sesiones de alta intensidad (Z4-Z5). Simular condiciones de carrera.' : ''}${faseActual.nombre === 'taper' ? '- Sesiones activas: 30-60 min. Reducir volumen 30-50%. Mantener 1 sesión corta de intensidad. Descanso activo.' : ''}` : '';
+
+    const semanaLabel = numeroDeSemana ? `Semana ${numeroDeSemana} del plan del atleta.` : '';
+
     userMessage = `Genera un plan de entrenamiento semanal para este atleta:
 
 Deportes: ${deportesTexto}
@@ -438,7 +492,7 @@ Nivel: ${nivelPrimario}
 Objetivo: ${profile.objetivo || 'mejorar forma física'}
 ${carrerasTexto ? `Carreras/eventos próximos: ${carrerasTexto}` : ''}
 ${semanaLabel}
-${profile.contexto ? `Contexto del atleta: ${profile.contexto}` : ''}${analisisSection}
+${profile.contexto ? `Contexto del atleta: ${profile.contexto}` : ''}${analisisSection}${macrocicloSection}
 ${distribucionDeportes}${contextoSemanaSection}
 
 El plan empieza el ${weekStart}. Los días en orden son: ${dias.join(', ')}.
@@ -446,34 +500,54 @@ El plan empieza el ${weekStart}. Los días en orden son: ${dias.join(', ')}.
 ${metodoTextos[metodo]}
 ${profile.nivel === 'principiante' ? `RESTRICCIÓN NIVEL PRINCIPIANTE: Máximo 5 sesiones activas (2 deben ser descanso). Duración máxima de sesión: 60min. Sin series de alta intensidad. Todas las sesiones en Z1-Z2. Prioriza técnica y adaptación.` : ''}
 
-El JSON debe tener esta estructura exacta con los días en el orden indicado:
+El JSON debe tener esta estructura exacta. El campo "estructura" es OBLIGATORIO para sesiones no-descanso:
 {
   "semana": "${weekStart}",
   "sesiones": [
-    { "dia": "${dias[0]}", "tipo": "Correr", "descripcion": "Rodaje suave 45min zona 2", "duracion_min": 45, "intensidad": "suave" },
-    { "dia": "${dias[1]}", "tipo": "Descanso", "descripcion": "Recuperación activa o descanso completo", "duracion_min": 0, "intensidad": "descanso" },
-    { "dia": "${dias[2]}", "tipo": "Correr", "descripcion": "...", "duracion_min": 50, "intensidad": "moderada" },
-    { "dia": "${dias[3]}", "tipo": "Descanso", "descripcion": "...", "duracion_min": 0, "intensidad": "descanso" },
-    { "dia": "${dias[4]}", "tipo": "Correr", "descripcion": "...", "duracion_min": 45, "intensidad": "suave" },
-    { "dia": "${dias[5]}", "tipo": "Correr", "descripcion": "...", "duracion_min": 75, "intensidad": "moderada" },
-    { "dia": "${dias[6]}", "tipo": "Descanso", "descripcion": "...", "duracion_min": 0, "intensidad": "descanso" }
+    {
+      "dia": "${dias[0]}",
+      "tipo": "Correr",
+      "subtipo": "Rodaje Z2",
+      "duracion_min": 50,
+      "intensidad": "suave",
+      "distancia_km": 7,
+      "zona_objetivo": "Z1-Z2",
+      "estructura": {
+        "calentamiento": "10min trote suave Z1",
+        "principal": "35min rodaje continuo Z2 a 5:40/km",
+        "vuelta_calma": "5min andar + estiramientos gemelos",
+        "rpe_objetivo": "5-6"
+      }
+    },
+    {
+      "dia": "${dias[1]}",
+      "tipo": "Descanso",
+      "subtipo": "Descanso completo",
+      "duracion_min": 0,
+      "intensidad": "descanso",
+      "distancia_km": null,
+      "zona_objetivo": null,
+      "estructura": null
+    }
   ]
 }
 
 tipos posibles: "Correr", "Bici", "Nadar", "Fuerza", "Brick", "Descanso"
 intensidades posibles: "suave", "moderada", "fuerte", "descanso"
+zona_objetivo posibles: "Z1-Z2", "Z2-Z3", "Z3-Z4", "Z4-Z5" (null para Descanso)
+subtipo: nombre corto descriptivo de la sesión (ej: "Rodaje Z2", "Series 1km", "Largo dominical", "Fuerza core", "Brick bici+run")
+distancia_km: distancia estimada en km (null para sesiones de fuerza o descanso)
 Devuelve exactamente ${dias.length} sesiones en el orden: ${dias.join(', ')}.
 
-Para la descripción de cada sesión activa incluye en una sola línea:
-- Calentamiento específico (10-15% del tiempo): qué hacer exactamente
-- Bloque principal con detalles concretos según el deporte:
+Para el campo "estructura" de cada sesión activa:
+- calentamiento: qué hacer exactamente (10-15% del tiempo total)
+- principal: bloque central con detalles concretos según el deporte:
   * Correr: series con distancia y ritmo (ej: "4x1000m a 4:45/km, 90seg recuperación trote")
   * Bici: intervalos con zona o vatios (ej: "3x10min zona 3 a 85rpm")
-  * Nadar: estilo (crol/espalda/braza), distancia, descanso y ritmo por 100m; añadir drills de técnica si nivel principiante (ej: "6x100m crol con 20seg descanso, ritmo 2:00/100m")
+  * Nadar: estilo, distancia, descanso y ritmo por 100m (ej: "6x100m crol con 20seg, ritmo 2:00/100m")
   * Fuerza/Hyrox: ejercicios, series y repeticiones (ej: "Sentadilla 3x10, Remo 3x12, Core 3x15")
-- Vuelta a la calma (10% del tiempo): estiramientos o recuperación suave
-- RPE objetivo para el bloque principal (ej: "RPE 6-7")
-Ejemplo descripción running: "Cal 10min trote suave z1. Principal: 4x1000m a 5:10/km con 90seg recuperación. Vuelta 5min estiramientos. RPE 7-8"`;
+- vuelta_calma: recuperación y estiramientos (10% del tiempo)
+- rpe_objetivo: rango RPE para el bloque principal (ej: "5-6", "7-8", "9-10")`;
   }
 
 
@@ -515,12 +589,27 @@ Ejemplo descripción running: "Cal 10min trote suave z1. Principal: 4x1000m a 5:
     planData.sesiones = planData.sesiones.map(s => ({ ...s, tipo_semana: 'diagnostico' }));
   }
 
-  // Guardar en Supabase
-  const inserted = await supabasePost(hostname, '/rest/v1/plans', supabaseKey, {
+  // Calcular volumen planificado (suma duracion_min de sesiones no-descanso)
+  const volumenPlanificado = planData.sesiones
+    .filter(s => s.tipo?.toLowerCase() !== 'descanso')
+    .reduce((acc, s) => acc + (s.duracion_min || 0), 0);
+
+  // Construir registro a guardar
+  const planRecord = {
     user_id: userId,
     semana: weekStart,
-    sesiones: planData.sesiones
-  });
+    sesiones: planData.sesiones,
+    volumen_planificado_min: volumenPlanificado,
+    ...(activeCycle && faseActual ? {
+      cycle_id: activeCycle.id,
+      numero_semana: numeroDeSemana,
+      fase: faseActual.nombre,
+      objetivo_semana: faseActual.objetivo,
+    } : {}),
+  };
+
+  // Guardar en Supabase
+  const inserted = await supabasePost(hostname, '/rest/v1/plans', supabaseKey, planRecord);
 
   const plan = Array.isArray(inserted) ? inserted[0] : inserted;
 
