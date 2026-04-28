@@ -268,6 +268,20 @@ ${esSemanaDescarga
 - Si RPE medio < 5 y completadas >= ${activas.length}: se puede aumentar carga un 10%`;
 }
 
+// ─── Duración mínima por fase y tipo ─────────────────────────────────────────
+
+function validarDuracion(sesion, fase) {
+  if (sesion.tipo?.toLowerCase() === 'descanso') return sesion.duracion_min || 0;
+  const minimos = {
+    base:  { 'Correr': 55, 'Bici': 80, 'Nadar': 45, 'Fuerza': 50 },
+    build: { 'Correr': 65, 'Bici': 90, 'Nadar': 55, 'Fuerza': 55 },
+    peak:  { 'Correr': 70, 'Bici': 100, 'Nadar': 60, 'Fuerza': 55 },
+    taper: { 'Correr': 35, 'Bici': 50, 'Nadar': 35, 'Fuerza': 40 },
+  };
+  const min = minimos[fase]?.[sesion.tipo] || 45;
+  return Math.max(sesion.duracion_min || 0, min);
+}
+
 // ─── Macrocycle helpers (inlined — cannot import from src/ in CommonJS) ───────
 
 function getNumeroSemanaInline(fechaInicio, fechaSemana) {
@@ -480,8 +494,23 @@ CONTEXTO DEL MACROCICLO:
 ${esDescarga ? '⚠️ SEMANA DE DESCARGA: reducir volumen 20-30% respecto a semanas previas, mantener algo de intensidad corta, priorizar recuperación.' : ''}${adherenciaPct !== null ? `\n- Adherencia reciente: ${adherenciaPct}% de sesiones completadas${adherenciaPct < 70 ? ' — carga conservadora esta semana, no aumentar volumen' : ''}` : ''}
 - Carrera objetivo: ${activeCycle.carrera_nombre || 'Sin carrera definida'}${activeCycle.fecha_carrera ? ` — ${activeCycle.fecha_carrera}` : ''}
 
-DURACIONES RECOMENDADAS PARA FASE ${faseActual.nombre.toUpperCase()}:
-${faseActual.nombre === 'base' ? '- Sesiones activas: 35-75 min. Predomina Z1-Z2. Sin alta intensidad.' : ''}${faseActual.nombre === 'build' ? '- Sesiones activas: 40-90 min. Introduce Z3-Z4 en 1-2 sesiones. Volumen progresivo.' : ''}${faseActual.nombre === 'peak' ? '- Sesiones activas: 45-90 min. 2-3 sesiones de alta intensidad (Z4-Z5). Simular condiciones de carrera.' : ''}${faseActual.nombre === 'taper' ? '- Sesiones activas: 30-60 min. Reducir volumen 30-50%. Mantener 1 sesión corta de intensidad. Descanso activo.' : ''}` : '';
+DURACIONES MÍNIMAS OBLIGATORIAS — FASE ${faseActual.nombre.toUpperCase()} (NO usar valores menores):
+${faseActual.nombre === 'base' ? `- Correr: mínimo 55min (rodaje Z2: 55-70min, rodaje largo: 80-110min, intervalos: 60-75min incluyendo calentamiento y vuelta a la calma)
+- Bici: mínimo 80min (Z2: 80-120min, intervalos: 70-90min)
+- Nadar: mínimo 45min
+- Fuerza: mínimo 50min
+PROHIBIDO generar sesiones de Correr de 45min en esta fase — el mínimo es 55min.` : ''}${faseActual.nombre === 'build' ? `- Correr: mínimo 65min (rodaje Z2: 65-85min, rodaje largo: 90-130min, intervalos: 70-85min)
+- Bici: mínimo 90min (Z2: 90-150min, intervalos: 75-95min, brick: 90-130min)
+- Nadar: mínimo 55min
+- Fuerza: mínimo 55min
+PROHIBIDO generar sesiones de Correr de 45-60min en esta fase — el mínimo es 65min.` : ''}${faseActual.nombre === 'peak' ? `- Correr: mínimo 70min (rodaje Z2: 70-85min, rodaje largo: 90-140min, intervalos: 75-90min)
+- Bici: mínimo 100min (Z2: 100-160min, brick: 100-150min)
+- Nadar: mínimo 60min
+- Fuerza: mínimo 55min
+PROHIBIDO generar sesiones de menos de 70min en esta fase.` : ''}${faseActual.nombre === 'taper' ? `- Correr: 35-50min (reducir volumen, mantener algo de ritmo)
+- Bici: 50-75min
+- Nadar: 35-50min
+- Fuerza: 40-50min (sesiones cortas, técnica)`  : ''}` : '';
 
     const semanaLabel = numeroDeSemana ? `Semana ${numeroDeSemana} del plan del atleta.` : '';
 
@@ -587,6 +616,15 @@ Para el campo "estructura" de cada sesión activa:
   // Inyectar tipo_semana en cada sesión de diagnóstico
   if (necesitaDiagnostico) {
     planData.sesiones = planData.sesiones.map(s => ({ ...s, tipo_semana: 'diagnostico' }));
+  }
+
+  // Validar y corregir duraciones mínimas por fase (safety net post-generación)
+  if (!necesitaDiagnostico) {
+    const faseNombre = faseActual?.nombre || 'base';
+    planData.sesiones = planData.sesiones.map(s => {
+      const duracionCorregida = validarDuracion(s, faseNombre);
+      return duracionCorregida !== s.duracion_min ? { ...s, duracion_min: duracionCorregida } : s;
+    });
   }
 
   // Calcular volumen planificado (suma duracion_min de sesiones no-descanso)
