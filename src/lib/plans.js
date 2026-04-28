@@ -1,5 +1,11 @@
 import { supabase } from './supabase'
 
+export function esFormatoAntiguo(sesiones) {
+  if (!sesiones || !sesiones.length) return false
+  const activas = sesiones.filter(s => s.intensidad !== 'descanso' && s.tipo !== 'Descanso')
+  return activas.length > 0 && activas.every(s => !s.estructura)
+}
+
 function getWeekStart() {
   const now = new Date()
   const day = now.getDay()

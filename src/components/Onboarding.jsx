@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { generatePlan } from '../lib/plans'
 import StravaConnect from './StravaConnect'
 
 // ─── Datos estáticos ──────────────────────────────────────────────────────────
@@ -368,8 +367,8 @@ export default function Onboarding({ userId, onComplete }) {
     }
     setSubmitted(true)
     setGenerando(true)
-    const generatedPlan = await generatePlan(userId).catch(() => null)
-    onComplete(generatedPlan)
+    localStorage.setItem('onboarding_just_completed', form.nombre || 'atleta')
+    onComplete()
   }
 
   const heading = (text) => (
@@ -408,10 +407,10 @@ export default function Onboarding({ userId, onComplete }) {
     }}>
       <div style={{ fontSize: 48 }}>🏃</div>
       <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 24, fontWeight: 700, textAlign: 'center' }}>
-        Creando tu plan personalizado...
+        Preparando tu coach...
       </h2>
       <p style={{ color: 'var(--muted-foreground)', fontSize: 15, textAlign: 'center' }}>
-        Tu coach está diseñando los entrenamientos perfectos para ti
+        Configurando tu perfil y ciclo de entrenamiento
       </p>
       <div style={{
         width: 40,

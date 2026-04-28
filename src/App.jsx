@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
 import { getProfile, createProfile, updateProfile } from './lib/profiles'
-import { getPlanActual, getPlanProximaSemana, getHistorialPlanes, generatePlan, markSessionComplete, getNextWeekStart } from './lib/plans'
+import { getPlanActual, getPlanProximaSemana, getHistorialPlanes, generatePlan, markSessionComplete, getNextWeekStart, esFormatoAntiguo } from './lib/plans'
 import Login from './components/Login'
 import Onboarding from './components/Onboarding'
 import Chat from './components/Chat'
@@ -32,6 +32,7 @@ function App() {
   const [upgradeSuccess, setUpgradeSuccess] = useState(false)
   const [selectedSession, setSelectedSession] = useState(null)
   const [chatPrefill, setChatPrefill] = useState('')
+  const [planActualizando, setPlanActualizando] = useState(false)
 
   async function loadOrCreateProfile(user) {
     let profile = await getProfile(user.id)
@@ -101,7 +102,17 @@ function App() {
       setSession(session)
       if (session) {
         await loadOrCreateProfile(session.user)
-        getPlanActual(session.user.id).then(p => { setPlan(p); setPlanLoading(false) }).catch(() => setPlanLoading(false))
+        getPlanActual(session.user.id).then(async (p) => {
+          if (p && esFormatoAntiguo(p.sesiones)) {
+            setPlanActualizando(true)
+            const regenerado = await generatePlan(session.user.id).catch(() => null)
+            setPlan(regenerado?.sesiones ? regenerado : p)
+            setPlanActualizando(false)
+          } else {
+            setPlan(p)
+          }
+          setPlanLoading(false)
+        }).catch(() => setPlanLoading(false))
         getPlanProximaSemana(session.user.id).then(setPlanProximaSemana).catch(() => {})
         getHistorialPlanes(session.user.id).then(setHistorialPlanes).catch(() => {})
       } else {
@@ -160,14 +171,9 @@ function App() {
     return (
       <Onboarding
         userId={session.user.id}
-        onComplete={async (generatedPlan) => {
+        onComplete={async () => {
           await loadOrCreateProfile(session.user)
-          if (generatedPlan?.sesiones) {
-            setPlan(generatedPlan)
-          } else {
-            const newPlan = await generatePlan(session.user.id).catch(() => null)
-            if (newPlan) setPlan(newPlan)
-          }
+          setCurrentScreen('coach')
         }}
       />
     )
@@ -192,6 +198,23 @@ function App() {
           boxShadow: '0 4px 20px oklch(0 0 0 / 0.3)',
         }}>
           🏆 ¡Ya eres Pro! Bienvenido/a al plan completo.
+        </div>
+      )}
+
+      {planActualizando && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0,
+          background: 'var(--card)',
+          borderBottom: '1px solid var(--border)',
+          textAlign: 'center',
+          padding: '10px 16px',
+          fontSize: 13,
+          color: 'var(--muted-foreground)',
+          fontFamily: 'var(--font-sans)',
+          zIndex: 100,
+        }}>
+          Actualizando tu plan con el nuevo formato...
         </div>
       )}
 

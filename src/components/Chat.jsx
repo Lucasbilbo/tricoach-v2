@@ -3,9 +3,10 @@ import { getMessages, saveMessage } from '../lib/messages'
 import { canSendMessage } from '../lib/profiles'
 import { buildSystemPrompt } from '../prompts/buildSystemPrompt'
 import { updateContext } from '../lib/context'
-import { adjustPlan } from '../lib/plans'
+import { adjustPlan, generatePlan } from '../lib/plans'
 
 const AJUSTE_RE = /actualiz|cambiar|modificar|ajustar/i
+const GENERAR_RE = /generar|empezar|vamos|adelante|\bno\b|\bnada\b/i
 
 function renderMarkdown(text) {
   let html = text
@@ -56,6 +57,7 @@ const soportaVoz = typeof window !== 'undefined' && ('SpeechRecognition' in wind
 
 export default function Chat({ userId, profile, activeCycle, plan, planProximaSemana, historialPlanes, personalidad, onPersonalidadChange, onShowUpgrade, onPlanUpdate, prefillMessage }) {
   const [messages, setMessages] = useState([])
+  const [welcomeOnboarding, setWelcomeOnboarding] = useState(null) // nombre del usuario si viene de onboarding
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [stravaData, setStravaData] = useState(null)
@@ -101,6 +103,31 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
     if (!input.trim()) return
 
     const userMessage = input
+
+    // Flujo de bienvenida tras onboarding — detectar intención de generar plan
+    if (welcomeOnboarding) {
+      setWelcomeOnboarding(null) // desactivar tras primera respuesta
+      if (GENERAR_RE.test(userMessage.trim())) {
+        setInput('')
+        setLoading(true)
+        setMessages(prev => [...prev, { role: 'user', content: userMessage }])
+        try {
+          const generated = await generatePlan(userId)
+          if (generated?.sesiones) {
+            onPlanUpdate?.(generated)
+            setMessages(prev => [...prev, { role: 'assistant', content: '✅ ¡Tu plan está listo! Pulsa **Plan** en el menú inferior para verlo.' }])
+          } else {
+            setMessages(prev => [...prev, { role: 'assistant', content: 'No pude generar el plan ahora. Escríbeme cuando quieras e intentamos de nuevo.' }])
+          }
+        } catch {
+          setMessages(prev => [...prev, { role: 'assistant', content: 'Hubo un error al generar el plan. Inténtalo de nuevo.' }])
+        } finally {
+          setLoading(false)
+        }
+        return
+      }
+      // Si no hay keywords → flujo normal de Claude (el welcome se desactiva)
+    }
 
     const canSend = await canSendMessage(profile)
     if (!canSend) {
@@ -169,6 +196,14 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
       setMessages(msgs)
     })
   }, [userId])
+
+  useEffect(() => {
+    const nombre = localStorage.getItem('onboarding_just_completed')
+    if (nombre) {
+      setWelcomeOnboarding(nombre)
+      localStorage.removeItem('onboarding_just_completed')
+    }
+  }, [])
 
   useEffect(() => {
     if (!userId) return
@@ -435,7 +470,32 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
         paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
       }}>
         <div style={{ maxWidth: 640, margin: '0 auto' }}>
-          {messages.length === 0 && (
+          {welcomeOnboarding ? (
+            <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-end', gap: 8 }}>
+              <div style={{
+                width: 28, height: 28, borderRadius: '50%',
+                background: 'var(--primary)', color: 'var(--primary-foreground)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 11, fontWeight: 700, flexShrink: 0,
+              }}>
+                {(profile?.nombre_coach || 'C')[0].toUpperCase()}
+              </div>
+              <div style={{
+                background: 'var(--card)',
+                border: '1px solid var(--border)',
+                borderRadius: '16px 16px 16px 4px',
+                padding: '12px 16px',
+                maxWidth: '80%',
+                fontSize: 15,
+                lineHeight: 1.5,
+                color: 'var(--foreground)',
+              }}
+                dangerouslySetInnerHTML={{ __html: renderMarkdown(
+                  `¡Bienvenido/a ${welcomeOnboarding}! Ya tengo toda la info que necesito para prepararte el plan. Antes de generarlo, ¿hay algo más que quieras contarme? Lesiones recientes, semanas con menos disponibilidad, o cualquier cosa relevante. Si no, dime **"generar"** y empezamos.`
+                )}}
+              />
+            </div>
+          ) : messages.length === 0 && (
             <div style={{ textAlign: 'center', color: 'var(--muted-foreground)', marginTop: 48 }}>
               <div style={{ fontSize: 40, marginBottom: 12 }}>💬</div>
               <p style={{ fontSize: 15 }}>Cuéntame cómo va el entrenamiento</p>
