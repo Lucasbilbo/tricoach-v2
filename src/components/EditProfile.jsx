@@ -110,12 +110,17 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
   const [preferenciasAlimentarias, setPreferenciasAlimentarias] = useState(profile.preferencias_alimentarias || '')
   const [intolerancias, setIntolerancias] = useState(profile.intolerancias || '')
   // Intervals.icu
+  const [pace5k, setPace5k] = useState(profile.pace_5k || '')
+  const [pace10k, setPace10k] = useState(profile.pace_10k || '')
+  const [ftpBici, setFtpBici] = useState(profile.ftp_bici || '')
+  const [ritmoNatacion, setRitmoNatacion] = useState(profile.ritmo_natacion_100m || '')
   const [intervalsAthleteId, setIntervalsAthleteId] = useState(profile.intervals_athlete_id || '')
   const [intervalsApiKey, setIntervalsApiKey] = useState(profile.intervals_api_key || '')
   const [showIntervalsKey, setShowIntervalsKey] = useState(false)
   const [intervalsSaving, setIntervalsSaving] = useState(false)
   const [intervalsConnected, setIntervalsConnected] = useState(!!(profile.intervals_athlete_id && profile.intervals_api_key))
   const [saving, setSaving] = useState(false)
+  const [savingRendimiento, setSavingRendimiento] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [toast, setToast] = useState(null) // { msg, type: 'success'|'error' }
@@ -205,6 +210,30 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
     }
     setIntervalsConnected(!!(intervalsAthleteId && intervalsApiKey))
     showToast('Intervals.icu guardado', 'success')
+  }
+
+  async function handleSaveRendimiento() {
+    setSavingRendimiento(true)
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({
+        fc_maxima: fcMaxima !== '' ? parseInt(fcMaxima) : null,
+        pace_5k: pace5k || null,
+        pace_10k: pace10k || null,
+        ftp_bici: ftpBici !== '' ? parseInt(ftpBici) : null,
+        ritmo_natacion_100m: ritmoNatacion || null,
+      })
+      .eq('id', profile.id)
+      .select()
+      .single()
+    setSavingRendimiento(false)
+    if (error) {
+      console.error('[EditProfile] Error al guardar rendimiento:', error)
+      showToast('Error al guardar. Inténtalo de nuevo.', 'error')
+      return
+    }
+    onUpdate(data)
+    showToast('Datos de rendimiento guardados', 'success')
   }
 
   async function handleDisconnectIntervals() {
@@ -403,20 +432,6 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
           placeholder="Tu edad"
         />
 
-        <label style={labelStyle}>FC Máxima</label>
-        <input
-          type="number"
-          min={150}
-          max={220}
-          style={{ ...inputStyle, marginBottom: 4 }}
-          value={fcMaxima}
-          onChange={e => setFcMaxima(e.target.value)}
-          placeholder="Ej: 185 — de tu reloj Garmin"
-        />
-        <p style={{ fontSize: 12, color: 'var(--muted-foreground)', marginBottom: 20, marginTop: 0 }}>
-          Opcional. Si no la conoces, la estimamos con tu edad.
-        </p>
-
         {/* Nutrición */}
         <p style={{ fontSize: 13, color: 'var(--muted-foreground)', fontWeight: 600, marginBottom: 14, marginTop: 4, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
           🥗 Nutrición
@@ -492,6 +507,120 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
             }}
           >
             {saving ? 'Guardando...' : 'Guardar'}
+          </button>
+        </div>
+      </div>
+
+      {/* Datos de rendimiento */}
+      <div style={{
+        background: 'var(--card)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius)',
+        padding: 16,
+        marginBottom: 12,
+      }}>
+        <p style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 8, fontWeight: 600 }}>
+          ⚡ Datos de rendimiento
+        </p>
+        <p style={{ fontSize: 12, color: 'var(--muted-foreground)', marginBottom: 14, lineHeight: 1.5 }}>
+          Estos datos permiten al coach calcular tus zonas de entrenamiento exactas. Cuantos más rellenes, más precisas serán las sesiones y los consejos.
+        </p>
+
+        {!fcMaxima && (
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            background: 'oklch(0.7 0.18 45 / 0.12)',
+            border: '1px solid oklch(0.7 0.18 45 / 0.4)',
+            color: 'oklch(0.65 0.18 45)',
+            borderRadius: 999,
+            padding: '4px 10px',
+            fontSize: 12,
+            fontWeight: 600,
+            marginBottom: 16,
+          }}>
+            ⚡ Añade tu FC máxima para personalizar las zonas
+          </div>
+        )}
+
+        <label style={labelStyle}>FC máxima (bpm)</label>
+        <input
+          type="number"
+          min={150}
+          max={220}
+          style={{ ...inputStyle, marginBottom: 4 }}
+          value={fcMaxima}
+          onChange={e => setFcMaxima(e.target.value)}
+          placeholder="Ej: 185"
+        />
+        <p style={{ fontSize: 12, color: 'var(--muted-foreground)', marginBottom: 14, marginTop: 0 }}>
+          Si no la sabes, haz un test de 20min a máximo esfuerzo
+        </p>
+
+        <label style={labelStyle}>Pace 5K (min:seg/km)</label>
+        <input
+          style={{ ...inputStyle, marginBottom: 4 }}
+          value={pace5k}
+          onChange={e => setPace5k(e.target.value)}
+          placeholder="Ej: 4:30"
+        />
+        <p style={{ fontSize: 12, color: 'var(--muted-foreground)', marginBottom: 14, marginTop: 0 }}>
+          Tu mejor tiempo reciente en 5K
+        </p>
+
+        <label style={labelStyle}>Pace 10K (min:seg/km)</label>
+        <input
+          style={inputStyle}
+          value={pace10k}
+          onChange={e => setPace10k(e.target.value)}
+          placeholder="Ej: 4:50"
+        />
+
+        {deportesSeleccionados.includes('triatlon') && (
+          <>
+            <label style={labelStyle}>FTP bici (vatios)</label>
+            <input
+              type="number"
+              min={50}
+              max={600}
+              style={inputStyle}
+              value={ftpBici}
+              onChange={e => setFtpBici(e.target.value)}
+              placeholder="Ej: 220"
+            />
+          </>
+        )}
+
+        {(deportesSeleccionados.includes('triatlon') || deportesSeleccionados.includes('natacion')) && (
+          <>
+            <label style={labelStyle}>Ritmo natación cada 100m (min:seg)</label>
+            <input
+              style={inputStyle}
+              value={ritmoNatacion}
+              onChange={e => setRitmoNatacion(e.target.value)}
+              placeholder="Ej: 1:45"
+            />
+          </>
+        )}
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
+          <button
+            onClick={handleSaveRendimiento}
+            disabled={savingRendimiento}
+            style={{
+              background: 'var(--primary)',
+              border: 'none',
+              borderRadius: 8,
+              color: 'var(--primary-foreground)',
+              fontFamily: 'var(--font-sans)',
+              fontSize: 14,
+              fontWeight: 600,
+              padding: '8px 20px',
+              cursor: savingRendimiento ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {savingRendimiento ? 'Guardando...' : 'Guardar datos de rendimiento'}
           </button>
         </div>
       </div>
