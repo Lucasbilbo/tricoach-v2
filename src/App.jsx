@@ -379,6 +379,7 @@ function App() {
             onUpdate={(updated) => setProfile(updated)}
             onClose={() => handleNavigate('coach')}
             onShowUpgrade={() => setShowUpgradeModal(true)}
+            onCycleUpdated={setActiveCycle}
           />
 
           <div style={{ maxWidth: 640, margin: '0 auto', padding: '8px 16px 16px', textAlign: 'center' }}>

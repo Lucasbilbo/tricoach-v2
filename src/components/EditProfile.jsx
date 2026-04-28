@@ -90,7 +90,15 @@ function initDeportesSeleccionados(profile) {
   return profile.deporte ? [profile.deporte] : []
 }
 
-export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade }) {
+function carreraAHaCambiado(prevCarreras, nextCarreras) {
+  const prevA = (prevCarreras || []).find(c => c.prioridad === 'A')
+  const nextA = (nextCarreras || []).find(c => c.prioridad === 'A')
+  if (!prevA && !nextA) return false
+  if (!prevA || !nextA) return true
+  return prevA.fecha !== nextA.fecha || prevA.nombre !== nextA.nombre
+}
+
+export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade, onCycleUpdated }) {
   const [nombre, setNombre] = useState(profile.nombre || '')
   const [deporte, setDeporte] = useState(profile.deporte || '')
   const [deportesSeleccionados, setDeportesSeleccionados] = useState(() => initDeportesSeleccionados(profile))
@@ -175,6 +183,26 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
     }
 
     onUpdate(data)
+
+    // Recalcular ciclo si cambió la carrera A
+    if (onCycleUpdated && carreraAHaCambiado(profile.carreras, carreras)) {
+      const secret = import.meta.env.VITE_TRICOACH_SECRET || ''
+      fetch('/.netlify/functions/recalculate-cycle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-tricoach-secret': secret },
+        body: JSON.stringify({ userId: profile.id }),
+      })
+        .then(r => r.json())
+        .then(res => {
+          if (res.cycle) {
+            onCycleUpdated(res.cycle)
+            showToast('Tu plan de temporada se ha actualizado con la nueva fecha de carrera', 'success')
+          }
+        })
+        .catch(err => console.error('[EditProfile] recalculate-cycle error:', err))
+      return // toast shown async above
+    }
+
     showToast('Perfil actualizado', 'success')
     setTimeout(() => onClose(), 1200)
   }
