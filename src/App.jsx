@@ -254,7 +254,7 @@ function App() {
       )}
 
       {currentScreen === 'profile' && (
-        <div className="screen-enter" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 16px))', minHeight: '100vh', overflowY: 'auto' }}>
+        <div className="screen-enter" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 16px))', minHeight: '100vh' }}>
           {/* Profile header with gradient */}
           <div style={{
             background: 'radial-gradient(ellipse at 0% 0%, rgba(255,107,43,0.1) 0%, transparent 60%), var(--background)',
