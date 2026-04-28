@@ -254,15 +254,12 @@ function App() {
       )}
 
       {currentScreen === 'profile' && (
-        <div className="screen-enter" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 16px))', minHeight: '100vh' }}>
-          {/* Profile header with gradient */}
+        <div style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 16px))' }}>
+          {/* Profile header */}
           <div style={{
             background: 'var(--background)',
             borderBottom: '1px solid var(--border)',
             padding: '20px 20px 18px',
-            position: 'sticky',
-            top: 0,
-            zIndex: 50,
           }}>
             <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 14 }}>
               <div style={{
