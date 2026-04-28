@@ -486,6 +486,23 @@ Nunca más de 2 días seguidos del mismo deporte.` : '';
       ? `\n\nCONTEXTO ESPECIAL ESTA SEMANA (tiene prioridad):\n${contexto_semana}\nAdapta el plan teniendo en cuenta esta información.`
       : '';
 
+    // Detectar carrera B o C en los próximos 14 días
+    const hoy14 = new Date(hoyStr);
+    hoy14.setDate(hoy14.getDate() + 14);
+    const hoy14Str = hoy14.toISOString().split('T')[0];
+    const carreraProximaBC = carrerasArr
+      .filter(c => c.fecha && c.fecha >= hoyStr && c.fecha <= hoy14Str && (c.prioridad === 'B' || c.prioridad === 'C'))
+      .sort((a, b) => a.fecha.localeCompare(b.fecha))[0] || null;
+    let proximaCarreraSection = '';
+    if (carreraProximaBC) {
+      const diasRestantes = Math.round((new Date(carreraProximaBC.fecha) - new Date(hoyStr)) / (24 * 60 * 60 * 1000));
+      if (carreraProximaBC.prioridad === 'B') {
+        proximaCarreraSection = `\n\n⚠️ ATENCIÓN: El atleta tiene una carrera B (${carreraProximaBC.nombre}) en ${diasRestantes} días. Aplicar mini-taper: reducir volumen 20-30%, mantener algo de intensidad corta, incluir sesión de activación el día anterior a la carrera.`;
+      } else {
+        proximaCarreraSection = `\n\n⚠️ ATENCIÓN: El atleta tiene una carrera C (${carreraProximaBC.nombre}) en ${diasRestantes} días. Tratarla como sesión de calidad intensa en el plan. Sin cambios en el resto del plan.`;
+      }
+    }
+
     const macrocicloSection = activeCycle && faseActual ? `
 
 CONTEXTO DEL MACROCICLO:
@@ -576,7 +593,7 @@ Para el campo "estructura" de cada sesión activa:
   * Nadar: estilo, distancia, descanso y ritmo por 100m (ej: "6x100m crol con 20seg, ritmo 2:00/100m")
   * Fuerza/Hyrox: ejercicios, series y repeticiones (ej: "Sentadilla 3x10, Remo 3x12, Core 3x15")
 - vuelta_calma: recuperación y estiramientos (10% del tiempo)
-- rpe_objetivo: rango RPE para el bloque principal (ej: "5-6", "7-8", "9-10")`;
+- rpe_objetivo: rango RPE para el bloque principal (ej: "5-6", "7-8", "9-10")${proximaCarreraSection}`;
   }
 
 

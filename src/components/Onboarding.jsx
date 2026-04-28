@@ -261,7 +261,7 @@ export default function Onboarding({ userId, onComplete }) {
   const [carreras, setCarreras] = useState([])
   const [disponibilidadSlots, setDisponibilidadSlots] = useState([])
   const [sinLesiones, setSinLesiones] = useState(false)
-  const [nuevaCarrera, setNuevaCarrera] = useState({ nombre: '', tipo: '', dia: '', mes: '', anio: '' })
+  const [nuevaCarrera, setNuevaCarrera] = useState({ nombre: '', tipo: '', dia: '', mes: '', anio: '', prioridad: 'A' })
   const [mostrarFormCarrera, setMostrarFormCarrera] = useState(true)
   const [submitted, setSubmitted] = useState(false)
   const [generando, setGenerando] = useState(false)
@@ -329,8 +329,13 @@ export default function Onboarding({ userId, onComplete }) {
     }
     const fechaStr = `${nuevaCarrera.dia} ${nuevaCarrera.mes} ${nuevaCarrera.anio}`
     setErroresCarrera({ nombre: '', tipo: '', fecha: '' })
-    setCarreras(prev => [...prev, { nombre: nuevaCarrera.nombre, tipo: nuevaCarrera.tipo, fecha: fechaStr }])
-    setNuevaCarrera({ nombre: '', tipo: '', dia: '', mes: '', anio: '' })
+    const prioridadGuardada = nuevaCarrera.prioridad || 'A'
+    setCarreras(prev => {
+      const nuevas = [...prev, { nombre: nuevaCarrera.nombre, tipo: nuevaCarrera.tipo, fecha: fechaStr, prioridad: prioridadGuardada }]
+      const yaHayA = nuevas.some(c => c.prioridad === 'A')
+      setNuevaCarrera({ nombre: '', tipo: '', dia: '', mes: '', anio: '', prioridad: yaHayA ? 'B' : 'A' })
+      return nuevas
+    })
     setMostrarFormCarrera(false)
   }
 
@@ -606,7 +611,17 @@ export default function Onboarding({ userId, onComplete }) {
                     marginBottom: 6,
                   }}>
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: 14 }}>{c.nombre}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontWeight: 600, fontSize: 14 }}>{c.nombre}</span>
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, borderRadius: 99, padding: '1px 6px',
+                          background: c.prioridad === 'A' ? 'oklch(0.25 0.08 145)' : c.prioridad === 'C' ? 'oklch(0.22 0 0)' : 'oklch(0.22 0.06 240)',
+                          color: c.prioridad === 'A' ? 'oklch(0.8 0.15 145)' : c.prioridad === 'C' ? 'var(--muted-foreground)' : 'oklch(0.75 0.12 240)',
+                          border: `1px solid ${c.prioridad === 'A' ? 'oklch(0.4 0.1 145)' : c.prioridad === 'C' ? 'var(--border)' : 'oklch(0.38 0.1 240)'}`,
+                        }}>
+                          {c.prioridad === 'A' ? 'Objetivo A' : c.prioridad === 'C' ? 'Entrenamiento C' : 'Secundaria B'}
+                        </span>
+                      </div>
                       <div style={{ color: 'var(--muted-foreground)', fontSize: 12, marginTop: 2 }}>
                         {c.tipo}{c.fecha ? ` · ${c.fecha}` : ''}
                       </div>
@@ -646,6 +661,35 @@ export default function Onboarding({ userId, onComplete }) {
                     ))}
                   </select>
                   {erroresCarrera.tipo && <p style={{ color: 'var(--destructive)', fontSize: 12, marginTop: 4 }}>{erroresCarrera.tipo}</p>}
+                </div>
+                <div>
+                  <p style={{ fontSize: 12, color: 'var(--muted-foreground)', fontWeight: 600, marginBottom: 6 }}>Prioridad</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+                    {[
+                      { value: 'A', label: 'A · Objetivo' },
+                      { value: 'B', label: 'B · Secundaria' },
+                      { value: 'C', label: 'C · Entrenamiento' },
+                    ].map(({ value, label }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setNuevaCarrera({ ...nuevaCarrera, prioridad: value })}
+                        style={{
+                          background: nuevaCarrera.prioridad === value ? 'var(--primary)' : 'transparent',
+                          border: `1px solid ${nuevaCarrera.prioridad === value ? 'var(--primary)' : 'var(--border)'}`,
+                          borderRadius: 8,
+                          color: nuevaCarrera.prioridad === value ? 'var(--primary-foreground)' : 'var(--muted-foreground)',
+                          fontFamily: 'var(--font-sans)',
+                          fontSize: 12,
+                          fontWeight: nuevaCarrera.prioridad === value ? 700 : 400,
+                          padding: '8px 4px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: 6 }}>
@@ -691,7 +735,11 @@ export default function Onboarding({ userId, onComplete }) {
             {/* Botón añadir otra carrera */}
             {!mostrarFormCarrera && !sinCarrera && (
               <button
-                onClick={() => setMostrarFormCarrera(true)}
+                onClick={() => {
+                  const yaHayA = carreras.some(c => c.prioridad === 'A')
+                  setNuevaCarrera(prev => ({ ...prev, nombre: '', tipo: '', dia: '', mes: '', anio: '', prioridad: yaHayA ? 'B' : 'A' }))
+                  setMostrarFormCarrera(true)
+                }}
                 style={{
                   width: '100%',
                   background: 'transparent',

@@ -210,10 +210,15 @@ exports.handler = async (event) => {
     const futuras = profile.carreras
       .filter(c => c.fecha && c.fecha > today)
       .sort((a, b) => a.fecha.localeCompare(b.fecha));
-    if (futuras[0]) {
-      fechaCarrera = futuras[0].fecha;
-      carreraNombre = futuras[0].nombre || null;
-      carreraTipo   = futuras[0].tipo   || null;
+    // Prioridad: A > sin prioridad (legado) > cualquier otra
+    const carreraObj = futuras.find(c => c.prioridad === 'A')
+      || futuras.find(c => !c.prioridad)
+      || futuras[0]
+      || null;
+    if (carreraObj) {
+      fechaCarrera  = carreraObj.fecha;
+      carreraNombre = carreraObj.nombre || null;
+      carreraTipo   = carreraObj.tipo   || null;
     }
   }
 

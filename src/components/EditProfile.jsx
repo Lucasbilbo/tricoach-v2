@@ -119,6 +119,7 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
   const [showIntervalsKey, setShowIntervalsKey] = useState(false)
   const [intervalsSaving, setIntervalsSaving] = useState(false)
   const [intervalsConnected, setIntervalsConnected] = useState(!!(profile.intervals_athlete_id && profile.intervals_api_key))
+  const [carreras, setCarreras] = useState(profile.carreras || [])
   const [saving, setSaving] = useState(false)
   const [savingRendimiento, setSavingRendimiento] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -158,7 +159,7 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
         intolerancias: intolerancias || null,
         // pass-through jsonb fields unchanged
         equipamiento: profile.equipamiento ?? null,
-        carreras: profile.carreras ?? null,
+        carreras: carreras.length > 0 ? carreras : null,
         contexto: profile.contexto ?? null,
       })
       .eq('id', profile.id)
@@ -384,6 +385,54 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade 
 
         <label style={labelStyle}>Fecha de carrera</label>
         <input type="date" style={inputStyle} value={fechaCarrera} onChange={e => setFechaCarrera(e.target.value)} />
+
+        {/* Carreras con prioridad A/B/C */}
+        {carreras.length > 0 && (
+          <div style={{ marginBottom: 14 }}>
+            <p style={{ ...labelStyle, marginBottom: 8 }}>Carreras</p>
+            {carreras.map((c, i) => (
+              <div key={i} style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: 'var(--input)',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                padding: '8px 10px',
+                marginBottom: 6,
+                gap: 8,
+              }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--foreground)' }}>{c.nombre}</span>
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, borderRadius: 99, padding: '1px 6px', flexShrink: 0,
+                      background: c.prioridad === 'A' ? 'oklch(0.25 0.08 145)' : c.prioridad === 'C' ? 'oklch(0.22 0 0)' : 'oklch(0.22 0.06 240)',
+                      color: c.prioridad === 'A' ? 'oklch(0.8 0.15 145)' : c.prioridad === 'C' ? 'var(--muted-foreground)' : 'oklch(0.75 0.12 240)',
+                      border: `1px solid ${c.prioridad === 'A' ? 'oklch(0.4 0.1 145)' : c.prioridad === 'C' ? 'var(--border)' : 'oklch(0.38 0.1 240)'}`,
+                    }}>
+                      {c.prioridad === 'A' ? 'Objetivo A' : c.prioridad === 'C' ? 'Entrenamiento C' : 'Secundaria B'}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 11, color: 'var(--muted-foreground)', marginTop: 2 }}>{c.tipo}{c.fecha ? ` · ${c.fecha}` : ''}</p>
+                </div>
+                <select
+                  value={c.prioridad || 'A'}
+                  onChange={e => setCarreras(prev => prev.map((r, idx) => idx === i ? { ...r, prioridad: e.target.value } : r))}
+                  style={{
+                    background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 6,
+                    color: 'var(--foreground)', fontFamily: 'var(--font-sans)', fontSize: 12,
+                    padding: '4px 6px', cursor: 'pointer', colorScheme: 'dark', flexShrink: 0,
+                  }}
+                >
+                  <option value="A">A · Objetivo</option>
+                  <option value="B">B · Secundaria</option>
+                  <option value="C">C · Entrenamiento</option>
+                </select>
+              </div>
+            ))}
+          </div>
+        )}
 
         <label style={labelStyle}>Nombre del coach</label>
         <input style={inputStyle} value={nombreCoach} onChange={e => setNombreCoach(e.target.value)} placeholder="Ej: Alex" />
