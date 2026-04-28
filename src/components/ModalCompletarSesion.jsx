@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
 const RPE_COLORS = {
@@ -46,6 +46,36 @@ export default function ModalCompletarSesion({ sesion, planId, profile, onClose,
   const [fcMedia, setFcMedia] = useState('')
   const [notas, setNotas] = useState('')
   const [saving, setSaving] = useState(false)
+  const [stravaLoading, setStravaLoading] = useState(false)
+  const [stravaImportado, setStravaImportado] = useState(false)
+
+  useEffect(() => {
+    if (!profile?.strava_token || !sesion.fecha || !sesion.tipo) return
+
+    const controller = new AbortController()
+    setStravaLoading(true)
+
+    const secret = import.meta.env.VITE_TRICOACH_SECRET || ''
+    fetch('/.netlify/functions/strava-match-activity', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-tricoach-secret': secret },
+      body: JSON.stringify({ userId: profile.id, sessionDate: sesion.fecha, sessionTipo: sesion.tipo }),
+      signal: controller.signal,
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.found) {
+          if (data.duracion_min) setTiempoReal(data.duracion_min)
+          if (data.distancia_km) setDistanciaReal(data.distancia_km)
+          if (data.fc_media)    setFcMedia(data.fc_media)
+          setStravaImportado(true)
+        }
+      })
+      .catch(() => {})
+      .finally(() => setStravaLoading(false))
+
+    return () => controller.abort()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const mostrarDistancia = !TIPOS_SIN_DISTANCIA.has(sesion.tipo)
   const mostrarFc = !!profile?.fc_maxima
@@ -101,9 +131,34 @@ export default function ModalCompletarSesion({ sesion, planId, profile, onClose,
         <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 18, fontWeight: 700, marginBottom: 4 }}>
           {sesion.subtipo || sesion.tipo}
         </h3>
-        <p style={{ fontSize: 12, color: 'var(--muted-foreground)', marginBottom: 20 }}>
+        <p style={{ fontSize: 12, color: 'var(--muted-foreground)', marginBottom: stravaLoading || stravaImportado ? 10 : 20 }}>
           {sesion.dia} · {sesion.duracion_min} min planificados
         </p>
+
+        {stravaLoading && (
+          <p style={{ fontSize: 12, color: 'var(--muted-foreground)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', border: '2px solid var(--muted-foreground)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+            Buscando en Strava...
+          </p>
+        )}
+
+        {stravaImportado && !stravaLoading && (
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            background: 'oklch(0.25 0.05 145)',
+            border: '1px solid oklch(0.45 0.12 145)',
+            borderRadius: 99,
+            padding: '4px 10px',
+            fontSize: 12,
+            fontWeight: 600,
+            color: 'oklch(0.85 0.15 145)',
+            marginBottom: 16,
+          }}>
+            Datos importados de Strava 🟠
+          </div>
+        )}
 
         {/* RPE selector */}
         <div style={{ marginBottom: 20 }}>
