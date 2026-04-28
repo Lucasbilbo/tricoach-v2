@@ -938,21 +938,21 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
                     expanded ? (
                       <div>
                         {sesion.estructura ? (
-                          <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6, width: '100%' }}>
                             {sesion.estructura.calentamiento && (
-                              <div style={{ fontSize: 12, color: 'var(--muted-foreground)', lineHeight: 1.5 }}>
+                              <div style={{ fontSize: 12, color: 'var(--muted-foreground)', lineHeight: 1.5, wordBreak: 'break-word' }}>
                                 <span style={{ fontWeight: 600 }}>🔥 Calentamiento</span><br />
                                 {sesion.estructura.calentamiento}
                               </div>
                             )}
                             {sesion.estructura.principal && (
-                              <div style={{ fontSize: 12, color: 'var(--foreground)', lineHeight: 1.5 }}>
+                              <div style={{ fontSize: 12, color: 'var(--foreground)', lineHeight: 1.5, wordBreak: 'break-word' }}>
                                 <span style={{ fontWeight: 600 }}>💪 Principal</span><br />
                                 {sesion.estructura.principal}
                               </div>
                             )}
                             {sesion.estructura.vuelta_calma && (
-                              <div style={{ fontSize: 12, color: 'var(--muted-foreground)', lineHeight: 1.5 }}>
+                              <div style={{ fontSize: 12, color: 'var(--muted-foreground)', lineHeight: 1.5, wordBreak: 'break-word' }}>
                                 <span style={{ fontWeight: 600 }}>🧘 Vuelta a la calma</span><br />
                                 {sesion.estructura.vuelta_calma}
                               </div>
