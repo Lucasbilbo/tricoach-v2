@@ -261,3 +261,8 @@ Lee DESIGN.md para el sistema de diseño de referencia (Linear.app).
 
 ## Documentación de arquitectura
 Lee SPEC.md antes de cualquier tarea relacionada con macrociclos, planes, sesiones o training_cycles.
+
+## Git
+- Después de cada commit, SIEMPRE ejecutar `git push origin main` inmediatamente
+- Nunca dar una tarea por terminada sin confirmar que el push se ha ejecutado
+- No asumir que Netlify ha desplegado — el deploy solo ocurre tras el push
