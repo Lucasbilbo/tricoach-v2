@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { markSessionComplete } from '../lib/plans'
+import CicloCompletadoBanner from './CicloCompletadoBanner'
 
 function generarTCX(sesion) {
   const ahora = new Date().toISOString()
@@ -113,7 +114,7 @@ const FASE_COLORS = {
   taper: '#8B5CF6',
 }
 
-export default function Dashboard({ userId, plan, profile, activeCycle, loading, onPlanUpdate, onNavigate }) {
+export default function Dashboard({ userId, plan, profile, activeCycle, loading, onPlanUpdate, onNavigate, cicloCompletado, onRenovarCiclo, renovandoCiclo }) {
   const [completando, setCompletando] = useState(false)
   const [rpe, setRpe] = useState(6)
   const [showMovilidad, setShowMovilidad] = useState(false)
@@ -439,6 +440,15 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
               Generar mi plan
             </button>
           </div>
+        )}
+
+        {/* Completed cycle banner */}
+        {!loading && cicloCompletado && (
+          <CicloCompletadoBanner
+            semanasTotales={activeCycle?.semanas_totales}
+            onRenovar={onRenovarCiclo}
+            renovando={renovandoCiclo}
+          />
         )}
 
         {/* Macrocycle bar */}

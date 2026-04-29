@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
 import { getProfile, createProfile, updateProfile } from './lib/profiles'
 import { getPlanActual, getPlanProximaSemana, getHistorialPlanes, generatePlan, markSessionComplete, getNextWeekStart, esFormatoAntiguo } from './lib/plans'
+import { esCicloCompletado } from './lib/cycles'
 import Login from './components/Login'
 import Onboarding from './components/Onboarding'
 import Chat from './components/Chat'
@@ -33,6 +34,9 @@ function App() {
   const [selectedSession, setSelectedSession] = useState(null)
   const [chatPrefill, setChatPrefill] = useState('')
   const [planActualizando, setPlanActualizando] = useState(false)
+  const [cicloCompletado, setCicloCompletado] = useState(false)
+  const [cicloRenovadoSuccess, setCicloRenovadoSuccess] = useState(false)
+  const [renovandoCiclo, setRenovandoCiclo] = useState(false)
 
   async function loadOrCreateProfile(user) {
     let profile = await getProfile(user.id)
@@ -69,6 +73,43 @@ function App() {
       }
     } catch (e) {
       console.error('[App] loadOrCreateCycle error:', e)
+    }
+  }
+
+  useEffect(() => {
+    if (!activeCycle) { setCicloCompletado(false); return }
+    const semanaActual = Math.max(1, Math.round(
+      (new Date() - new Date(activeCycle.fecha_inicio)) / (7 * 24 * 60 * 60 * 1000)
+    ) + 1)
+    setCicloCompletado(esCicloCompletado(activeCycle, semanaActual))
+  }, [activeCycle])
+
+  async function handleRenovarCiclo() {
+    if (!session?.user?.id) return
+    setRenovandoCiclo(true)
+    try {
+      // Marcar ciclo actual como completado
+      if (activeCycle?.id) {
+        await supabase.from('training_cycles').update({ estado: 'completed' }).eq('id', activeCycle.id)
+      }
+      // Crear nuevo ciclo
+      const secret = import.meta.env.VITE_TRICOACH_SECRET || ''
+      const res = await fetch('/.netlify/functions/create-cycle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-tricoach-secret': secret },
+        body: JSON.stringify({ userId: session.user.id }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data.cycle) {
+        setActiveCycle(data.cycle)
+        setCicloCompletado(false)
+        setCicloRenovadoSuccess(true)
+        setTimeout(() => setCicloRenovadoSuccess(false), 4000)
+      }
+    } catch (e) {
+      console.error('[App] handleRenovarCiclo error:', e)
+    } finally {
+      setRenovandoCiclo(false)
     }
   }
 
@@ -201,6 +242,27 @@ function App() {
         </div>
       )}
 
+      {cicloRenovadoSuccess && (
+        <div style={{
+          position: 'fixed',
+          top: 16,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'var(--success)',
+          color: 'oklch(0.13 0.01 60)',
+          borderRadius: 'var(--radius)',
+          padding: '10px 20px',
+          fontWeight: 600,
+          fontSize: 14,
+          zIndex: 200,
+          fontFamily: 'var(--font-sans)',
+          boxShadow: '0 4px 20px oklch(0 0 0 / 0.3)',
+          whiteSpace: 'nowrap',
+        }}>
+          🔄 ¡Nuevo ciclo iniciado! Semana 1 de 16
+        </div>
+      )}
+
       {planActualizando && (
         <div style={{
           position: 'fixed',
@@ -228,6 +290,9 @@ function App() {
             loading={planLoading}
             onPlanUpdate={setPlan}
             onNavigate={handleNavigate}
+            cicloCompletado={cicloCompletado}
+            onRenovarCiclo={handleRenovarCiclo}
+            renovandoCiclo={renovandoCiclo}
           />
         </ErrorBoundary>
       )}

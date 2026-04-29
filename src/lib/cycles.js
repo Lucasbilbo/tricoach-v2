@@ -86,3 +86,13 @@ export function getNumeroSemana(fechaInicio, fechaSemanaActual) {
   const semanas = Math.round(diff / (7 * 24 * 60 * 60 * 1000))
   return semanas + 1
 }
+
+/**
+ * Devuelve true si el ciclo genérico (sin fecha_carrera) ha llegado a su última semana.
+ * Los ciclos con carrera nunca se consideran "completados" por esta función —
+ * su finalización la gestiona la propia fecha de la carrera.
+ */
+export function esCicloCompletado(cycle, numeroSemanaActual) {
+  if (!cycle || cycle.fecha_carrera) return false
+  return numeroSemanaActual >= cycle.semanas_totales
+}
