@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getRecentPlans, calcularConsistencia } from '../lib/plans'
+import { getRecentPlans, getHistorialPlanes, calcularConsistencia } from '../lib/plans'
 
 function diasRestantes(fechaCarrera) {
   if (!fechaCarrera) return null
@@ -249,14 +249,15 @@ function TimelineMacrociclo({ cycle }) {
   )
 }
 
-export default function Progress({ userId, profile, activeCycle, onNavigate }) {
-  const [planes, setPlanes] = useState(null)
+export default function Progress({ userId, profile, activeCycle, plan: planActual, onNavigate }) {
+  const [planes, setPlanes] = useState(null)       // past completed weeks (for stats)
   const [actividades, setActividades] = useState(null) // null=no cargado, []= vacío, [...]= datos
   const [loadingActividades, setLoadingActividades] = useState(false)
 
   useEffect(() => {
     if (!userId) return
-    getRecentPlans(userId, 4).then(setPlanes).catch(() => setPlanes([]))
+    // Use past weeks only for consistency/adherence stats — current week is in progress
+    getHistorialPlanes(userId, 4).then(setPlanes).catch(() => setPlanes([]))
   }, [userId])
 
   useEffect(() => {
@@ -457,8 +458,8 @@ export default function Progress({ userId, profile, activeCycle, onNavigate }) {
           </>
         )}
 
-        {/* Weekly bar chart */}
-        {!vacio && planes !== null && <GraficoSemana plan={planes[0]} />}
+        {/* Weekly bar chart — uses current week plan prop (not historical) */}
+        {planActual && <GraficoSemana plan={planActual} />}
 
         {/* Coach message */}
         {mensaje && (

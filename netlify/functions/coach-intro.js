@@ -95,6 +95,11 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId y perfil requeridos' }) };
   }
 
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!UUID_REGEX.test(userId)) {
+    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId inválido' }) };
+  }
+
   const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
   if (!ANTHROPIC_KEY) {
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'API key not configured' }) };

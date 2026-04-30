@@ -82,6 +82,11 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId y priceId son requeridos' }) };
   }
 
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!UUID_REGEX.test(userId)) {
+    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId inválido' }) };
+  }
+
   const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
   if (!STRIPE_SECRET_KEY) {
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Stripe no configurado' }) };

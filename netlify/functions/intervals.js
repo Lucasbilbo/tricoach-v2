@@ -83,9 +83,12 @@ exports.handler = async (event) => {
   const action = params.get('action')
 
   // GET — wellness o list
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
   if (event.httpMethod === 'GET') {
     const userId = params.get('userId')
     if (!userId) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId requerido' }) }
+    if (!UUID_REGEX.test(userId)) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId inválido' }) }
 
     const creds = await getIntervalsCredentials(userId)
     if (!creds) return { statusCode: 403, headers: CORS, body: JSON.stringify({ error: 'Intervals no configurado' }) }
@@ -114,6 +117,7 @@ exports.handler = async (event) => {
 
     const { userId, ...eventData } = parsed
     if (!userId) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId requerido' }) }
+    if (!UUID_REGEX.test(userId)) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId inválido' }) }
 
     const creds = await getIntervalsCredentials(userId)
     if (!creds) return { statusCode: 403, headers: CORS, body: JSON.stringify({ error: 'Intervals no configurado' }) }
@@ -127,6 +131,7 @@ exports.handler = async (event) => {
     const userId = params.get('userId')
     const id = params.get('id')
     if (!userId || !id) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId e id requeridos' }) }
+    if (!UUID_REGEX.test(userId)) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId inválido' }) }
 
     const creds = await getIntervalsCredentials(userId)
     if (!creds) return { statusCode: 403, headers: CORS, body: JSON.stringify({ error: 'Intervals no configurado' }) }

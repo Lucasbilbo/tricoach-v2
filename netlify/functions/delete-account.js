@@ -44,6 +44,11 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId requerido' }) };
   }
 
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!UUID_REGEX.test(userId)) {
+    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId inválido' }) };
+  }
+
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
   const hostname = new URL(supabaseUrl).hostname;
@@ -78,28 +83,19 @@ exports.handler = async (event) => {
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Error al borrar planes' }) };
   }
 
-  // Delete profile
+  // Soft-delete profile: set deleted_at instead of hard DELETE so the account
+  // can be detected on login and the user shown a clear message.
+  // Required migration: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
+  const deletedAtBody = JSON.stringify({ deleted_at: new Date().toISOString() });
   const profileResult = await httpsRequest({
     hostname,
     path: `/rest/v1/profiles?id=eq.${userId}`,
-    method: 'DELETE',
-    headers: baseHeaders,
-  });
+    method: 'PATCH',
+    headers: { ...baseHeaders, 'Content-Length': Buffer.byteLength(deletedAtBody) },
+  }, deletedAtBody);
   if (profileResult.status >= 300) {
-    console.error('delete-account: error borrando profile', profileResult.body);
-    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Error al borrar perfil' }) };
-  }
-
-  // Delete auth user via Supabase Admin API
-  const authResult = await httpsRequest({
-    hostname,
-    path: `/auth/v1/admin/users/${userId}`,
-    method: 'DELETE',
-    headers: baseHeaders,
-  });
-  if (authResult.status >= 300) {
-    console.error('delete-account: error borrando auth user', authResult.body);
-    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Error al borrar usuario' }) };
+    console.error('delete-account: error actualizando profile', profileResult.body);
+    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Error al eliminar la cuenta' }) };
   }
 
   return { statusCode: 200, headers: CORS, body: JSON.stringify({ success: true }) };

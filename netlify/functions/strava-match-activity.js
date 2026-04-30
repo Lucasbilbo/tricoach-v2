@@ -47,6 +47,11 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId, sessionDate y sessionTipo son requeridos' }) };
   }
 
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!UUID_REGEX.test(userId)) {
+    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId inválido' }) };
+  }
+
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 

@@ -32,6 +32,8 @@ Cada recomendación tiene una razón fisiológica. Usas métricas exactas: zonas
 }
 
 export function buildSystemPrompt(profile, personalidad = 'cercano', actividades = null, plan = null, planProximaSemana = null, historialPlanes = [], cycle = null) {
+  const truncar = (str, max) => str && str.length > max ? str.slice(0, max) + '…' : str
+
   const ahora = new Date().toLocaleDateString('es-ES', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
     timeZone: 'Europe/Madrid'
@@ -42,9 +44,9 @@ export function buildSystemPrompt(profile, personalidad = 'cercano', actividades
     : profile.deporte ? [{ deporte: profile.deporte, nivel: profile.nivel }] : []
   const deporte = deportesArr[0]?.deporte || profile.deporte || 'deporte de resistencia'
   const nivel = deportesArr[0]?.nivel || profile.nivel || 'principiante'
-  const objetivo = profile.objetivo || 'mejorar mi forma física'
-  const nombre = profile.nombre || 'atleta'
-  const nombreCoach = profile.nombre_coach || 'Coach'
+  const objetivo = truncar(profile.objetivo, 200) || 'mejorar mi forma física'
+  const nombre = truncar(profile.nombre, 50) || 'atleta'
+  const nombreCoach = truncar(profile.nombre_coach, 50) || 'Coach'
 
   // Carreras: array o legacy fecha_carrera
   const carrerasArr = Array.isArray(profile.carreras) && profile.carreras.length > 0
@@ -68,7 +70,7 @@ export function buildSystemPrompt(profile, personalidad = 'cercano', actividades
     ? `El próximo evento es "${carreraProxima.nombre || carreraProxima.tipo}" el ${fechaCarreraLegible}.`
     : ''
   const contexto = profile.contexto
-    ? `\nLo que sabes de este atleta de conversaciones anteriores:\n${profile.contexto}`
+    ? `\nLo que sabes de este atleta de conversaciones anteriores:\n${truncar(profile.contexto, 500)}`
     : ''
 
   const deporteInfo = {
@@ -269,8 +271,8 @@ Cuando el usuario comparta resultados: calcula sus zonas, explícaselas de forma
       ganancia_muscular: 'objetivo: ganancia muscular',
     }
     const objNutInfo = profile.objetivo_nutricional ? objNut[profile.objetivo_nutricional] || '' : ''
-    const prefsInfo = profile.preferencias_alimentarias ? `Preferencias: ${profile.preferencias_alimentarias}.` : ''
-    const intolerInfo = profile.intolerancias ? `Intolerancias/alergias (SIEMPRE respetar): ${profile.intolerancias}.` : ''
+    const prefsInfo = profile.preferencias_alimentarias ? `Preferencias: ${truncar(profile.preferencias_alimentarias, 200)}.` : ''
+    const intolerInfo = profile.intolerancias ? `Intolerancias/alergias (SIEMPRE respetar): ${truncar(profile.intolerancias, 200)}.` : ''
     return `
 CONOCIMIENTO NUTRICIONAL INTEGRADO CON EL PLAN:
 Eres también experto en nutrición deportiva. Cuando sea relevante, combina entrenamiento y nutrición de forma natural — como un coach real que conoce ambas dimensiones del atleta.

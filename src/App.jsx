@@ -37,9 +37,15 @@ function App() {
   const [cicloCompletado, setCicloCompletado] = useState(false)
   const [cicloRenovadoSuccess, setCicloRenovadoSuccess] = useState(false)
   const [renovandoCiclo, setRenovandoCiclo] = useState(false)
+  const [cuentaEliminada, setCuentaEliminada] = useState(false)
 
   async function loadOrCreateProfile(user) {
     let profile = await getProfile(user.id)
+    if (profile?.deleted_at) {
+      await supabase.auth.signOut()
+      setCuentaEliminada(true)
+      return
+    }
     if (!profile) {
       profile = await createProfile(user)
     }
@@ -115,6 +121,8 @@ function App() {
 
   function handleNavigate(screen) {
     window.scrollTo(0, 0)
+    // Each screen uses its own overflow-y:auto container (.screen-enter) — reset its scroll too
+    document.querySelectorAll('.screen-enter').forEach(el => { el.scrollTop = 0 })
     setCurrentScreen(screen)
   }
 
@@ -203,6 +211,14 @@ function App() {
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: 'var(--muted-foreground)' }}>
       Cargando...
+    </div>
+  )
+
+  if (cuentaEliminada) return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', padding: 24, textAlign: 'center', color: 'var(--foreground)' }}>
+      <p style={{ fontSize: 40, marginBottom: 16 }}>🗑️</p>
+      <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 22, fontWeight: 700, marginBottom: 12 }}>Cuenta eliminada</h2>
+      <p style={{ color: 'var(--muted-foreground)', fontSize: 15, maxWidth: 300 }}>Esta cuenta ha sido eliminada y ya no está disponible.</p>
     </div>
   )
 

@@ -179,10 +179,12 @@ export function calcularConsistencia(planes) {
   let total = 0
   for (const plan of planes) {
     for (const s of (plan.sesiones || [])) {
-      if (s.tipo?.toLowerCase() !== 'descanso') {
-        total++
-        if (s.completada) completadas++
-      }
+      const tipo = s.tipo?.toLowerCase()
+      // Skip rest days and sessions with no type
+      if (!tipo || tipo === 'descanso' || s.intensidad === 'descanso') continue
+      total++
+      // Robust check: handle boolean true, number 1, or string "true"
+      if (s.completada === true || s.completada === 1 || s.completada === 'true') completadas++
     }
   }
   if (total === 0) return null

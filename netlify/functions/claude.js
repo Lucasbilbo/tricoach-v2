@@ -66,21 +66,36 @@ function supabaseGet(hostname, path, key) {
   });
 }
 
-function supabasePatch(hostname, path, key, body) {
+// Atomic rate-limit increment via Postgres RPC.
+// Required SQL (run once in Supabase SQL Editor):
+//   CREATE OR REPLACE FUNCTION increment_messages_today(p_user_id uuid, p_limit int, p_today text)
+//   RETURNS int LANGUAGE plpgsql SECURITY DEFINER AS $$
+//   DECLARE new_count int;
+//   BEGIN
+//     UPDATE profiles
+//     SET messages_today = CASE WHEN last_message_date::text = p_today THEN messages_today + 1 ELSE 1 END,
+//         last_message_date = p_today::date
+//     WHERE id = p_user_id AND (last_message_date::text != p_today OR messages_today < p_limit)
+//     RETURNING messages_today INTO new_count;
+//     RETURN COALESCE(new_count, -1);
+//   END; $$;
+//   GRANT EXECUTE ON FUNCTION increment_messages_today TO service_role;
+function supabaseRpc(hostname, path, key, body) {
   const bodyStr = JSON.stringify(body);
   return new Promise((resolve) => {
     const req = https.request({
-      hostname, path, method: 'PATCH',
+      hostname, path, method: 'POST',
       headers: {
         'apikey': key, 'Authorization': `Bearer ${key}`,
-        'Content-Type': 'application/json', 'Prefer': 'return=minimal',
+        'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(bodyStr)
       }
     }, (r) => {
-      r.on('data', () => {});
-      r.on('end', () => resolve(r.statusCode));
+      let d = '';
+      r.on('data', chunk => d += chunk);
+      r.on('end', () => { try { resolve(JSON.parse(d)); } catch { resolve(null); } });
     });
-    req.on('error', () => resolve(500));
+    req.on('error', () => resolve(null));
     req.write(bodyStr);
     req.end();
   });
@@ -118,43 +133,46 @@ exports.handler = async (event) => {
     parsed.messages = parsed.messages.slice(-60);
   }
 
-  // ── Rate limiting via Supabase ──
+  // ── Rate limiting via atomic Supabase RPC ──
   const { userId } = parsed;
   if (userId) {
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_REGEX.test(userId)) {
+      return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId inválido' }) };
+    }
+
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
     const hostname = new URL(supabaseUrl).hostname;
 
+    // Read plan to determine the right limit, then atomically increment
     const profile = await supabaseGet(
       hostname,
-      `/rest/v1/profiles?id=eq.${userId}&select=plan,messages_today,last_message_date`,
+      `/rest/v1/profiles?id=eq.${userId}&select=plan`,
       supabaseKey
     );
 
     if (profile) {
-      const today = new Date().toISOString().split('T')[0]; // UTC date
+      const today = new Date().toISOString().split('T')[0];
       const plan = profile.plan || 'free';
       const limit = DAILY_LIMIT[plan] ?? DAILY_LIMIT.free;
 
-      // Reset counter if date has changed
-      const currentCount = profile.last_message_date === today ? (profile.messages_today || 0) : 0;
+      // Single atomic operation: increment if under limit, reset if new day, return -1 if blocked
+      const newCount = await supabaseRpc(
+        hostname,
+        '/rest/v1/rpc/increment_messages_today',
+        supabaseKey,
+        { p_user_id: userId, p_limit: limit, p_today: today }
+      );
 
-      if (currentCount >= limit) {
-        console.log('[RateLimit] Usuario bloqueado:', userId, 'plan:', plan, 'count:', currentCount, 'limit:', limit);
+      if (newCount === -1 || newCount === null) {
+        console.log('[RateLimit] Usuario bloqueado:', userId, 'plan:', plan, 'limit:', limit);
         return {
           statusCode: 429,
           headers: CORS,
           body: JSON.stringify({ error: 'Has alcanzado el límite de mensajes de hoy' })
         };
       }
-
-      // Increment counter in Supabase BEFORE calling Claude
-      await supabasePatch(
-        hostname,
-        `/rest/v1/profiles?id=eq.${userId}`,
-        supabaseKey,
-        { messages_today: currentCount + 1, last_message_date: today }
-      );
     }
   }
 

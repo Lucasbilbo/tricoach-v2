@@ -171,6 +171,11 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId requerido' }) };
   }
 
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!UUID_REGEX.test(userId)) {
+    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId inválido' }) };
+  }
+
   const key = process.env.SUPABASE_SERVICE_KEY;
   if (!key) {
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Server misconfigured' }) };
