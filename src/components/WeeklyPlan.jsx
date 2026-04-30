@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { generatePlan, getPlanForWeek, getNextWeekStart, adjustPlan, analizarPlan } from '../lib/plans'
 import ModalCompletarSesion from './ModalCompletarSesion'
+import AdjustmentBanner from './AdjustmentBanner'
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 
@@ -54,6 +55,7 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
   const [rpe, setRpe] = useState(5)
   const [sesionParaCompletar, setSesionParaCompletar] = useState(null)
   const [ajustando, setAjustando] = useState(false)
+  const [ajusteBanner, setAjusteBanner] = useState(null) // { reason, mensaje }
   const [diaInicio, setDiaInicio] = useState(String(_todayDate.getDate()))
   const [mesInicio, setMesInicio] = useState(MESES[_todayDate.getMonth()])
   const [anioInicio, setAnioInicio] = useState(String(_todayDate.getFullYear()))
@@ -211,9 +213,16 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
 
   async function handleAjustar(motivo, descripcion = '') {
     setAjustando(motivo)
+    setAjusteBanner(null)
     try {
       const updated = await adjustPlan(userId, plan.id, motivo, descripcion)
       onPlanUpdate(updated)
+      if (updated?.mensaje) {
+        const label = motivo === 'lesion' ? 'Lesión detectada'
+          : motivo === 'viaje' ? 'Viaje adaptado'
+          : 'Plan actualizado'
+        setAjusteBanner({ reason: label, mensaje: updated.mensaje })
+      }
     } catch (e) {
       console.error('Error al ajustar plan:', e)
       setErrorToast('No se pudo ajustar el plan. Inténtalo de nuevo.')
@@ -733,6 +742,38 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
               </div>
             </div>
           </div>
+        )}
+
+        {/* Toast "Ajustando..." */}
+        {ajustando !== false && (
+          <div style={{
+            position: 'fixed',
+            bottom: 'calc(80px + env(safe-area-inset-bottom, 16px))',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'oklch(0.22 0.015 60)',
+            border: '1px solid var(--border)',
+            color: 'var(--foreground)',
+            borderRadius: 99,
+            padding: '10px 20px',
+            fontSize: 13,
+            fontFamily: 'var(--font-sans)',
+            fontWeight: 500,
+            zIndex: 200,
+            whiteSpace: 'nowrap',
+            boxShadow: '0 4px 16px oklch(0 0 0 / 0.3)',
+          }}>
+            ⏳ Ajustando tu plan...
+          </div>
+        )}
+
+        {/* Banner de ajuste del coach */}
+        {ajusteBanner && (
+          <AdjustmentBanner
+            reason={ajusteBanner.reason}
+            mensaje={ajusteBanner.mensaje}
+            onDismiss={() => setAjusteBanner(null)}
+          />
         )}
 
         {/* Botones de ajuste rápido */}

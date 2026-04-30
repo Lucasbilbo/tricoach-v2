@@ -123,8 +123,29 @@ function buildMotivoPrompt(motivo, descripcion, pendientesStr) {
       return `El atleta está lesionado${desc}. Genera una semana de recuperación activa. Sin impacto, sin pesos. Solo movilidad, natación suave o bici estática. Mantén la rutina sin forzar.`;
     case 'viaje':
       return `El atleta va de viaje${desc}. Adapta las sesiones pendientes para hacer sin material ni gym. Running, HIIT con peso corporal, estiramientos.`;
+    case 'sobrecarga':
+      return `El atleta muestra señales de sobrecarga (RPE elevado o volumen excesivo de Strava). Reduce la intensidad y/o duración de las sesiones pendientes un 20-30%. Mantén el tipo de sesión pero baja la carga. Prioriza la recuperación.`;
+    case 'sesiones_perdidas':
+      return `El atleta ha perdido varias sesiones esta semana. Sesiones pendientes: ${pendientesStr}. Redistribuye priorizando las más importantes y reduciendo el volumen total un 20%. No intentes recuperar todo lo perdido.`;
     default:
       return `Ajusta el plan según esta situación: ${descripcion || motivo}`;
+  }
+}
+
+function getMensajeAjuste(motivo) {
+  switch (motivo) {
+    case 'sobrecarga':
+      return 'He notado un esfuerzo elevado. He reducido la carga de los próximos días para que llegues fresco.';
+    case 'sesiones_perdidas':
+      return 'Has perdido varias sesiones. He reorganizado la semana priorizando las más importantes.';
+    case 'lesion':
+      return 'He eliminado las sesiones de impacto. Semana de recuperación activa hasta que estés bien.';
+    case 'viaje':
+      return 'Plan adaptado para hacer sin material. Running y trabajo corporal donde estés.';
+    case 'dia_suelto':
+      return 'He redistribuido la sesión de hoy en los días que quedan de la semana.';
+    default:
+      return 'He ajustado el plan según la situación.';
   }
 }
 
@@ -147,9 +168,11 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'JSON inválido' }) };
   }
 
-  const { userId, planId, motivo, descripcion } = parsed;
+  const { userId, planId, motivo: motivoRaw, signal, descripcion } = parsed;
+  // signal is the new param; motivo is the legacy param — both accepted
+  const motivo = signal || motivoRaw;
   if (!userId || !planId || !motivo) {
-    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId, planId y motivo son requeridos' }) };
+    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId, planId y motivo/signal son requeridos' }) };
   }
 
   const supabaseUrl = process.env.SUPABASE_URL;
@@ -274,10 +297,11 @@ Conserva el campo "completada: true" y TODOS los campos originales (incluyendo e
   );
 
   const plan = Array.isArray(updated) ? updated[0] : updated;
+  const mensaje = getMensajeAjuste(motivo);
 
   return {
     statusCode: 200,
     headers: { ...CORS, 'Content-Type': 'application/json' },
-    body: JSON.stringify(plan)
+    body: JSON.stringify({ ...plan, mensaje })
   };
 };

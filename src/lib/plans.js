@@ -149,6 +149,20 @@ export async function adjustPlan(userId, planId, motivo, descripcion) {
   return response.json()
 }
 
+export async function autoAdjustPlan(userId, planId, signal) {
+  const secret = import.meta.env.VITE_TRICOACH_SECRET || ''
+  const response = await fetch('/.netlify/functions/adjust-plan', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'x-tricoach-secret': secret
+    },
+    body: JSON.stringify({ userId, planId, signal })
+  })
+  return response.json()
+}
+
 export async function getRecentPlans(userId, numSemanas = 4) {
   const { data } = await supabase
     .from('plans')

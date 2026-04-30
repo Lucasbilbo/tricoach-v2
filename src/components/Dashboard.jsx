@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
-import { markSessionComplete } from '../lib/plans'
+import { markSessionComplete, autoAdjustPlan } from '../lib/plans'
+import { checkShouldAdjust } from '../lib/autoAdjust'
 import CicloCompletadoBanner from './CicloCompletadoBanner'
+import AdjustmentBanner from './AdjustmentBanner'
 
 function generarTCX(sesion) {
   const ahora = new Date().toISOString()
@@ -121,6 +123,7 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
   const [showMovilidad, setShowMovilidad] = useState(false)
   const [syncToast, setSyncToast] = useState(null)
   const [stravaSyncLoading, setStravaSyncLoading] = useState(false)
+  const [adjustBanner, setAdjustBanner] = useState(null) // { reason, mensaje }
   const [intervalsLoading, setIntervalsLoading] = useState(false)
   const [intervalsToast, setIntervalsToast] = useState(null)
   const syncedRef = useRef(false)
@@ -179,8 +182,18 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
       })
       const data = await r.json()
       if (data.sincronizadas > 0 && data.sesiones) {
-        onPlanUpdate({ ...plan, sesiones: data.sesiones })
+        const updatedPlan = { ...plan, sesiones: data.sesiones }
+        onPlanUpdate(updatedPlan)
         setSyncToast(`✓ ${data.sincronizadas} sesión${data.sincronizadas > 1 ? 'es' : ''} sincronizada${data.sincronizadas > 1 ? 's' : ''} con Strava`)
+        // Comprobar si hay señales de sobrecarga tras la sincronización
+        const { shouldAdjust, reason, signal } = checkShouldAdjust(updatedPlan, profile)
+        if (shouldAdjust) {
+          const result = await autoAdjustPlan(userId, plan.id, signal)
+          if (result?.sesiones) {
+            onPlanUpdate(result)
+            setAdjustBanner({ reason, mensaje: result.mensaje || 'Plan ajustado según los datos de Strava.' })
+          }
+        }
       } else {
         setSyncToast('Todo al día ✓')
       }
@@ -236,6 +249,14 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
     try {
       const updated = await markSessionComplete(plan.id, sesionHoy.dia, rpe)
       onPlanUpdate(updated)
+      // Auto-adjust si RPE >= 8 (señal de sobrecarga)
+      if (rpe >= 8) {
+        const result = await autoAdjustPlan(userId, plan.id, 'sobrecarga')
+        if (result?.sesiones) {
+          onPlanUpdate(result)
+          setAdjustBanner({ reason: 'RPE elevado', mensaje: result.mensaje || 'Tu coach ha ajustado el plan para los próximos días.' })
+        }
+      }
     } catch (e) {
       console.error(e)
     } finally {
@@ -449,6 +470,16 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
             semanasTotales={activeCycle?.semanas_totales}
             onRenovar={onRenovarCiclo}
             renovando={renovandoCiclo}
+          />
+        )}
+
+        {/* Auto-adjustment banner */}
+        {adjustBanner && (
+          <AdjustmentBanner
+            reason={adjustBanner.reason}
+            mensaje={adjustBanner.mensaje}
+            onVerCambios={onNavigate ? () => onNavigate('plan') : undefined}
+            onDismiss={() => setAdjustBanner(null)}
           />
         )}
 
