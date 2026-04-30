@@ -637,7 +637,7 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
                     fontSize: 36,
                     fontWeight: 700,
                     marginBottom: 12,
-                    color: sesionHoy.completada ? 'var(--success)' : 'var(--foreground)',
+                    color: '#FFFFFF',
                     letterSpacing: '-0.5px',
                   }}>
                     {sesionHoy.tipo}
