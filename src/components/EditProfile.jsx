@@ -57,13 +57,13 @@ function StravaDisconnect({ userId, onDisconnected }) {
 const inputStyle = {
   display: 'block',
   width: '100%',
-  background: 'var(--input)',
-  border: '1px solid var(--border)',
-  borderRadius: 8,
-  color: 'var(--foreground)',
+  background: '#141414',
+  border: '1px solid #2a2a2a',
+  borderRadius: 10,
+  color: '#e0e0e0',
   fontFamily: 'var(--font-sans)',
   fontSize: 14,
-  padding: '9px 12px',
+  padding: '12px 16px',
   marginTop: 6,
   marginBottom: 14,
   outline: 'none',
@@ -71,9 +71,11 @@ const inputStyle = {
 
 const labelStyle = {
   display: 'block',
-  fontSize: 13,
-  color: 'var(--muted-foreground)',
-  fontWeight: 500,
+  fontSize: '11px',
+  fontWeight: 600,
+  letterSpacing: '1px',
+  color: '#666',
+  textTransform: 'uppercase',
 }
 
 const DEPORTES_EDIT = [
@@ -466,13 +468,35 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade,
         <input style={inputStyle} value={nombreCoach} onChange={e => setNombreCoach(e.target.value)} placeholder="Ej: Alex" />
 
         <label style={labelStyle}>Estilo del coach</label>
-        <select style={inputStyle} value={personalidad} onChange={e => setPersonalidad(e.target.value)}>
-          <option value="cercano">😊 Cercano</option>
-          <option value="estricto">💪 Estricto</option>
-          <option value="gracioso">😄 Gracioso</option>
-          <option value="motivador">🔥 Motivador</option>
-          <option value="cientifico">🔬 Científico</option>
-        </select>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
+          {[
+            { value: 'cercano', label: '😊 Cercano' },
+            { value: 'estricto', label: '💪 Estricto' },
+            { value: 'gracioso', label: '😄 Gracioso' },
+            { value: 'motivador', label: '🔥 Motivador' },
+            { value: 'cientifico', label: '🔬 Científico' },
+          ].map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setPersonalidad(value)}
+              style={{
+                background: personalidad === value ? 'rgba(255,107,53,0.1)' : '#141414',
+                border: personalidad === value ? '2px solid #FF6B35' : '1px solid #2a2a2a',
+                borderRadius: 10,
+                color: personalidad === value ? '#FF6B35' : 'var(--muted-foreground)',
+                fontFamily: 'var(--font-sans)',
+                fontSize: 13,
+                fontWeight: personalidad === value ? 600 : 400,
+                padding: '8px 14px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
         <label style={labelStyle}>Historial deportivo</label>
         <textarea

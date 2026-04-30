@@ -28,6 +28,7 @@ const SPORT_COLORS = {
 }
 
 const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+const DIA_OFFSET_MAP = { Lunes: 0, Martes: 1, 'Miércoles': 2, Jueves: 3, Viernes: 4, Sábado: 5, Domingo: 6 }
 
 function getTodayStr() {
   return new Date().toISOString().split('T')[0]
@@ -842,6 +843,12 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
         {/* Sessions */}
         {(!viendoProxima || (viendoProxima && displayedPlan)) && !loadingProxima && displayedPlan?.sesiones?.map((sesion) => {
           const esHoy = sesion.dia === today && !esSemanaPasada && !esPlanFuturo && !viendoProxima
+          const sesionFecha = (() => {
+            const base = new Date(displayedPlan.semana + 'T12:00:00')
+            base.setDate(base.getDate() + (DIA_OFFSET_MAP[sesion.dia] ?? 0))
+            return base.toISOString().split('T')[0]
+          })()
+          const esPasadoEnSemanaActual = !esSemanaPasada && !esPlanFuturo && !viendoProxima && sesionFecha < todayStr && !esHoy
           const sportColor = SPORT_COLORS[sesion.tipo] || '#374151'
           const leftBorderColor = sesion.completada ? 'oklch(0.7 0.14 180)' : sportColor
           const expanded = expandedDias.has(sesion.dia) || esHoy
@@ -860,6 +867,7 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
                 padding: '14px 16px',
                 marginBottom: 8,
                 transition: 'background 0.2s',
+                opacity: esPasadoEnSemanaActual ? 0.5 : 1,
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
@@ -909,26 +917,39 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
                     )}
                     {sesion.zona_objetivo && (
                       <span style={{
-                        fontSize: 10,
-                        background: 'var(--secondary)',
-                        color: 'var(--muted-foreground)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 99,
+                        fontSize: 11,
+                        background: '#1a1a1a',
+                        color: '#aaa',
+                        border: '1px solid #2a2a2a',
+                        borderRadius: 20,
                         padding: '1px 7px',
                         fontWeight: 600,
+                        letterSpacing: '0.5px',
                       }}>
                         {sesion.zona_objetivo}
                       </span>
                     )}
                     {sesion.intensidad && sesion.intensidad !== 'descanso' && (
                       <span style={{
-                        fontSize: 10,
-                        background: `${sportColor}15`,
-                        color: sportColor,
-                        border: `1px solid ${sportColor}30`,
-                        borderRadius: 99,
+                        fontSize: 11,
+                        background: sesion.intensidad?.toLowerCase() === 'suave' ? '#2d4a3e'
+                          : sesion.intensidad?.toLowerCase() === 'media' ? '#3d3520'
+                          : sesion.intensidad?.toLowerCase() === 'alta' ? '#4a1a1a'
+                          : `${sportColor}15`,
+                        color: sesion.intensidad?.toLowerCase() === 'suave' ? '#4ade80'
+                          : sesion.intensidad?.toLowerCase() === 'media' ? '#fbbf24'
+                          : sesion.intensidad?.toLowerCase() === 'alta' ? '#f87171'
+                          : sportColor,
+                        border: `1px solid ${
+                          sesion.intensidad?.toLowerCase() === 'suave' ? '#3d6b55'
+                          : sesion.intensidad?.toLowerCase() === 'media' ? '#5c4d30'
+                          : sesion.intensidad?.toLowerCase() === 'alta' ? '#6b2b2b'
+                          : `${sportColor}30`
+                        }`,
+                        borderRadius: 20,
                         padding: '1px 7px',
                         fontWeight: 600,
+                        letterSpacing: '0.5px',
                       }}>
                         {sesion.intensidad}
                       </span>
@@ -940,19 +961,19 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
                         {sesion.estructura ? (
                           <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6, width: '100%' }}>
                             {sesion.estructura.calentamiento && (
-                              <div style={{ fontSize: 12, color: 'var(--muted-foreground)', lineHeight: 1.5, wordBreak: 'break-word' }}>
+                              <div style={{ fontSize: 12, color: 'var(--muted-foreground)', lineHeight: 1.5, wordBreak: 'break-word', borderLeft: '2px solid #2a2a2a', paddingLeft: 12, margin: '6px 0' }}>
                                 <span style={{ fontWeight: 600 }}>🔥 Calentamiento</span><br />
                                 {sesion.estructura.calentamiento}
                               </div>
                             )}
                             {sesion.estructura.principal && (
-                              <div style={{ fontSize: 12, color: 'var(--foreground)', lineHeight: 1.5, wordBreak: 'break-word' }}>
+                              <div style={{ fontSize: 12, color: 'var(--foreground)', lineHeight: 1.5, wordBreak: 'break-word', borderLeft: '2px solid #2a2a2a', paddingLeft: 12, margin: '6px 0' }}>
                                 <span style={{ fontWeight: 600 }}>💪 Principal</span><br />
                                 {sesion.estructura.principal}
                               </div>
                             )}
                             {sesion.estructura.vuelta_calma && (
-                              <div style={{ fontSize: 12, color: 'var(--muted-foreground)', lineHeight: 1.5, wordBreak: 'break-word' }}>
+                              <div style={{ fontSize: 12, color: 'var(--muted-foreground)', lineHeight: 1.5, wordBreak: 'break-word', borderLeft: '2px solid #2a2a2a', paddingLeft: 12, margin: '6px 0' }}>
                                 <span style={{ fontWeight: 600 }}>🧘 Vuelta a la calma</span><br />
                                 {sesion.estructura.vuelta_calma}
                               </div>
@@ -1010,7 +1031,7 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
                     <span style={{ color: 'var(--success)', fontWeight: 600, fontSize: 13 }}>
                       ✓{sesion.rpe ? ` RPE ${sesion.rpe}` : ''}
                     </span>
-                  ) : sesion.tipo !== 'Descanso' && !esSemanaPasada && (
+                  ) : sesion.tipo !== 'Descanso' && !esSemanaPasada && !esPasadoEnSemanaActual && (
                     <button
                       onClick={() => setSesionParaCompletar(sesion)}
                       style={{

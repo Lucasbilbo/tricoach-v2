@@ -73,7 +73,8 @@ function getSaludo(nombre) {
 }
 
 function getFechaHoy() {
-  return new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
+  const s = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
+  return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
 const RUTINA_MOVILIDAD = [
@@ -349,7 +350,7 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
             <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 22, fontWeight: 600, marginBottom: 2 }}>
               {getSaludo(profile?.nombre)}
             </h2>
-            <p style={{ fontSize: 13, color: 'var(--muted-foreground)', textTransform: 'capitalize' }}>
+            <p style={{ fontSize: 13, color: 'var(--muted-foreground)' }}>
               {getFechaHoy()}
             </p>
           </div>
@@ -360,7 +361,7 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
               style={{
                 background: 'none',
                 border: '1px solid var(--border)',
-                borderRadius: 99,
+                borderRadius: 20,
                 color: stravaSyncLoading ? 'var(--muted-foreground)' : '#fc4c02',
                 fontFamily: 'var(--font-sans)',
                 fontSize: 12,

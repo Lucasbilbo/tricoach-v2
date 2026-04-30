@@ -473,21 +473,23 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
           {welcomeOnboarding ? (
             <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-end', gap: 8 }}>
               <div style={{
-                width: 28, height: 28, borderRadius: '50%',
+                width: 36, height: 36, borderRadius: '50%',
                 background: 'var(--primary)', color: 'var(--primary-foreground)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 11, fontWeight: 700, flexShrink: 0,
+                fontSize: 13, fontWeight: 700, flexShrink: 0,
+                boxShadow: '0 0 12px rgba(255,107,53,0.3)',
               }}>
                 {(profile?.nombre_coach || 'C')[0].toUpperCase()}
               </div>
               <div style={{
-                background: 'var(--card)',
+                background: '#1C1C1E',
                 border: '1px solid var(--border)',
-                borderRadius: '16px 16px 16px 4px',
-                padding: '12px 16px',
+                borderTop: '2px solid rgba(255,107,53,0.3)',
+                borderRadius: '4px 18px 18px 18px',
+                padding: '14px 16px',
                 maxWidth: '80%',
                 fontSize: 15,
-                lineHeight: 1.5,
+                lineHeight: 1.6,
                 color: 'var(--foreground)',
               }}
                 dangerouslySetInnerHTML={{ __html: renderMarkdown(
@@ -511,14 +513,15 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
             }}>
               {msg.role === 'assistant' && (
                 <div style={{
-                  width: 28, height: 28,
+                  width: 36, height: 36,
                   borderRadius: '50%',
                   background: 'var(--primary)',
                   color: 'var(--primary-foreground)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 11, fontWeight: 700,
+                  fontSize: 13, fontWeight: 700,
                   flexShrink: 0,
                   marginBottom: 2,
+                  boxShadow: '0 0 12px rgba(255,107,53,0.3)',
                 }}>
                   {coachInitial}
                 </div>
@@ -532,11 +535,12 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
                 {msg.role === 'assistant' ? (
                   <span
                     style={{
-                      background: 'var(--secondary)',
+                      background: '#1C1C1E',
                       color: 'var(--foreground)',
                       border: '1px solid var(--border)',
-                      padding: '9px 13px',
-                      borderRadius: '4px 16px 16px 16px',
+                      borderTop: '2px solid rgba(255,107,53,0.3)',
+                      padding: '14px 16px',
+                      borderRadius: '4px 18px 18px 18px',
                       display: 'inline-block',
                       fontSize: 14,
                       lineHeight: 1.6,
@@ -715,8 +719,8 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
             <input
               style={{
                 flex: 1,
-                background: escuchando ? 'rgba(239,68,68,0.04)' : 'var(--secondary)',
-                border: escuchando ? '1px solid rgba(239,68,68,0.3)' : '1px solid var(--border)',
+                background: escuchando ? 'rgba(239,68,68,0.04)' : '#1C1C1E',
+                border: escuchando ? '1px solid rgba(239,68,68,0.3)' : '1px solid #2a2a2a',
                 borderRadius: 24,
                 color: 'var(--foreground)',
                 fontFamily: 'var(--font-sans)',
