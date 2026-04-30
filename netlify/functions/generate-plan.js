@@ -129,6 +129,70 @@ function callClaude(apiKey, systemPrompt, userMessage) {
   });
 }
 
+async function refreshStravaToken(userId, stravaToken, stravaRefreshToken, stravaExpiresAt, hostname, supabaseKey) {
+  const now = Math.floor(Date.now() / 1000);
+  if (!stravaExpiresAt || stravaExpiresAt > now) return stravaToken;
+  if (!stravaRefreshToken) return null;
+
+  const postData = new URLSearchParams({
+    client_id: process.env.STRAVA_CLIENT_ID,
+    client_secret: process.env.STRAVA_CLIENT_SECRET,
+    refresh_token: stravaRefreshToken,
+    grant_type: 'refresh_token'
+  }).toString();
+
+  const refreshResult = await new Promise((resolve) => {
+    const options = {
+      hostname: 'www.strava.com',
+      path: '/oauth/token',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(postData)
+      }
+    };
+    const req = https.request(options, (r) => {
+      let d = '';
+      r.on('data', chunk => d += chunk);
+      r.on('end', () => { try { resolve(JSON.parse(d)); } catch { resolve(null); } });
+    });
+    req.on('error', () => resolve(null));
+    req.write(postData);
+    req.end();
+  });
+
+  if (!refreshResult?.access_token) return null;
+
+  const updateBody = JSON.stringify({
+    strava_token: refreshResult.access_token,
+    strava_refresh_token: refreshResult.refresh_token,
+    strava_token_expires_at: refreshResult.expires_at
+  });
+
+  await new Promise((resolve) => {
+    const options = {
+      hostname,
+      path: `/rest/v1/profiles?id=eq.${userId}`,
+      method: 'PATCH',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(updateBody)
+      }
+    };
+    const req = https.request(options, (r) => {
+      r.on('data', () => {});
+      r.on('end', resolve);
+    });
+    req.on('error', resolve);
+    req.write(updateBody);
+    req.end();
+  });
+
+  return refreshResult.access_token;
+}
+
 function fetchStravaActivities(accessToken) {
   return new Promise((resolve) => {
     const options = {
@@ -149,8 +213,8 @@ function fetchStravaActivities(accessToken) {
   });
 }
 
-function buildDiagnosticoUserMessage(profile, weekStart, deporteInfo, dias) {
-  const deporte = profile.deporte;
+function buildDiagnosticoUserMessage(deportesEfectivos, weekStart, deporteInfo, dias, objetivo) {
+  const deporte = deportesEfectivos[0]?.deporte || 'running';
 
   const testsInfo = {
     running: [
@@ -191,14 +255,15 @@ function buildDiagnosticoUserMessage(profile, weekStart, deporteInfo, dias) {
     ],
   };
 
-  const sesionesInfo = (testsInfo[deporte] || testsInfo.running).slice(0, dias.length).join('\n- ');
-
-  return `Este atleta acaba de registrarse. Genera una SEMANA DE DIAGNÓSTICO para evaluar su nivel real.
+  // Single sport: use per-day schedule as before
+  if (deportesEfectivos.length <= 1) {
+    const sesionesInfo = (testsInfo[deporte] || testsInfo.running).slice(0, dias.length).join('\n- ');
+    return `Este atleta acaba de registrarse. Genera una SEMANA DE DIAGNÓSTICO para evaluar su nivel real.
 
 PERFIL:
 Deporte: ${deporteInfo[deporte] || deporte}
-Nivel declarado: ${profile.nivel || 'desconocido'}
-Objetivo: ${profile.objetivo || 'mejorar forma física'}
+Nivel declarado: ${deportesEfectivos[0]?.nivel || 'desconocido'}
+Objetivo: ${objetivo || 'mejorar forma física'}
 
 El plan empieza el ${weekStart}. Los días en orden son: ${dias.join(', ')}.
 
@@ -221,6 +286,90 @@ Para cada sesión de test (no descanso), la descripción debe:
 4. Indicar RPE objetivo del bloque principal
 
 En la descripción de la última sesión añade: "Cuando termines cada test, cuéntame el resultado en el chat y lo usaré para calibrar tu plan personalizado de la próxima semana."
+
+tipos posibles: "Correr", "Bici", "Nadar", "Fuerza", "Brick", "Descanso"
+intensidades posibles: "suave", "moderada", "fuerte", "descanso"
+Devuelve exactamente ${dias.length} sesiones en el orden: ${dias.join(', ')}.`;
+  }
+
+  // Multi-sport: key tests per sport (max 2 intense tests each)
+  const keyTestsByDeporte = {
+    running: [
+      { tipo: 'Correr', desc: 'Cooper Test. Cal 10min trote suave + 12min carrera a máximo esfuerzo en llano + 10min vuelta calma. Medir distancia recorrida en 12min. RPE 9-10.' },
+      { tipo: 'Correr', desc: '5K Time Trial. Cal 10min + 5km a máximo esfuerzo sin parar + 10min vuelta calma. Anotar tiempo total y ritmo medio. RPE 9.' },
+    ],
+    natacion: [
+      { tipo: 'Nadar', desc: 'Velocidad Crítica. Cal 200m suave + 400m crol a máximo esfuerzo + 15min descanso + 200m crol a máximo esfuerzo. Anotar tiempos de 400m y 200m por separado. RPE 9-10.' },
+      { tipo: 'Nadar', desc: '400m Endurance. Cal 200m suave + 400m continuo a ritmo fuerte + 200m vuelta calma. Anotar tiempo de los 400m. RPE 7-8.' },
+    ],
+    triatlon: [
+      { tipo: 'Nadar', desc: 'Natación Velocidad Crítica. Cal 200m suave + 400m crol a máximo esfuerzo + 15min descanso + 200m crol a máximo esfuerzo. Anotar tiempos de 400m y 200m. RPE 9-10.' },
+      { tipo: 'Bici', desc: 'Bici 20min TT. Cal 15min suave + 20min a máximo esfuerzo sostenido en rodillo o carretera llana + 10min vuelta calma. Anotar vatios medios o FC media. RPE 9.' },
+      { tipo: 'Correr', desc: 'Running 5K Time Trial. Cal 10min + 5km a máximo esfuerzo + 10min vuelta calma. Anotar tiempo total y ritmo. RPE 9.' },
+    ],
+    hyrox: [
+      { tipo: 'Correr', desc: '5K Threshold Run. Cal 10min trote + 5km a máximo esfuerzo sostenido + 5min vuelta calma. Anotar tiempo y ritmo medio. RPE 9.' },
+      { tipo: 'Fuerza', desc: 'Strength Circuit. 3 series progresivas en press banca para estimar 3RM (3min descanso entre series). Luego máximo pull-ups en 2min (anotar número). Luego 100m lunges con 15-20kg (anotar tiempo). RPE 8-9.' },
+    ],
+  };
+
+  // If triatlón is present, it already covers running+natacion — skip those to avoid duplication
+  const hasTri = deportesEfectivos.some(d => d.deporte === 'triatlon');
+  const testSequence = [];
+  deportesEfectivos.forEach(d => {
+    if (hasTri && (d.deporte === 'running' || d.deporte === 'natacion')) return;
+    const tests = keyTestsByDeporte[d.deporte] || [];
+    testSequence.push(...tests);
+  });
+
+  // Build 7-day schedule: rest on day 0, alternate tests with rest between intense sessions
+  const schedule = [`${dias[0]}: Descanso.`];
+  let testIdx = 0;
+  let dayIdx = 1;
+  while (dayIdx < dias.length && testIdx < testSequence.length) {
+    const t = testSequence[testIdx++];
+    schedule.push(`${dias[dayIdx]}: ${t.tipo}. ${t.desc}`);
+    dayIdx++;
+    if (dayIdx < dias.length && testIdx < testSequence.length) {
+      schedule.push(`${dias[dayIdx]}: Descanso activo o movilidad 20min.`);
+      dayIdx++;
+    }
+  }
+  while (dayIdx < dias.length) {
+    schedule.push(`${dias[dayIdx]}: Descanso.`);
+    dayIdx++;
+  }
+
+  const deportesNombres = deportesEfectivos.map(d => deporteInfo[d.deporte] || d.deporte).join(' + ');
+
+  return `Este atleta acaba de registrarse. Practica MÚLTIPLES DEPORTES: ${deportesNombres}.
+Genera una SEMANA DE DIAGNÓSTICO multi-deporte para evaluar su nivel real en cada disciplina.
+
+DEPORTES DEL ATLETA:
+${deportesEfectivos.map(d => `- ${deporteInfo[d.deporte] || d.deporte}: nivel declarado ${d.nivel || 'desconocido'}`).join('\n')}
+Objetivo: ${objetivo || 'mejorar forma física'}
+
+El plan empieza el ${weekStart}. Los días en orden son: ${dias.join(', ')}.
+
+TESTS PROGRAMADOS (en el orden exacto de los días del plan):
+- ${schedule.join('\n- ')}
+
+El JSON debe tener esta estructura exacta con los días en el orden indicado:
+{
+  "semana": "${weekStart}",
+  "sesiones": [
+    { "dia": "${dias[0]}", "tipo": "Descanso", "descripcion": "...", "duracion_min": 0, "intensidad": "descanso" },
+    { "dia": "${dias[1]}", "tipo": "Nadar", "descripcion": "...", "duracion_min": 50, "intensidad": "fuerte" }
+  ]
+}
+
+Para cada sesión de test (no descanso), la descripción debe:
+1. Explicar en una frase POR QUÉ se hace ese test y qué disciplina evalúa
+2. Dar instrucciones exactas (calentamiento, bloque test, vuelta calma)
+3. Indicar QUÉ debe medir o anotar el atleta
+4. Indicar RPE objetivo del bloque principal
+
+En la descripción de la última sesión activa añade: "Cuando termines cada test, cuéntame el resultado en el chat y lo usaré para calibrar tu plan personalizado de la próxima semana."
 
 tipos posibles: "Correr", "Bici", "Nadar", "Fuerza", "Brick", "Descanso"
 intensidades posibles: "suave", "moderada", "fuerte", "descanso"
@@ -334,7 +483,7 @@ exports.handler = async (event) => {
   // Obtener perfil del usuario (incluyendo campos de Strava y multi-deporte)
   const profiles = await supabaseGet(
     hostname,
-    `/rest/v1/profiles?id=eq.${userId}&select=deporte,nivel,objetivo,fecha_carrera,contexto,strava_token,strava_token_expires_at,plan,created_at,deportes,carreras`,
+    `/rest/v1/profiles?id=eq.${userId}&select=deporte,nivel,objetivo,fecha_carrera,contexto,strava_token,strava_refresh_token,strava_token_expires_at,plan,created_at,deportes,carreras`,
     supabaseKey
   );
 
@@ -353,14 +502,13 @@ exports.handler = async (event) => {
 
   const isPro = profile.plan === 'pro';
 
-  // Obtener actividades de Strava solo para usuarios Pro
+  // Obtener actividades de Strava solo para usuarios Pro (con refresh automático de token)
   let stravaText = null;
   let stravaActivities = null;
   if (isPro && profile.strava_token) {
-    const now = Math.floor(Date.now() / 1000);
-    const tokenOk = !profile.strava_token_expires_at || profile.strava_token_expires_at > now;
-    if (tokenOk) {
-      stravaActivities = await fetchStravaActivities(profile.strava_token);
+    const accessToken = await refreshStravaToken(userId, profile.strava_token, profile.strava_refresh_token, profile.strava_token_expires_at, hostname, supabaseKey);
+    if (accessToken) {
+      stravaActivities = await fetchStravaActivities(accessToken);
       if (Array.isArray(stravaActivities) && stravaActivities.length > 0) {
         stravaText = stravaActivities.slice(0, 5)
           .map(a => `${a.type} ${(a.distance / 1000).toFixed(1)}km en ${Math.round(a.moving_time / 60)}min`)
@@ -462,8 +610,7 @@ Instrucción: devuelve SOLO un JSON válido, sin texto adicional, sin markdown, 
 
   let userMessage;
   if (necesitaDiagnostico) {
-    const profileParaDiag = { ...profile, deporte: deportePrimario };
-    userMessage = buildDiagnosticoUserMessage(profileParaDiag, weekStart, deporteInfo, dias);
+    userMessage = buildDiagnosticoUserMessage(deportesEfectivos, weekStart, deporteInfo, dias, profile.objetivo);
   } else {
     const stravaParaAnalisis = isPro ? stravaText : null;
     const analisisSection = planAnteriorEfectivo
