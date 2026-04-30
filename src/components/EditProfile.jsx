@@ -130,6 +130,7 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade,
   const [intervalsSaving, setIntervalsSaving] = useState(false)
   const [intervalsConnected, setIntervalsConnected] = useState(!!(profile.intervals_athlete_id && profile.intervals_api_key))
   const [carreras, setCarreras] = useState(profile.carreras || [])
+  const [nuevaCarrera, setNuevaCarrera] = useState({ nombre: '', fecha: '', tipo: 'running' })
   const [saving, setSaving] = useState(false)
   const [savingRendimiento, setSavingRendimiento] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -416,54 +417,6 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade,
         <label style={labelStyle}>Fecha de carrera</label>
         <input type="date" style={inputStyle} value={fechaCarrera} onChange={e => setFechaCarrera(e.target.value)} />
 
-        {/* Carreras con prioridad A/B/C */}
-        {carreras.length > 0 && (
-          <div style={{ marginBottom: 14 }}>
-            <p style={{ ...labelStyle, marginBottom: 8 }}>Carreras</p>
-            {carreras.map((c, i) => (
-              <div key={i} style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                background: 'var(--input)',
-                border: '1px solid var(--border)',
-                borderRadius: 8,
-                padding: '8px 10px',
-                marginBottom: 6,
-                gap: 8,
-              }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--foreground)' }}>{c.nombre}</span>
-                    <span style={{
-                      fontSize: 10, fontWeight: 700, borderRadius: 99, padding: '1px 6px', flexShrink: 0,
-                      background: c.prioridad === 'A' ? 'oklch(0.25 0.08 145)' : c.prioridad === 'C' ? 'oklch(0.22 0 0)' : 'oklch(0.22 0.06 240)',
-                      color: c.prioridad === 'A' ? 'oklch(0.8 0.15 145)' : c.prioridad === 'C' ? 'var(--muted-foreground)' : 'oklch(0.75 0.12 240)',
-                      border: `1px solid ${c.prioridad === 'A' ? 'oklch(0.4 0.1 145)' : c.prioridad === 'C' ? 'var(--border)' : 'oklch(0.38 0.1 240)'}`,
-                    }}>
-                      {c.prioridad === 'A' ? 'Objetivo A' : c.prioridad === 'C' ? 'Entrenamiento C' : 'Secundaria B'}
-                    </span>
-                  </div>
-                  <p style={{ fontSize: 11, color: 'var(--muted-foreground)', marginTop: 2 }}>{c.tipo}{c.fecha ? ` · ${c.fecha}` : ''}</p>
-                </div>
-                <select
-                  value={c.prioridad || 'A'}
-                  onChange={e => setCarreras(prev => prev.map((r, idx) => idx === i ? { ...r, prioridad: e.target.value } : r))}
-                  style={{
-                    background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 6,
-                    color: 'var(--foreground)', fontFamily: 'var(--font-sans)', fontSize: 12,
-                    padding: '4px 6px', cursor: 'pointer', colorScheme: 'dark', flexShrink: 0,
-                  }}
-                >
-                  <option value="A">A · Objetivo</option>
-                  <option value="B">B · Secundaria</option>
-                  <option value="C">C · Entrenamiento</option>
-                </select>
-              </div>
-            ))}
-          </div>
-        )}
-
         <label style={labelStyle}>Nombre del coach</label>
         <input style={inputStyle} value={nombreCoach} onChange={e => setNombreCoach(e.target.value)} placeholder="Ej: Alex" />
 
@@ -532,6 +485,109 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade,
           onChange={e => setEdad(e.target.value)}
           placeholder="Tu edad"
         />
+
+        {/* Mis carreras */}
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16, marginBottom: 14 }}>
+          <p style={{ fontSize: 13, color: 'var(--muted-foreground)', fontWeight: 600, marginBottom: 12 }}>
+            🏁 Mis carreras
+          </p>
+
+          {/* Cards de carreras existentes */}
+          {carreras.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+              {carreras.map((c, i) => (
+                <div key={i} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  background: '#141414',
+                  border: '1px solid #2a2a2a',
+                  borderRadius: 8,
+                  padding: '8px 12px',
+                  gap: 8,
+                }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#e0e0e0', display: 'block' }}>{c.nombre}</span>
+                    <span style={{ fontSize: 11, color: '#666' }}>
+                      {c.tipo}{c.fecha ? ` · ${c.fecha}` : ''}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCarreras(prev => prev.filter((_, idx) => idx !== i))}
+                    style={{
+                      background: 'none',
+                      border: '1px solid #2a2a2a',
+                      borderRadius: 6,
+                      color: '#666',
+                      fontFamily: 'var(--font-sans)',
+                      fontSize: 13,
+                      lineHeight: 1,
+                      padding: '4px 8px',
+                      cursor: 'pointer',
+                      flexShrink: 0,
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Formulario añadir carrera */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <input
+              style={{ ...inputStyle, marginTop: 0, marginBottom: 0 }}
+              placeholder="Nombre de la carrera"
+              value={nuevaCarrera.nombre}
+              onChange={e => setNuevaCarrera(prev => ({ ...prev, nombre: e.target.value }))}
+            />
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input
+                type="date"
+                style={{ ...inputStyle, marginTop: 0, marginBottom: 0, flex: 1 }}
+                value={nuevaCarrera.fecha}
+                onChange={e => setNuevaCarrera(prev => ({ ...prev, fecha: e.target.value }))}
+              />
+              <select
+                style={{ ...inputStyle, marginTop: 0, marginBottom: 0, flex: 1, colorScheme: 'dark' }}
+                value={nuevaCarrera.tipo}
+                onChange={e => setNuevaCarrera(prev => ({ ...prev, tipo: e.target.value }))}
+              >
+                {DEPORTES_EDIT.map(({ value, label }) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (!nuevaCarrera.nombre.trim() || !nuevaCarrera.fecha) return
+                setCarreras(prev => [...prev, {
+                  nombre: nuevaCarrera.nombre.trim(),
+                  fecha: nuevaCarrera.fecha,
+                  tipo: nuevaCarrera.tipo,
+                }])
+                setNuevaCarrera({ nombre: '', fecha: '', tipo: 'running' })
+              }}
+              style={{
+                background: '#141414',
+                border: '1px solid #2a2a2a',
+                borderRadius: 8,
+                color: 'var(--primary)',
+                fontFamily: 'var(--font-sans)',
+                fontSize: 13,
+                fontWeight: 600,
+                padding: '9px 16px',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
+            >
+              + Añadir carrera
+            </button>
+          </div>
+        </div>
 
         {/* Nutrición */}
         <p style={{ fontSize: 13, color: 'var(--muted-foreground)', fontWeight: 600, marginBottom: 14, marginTop: 4, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
