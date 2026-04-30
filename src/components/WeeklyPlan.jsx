@@ -213,12 +213,10 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
   }
 
   async function handleAjustar(motivo, descripcion = '') {
-    console.log('[handleAjustar] motivo:', motivo, '| planId:', plan?.id)
     setAjustando(motivo)
     setAjusteBanner(null)
     try {
       const updated = await adjustPlan(userId, plan.id, motivo, descripcion)
-      console.log('[handleAjustar] respuesta adjust-plan:', JSON.stringify(updated)?.slice(0, 200))
       onPlanUpdate(updated)
       if (updated?.mensaje) {
         const label = motivo === 'lesion' ? 'Lesión detectada'
