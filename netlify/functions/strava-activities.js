@@ -266,6 +266,17 @@ exports.handler = async (event) => {
   const fcMaximaEfectiva = profileData.fc_maxima || (profileData.edad ? 220 - profileData.edad : null)
   const formatted = formatActivities(activitiesResult, fcMaximaEfectiva);
 
+  // Fire and forget: feedback del coach para la actividad más reciente (solo si es de los últimos 7 días)
+  const sevenDaysAgoStr = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  if (formatted.actividades.length > 0 && formatted.actividades[0].fecha >= sevenDaysAgoStr) {
+    const feedbackUrl = `${process.env.URL || 'http://localhost:8888'}/.netlify/functions/strava-feedback`;
+    fetch(feedbackUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-tricoach-secret': FUNCTION_SECRET },
+      body: JSON.stringify({ userId, actividad: formatted.actividades[0] })
+    }).catch(() => {});
+  }
+
   return {
     statusCode: 200,
     headers: { ...CORS, 'Content-Type': 'application/json' },

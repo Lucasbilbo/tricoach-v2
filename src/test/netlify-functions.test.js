@@ -44,6 +44,39 @@ describe('Funciones Netlify', () => {
     expect(res.status).toBe(401)
   })
 
+  it('strava-feedback: devuelve 401 sin secreto', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      json: async () => ({ error: 'Unauthorized' })
+    })
+
+    const res = await fetch('/.netlify/functions/strava-feedback', {
+      method: 'POST',
+      body: JSON.stringify({ userId: 'test', actividad: {} })
+    })
+
+    expect(res.ok).toBe(false)
+    expect(res.status).toBe(401)
+  })
+
+  it('strava-feedback: devuelve 400 sin userId', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: async () => ({ error: 'userId requerido' })
+    })
+
+    const res = await fetch('/.netlify/functions/strava-feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-tricoach-secret': 'test-secret' },
+      body: JSON.stringify({})
+    })
+
+    expect(res.ok).toBe(false)
+    expect(res.status).toBe(400)
+  })
+
   it('generate-plan: devuelve plan con cycle_id, numero_semana, fase y volumen_planificado_min', async () => {
     global.fetch.mockResolvedValueOnce({
       ok: true,
