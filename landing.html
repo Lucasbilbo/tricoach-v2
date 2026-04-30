@@ -769,6 +769,21 @@
 
     /* ── SCHEMA MARKUP helper ── */
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+
+    /* ── GUIDES GRID ── */
+    @media (max-width: 900px) { .guides-grid { grid-template-columns: repeat(2,1fr) !important; } }
+    @media (max-width: 520px)  { .guides-grid { grid-template-columns: 1fr !important; } }
+    .guide-card {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 20px;
+      background: var(--bg-3); border: 1px solid var(--border);
+      border-radius: 10px; text-decoration: none;
+      transition: border-color .2s, transform .2s, background .2s;
+    }
+    .guide-card:hover { border-color: var(--border-2); background: var(--bg-4); transform: translateY(-2px); }
+    .guide-card-title { font-size: .95rem; font-weight: 500; color: var(--white-80); line-height: 1.3; }
+    .guide-card-arrow { font-size: 1rem; color: var(--orange); flex-shrink: 0; margin-left: 12px; transition: transform .2s; }
+    .guide-card:hover .guide-card-arrow { transform: translateX(3px); }
   </style>
 </head>
 <body>
@@ -1253,6 +1268,50 @@
       <a href="#precios" class="btn-secondary">Ver planes</a>
     </div>
     <p class="hero-note" style="margin-top: 16px;">Sin tarjeta · Sin compromiso · En español</p>
+  </div>
+</section>
+
+<!-- GUÍAS SEO -->
+<section class="section" style="background: var(--bg-2); border-top: 1px solid var(--border);">
+  <div class="section-inner">
+    <div style="text-align:center; margin-bottom: 40px;" class="reveal">
+      <div class="label">Guías gratuitas</div>
+      <h2>Prepárate para tu <em>próxima carrera</em></h2>
+    </div>
+    <div style="display:grid; grid-template-columns: repeat(4,1fr); gap: 14px;" class="reveal guides-grid">
+      <a href="/entrenamiento-zona-2" class="guide-card">
+        <span class="guide-card-title">Entrenamiento en Zona 2</span>
+        <span class="guide-card-arrow">→</span>
+      </a>
+      <a href="/plan-media-maraton" class="guide-card">
+        <span class="guide-card-title">Plan Media Maratón</span>
+        <span class="guide-card-arrow">→</span>
+      </a>
+      <a href="/preparar-primer-triatlon" class="guide-card">
+        <span class="guide-card-title">Prepara tu primer triatlón</span>
+        <span class="guide-card-arrow">→</span>
+      </a>
+      <a href="/plan-entrenamiento-triatlon" class="guide-card">
+        <span class="guide-card-title">Plan de Triatlón</span>
+        <span class="guide-card-arrow">→</span>
+      </a>
+      <a href="/plan-entrenamiento-hyrox" class="guide-card">
+        <span class="guide-card-title">Plan de Hyrox</span>
+        <span class="guide-card-arrow">→</span>
+      </a>
+      <a href="/maraton-valencia" class="guide-card">
+        <span class="guide-card-title">Maratón Valencia 2026</span>
+        <span class="guide-card-arrow">→</span>
+      </a>
+      <a href="/maraton-madrid" class="guide-card">
+        <span class="guide-card-title">Maratón Madrid</span>
+        <span class="guide-card-arrow">→</span>
+      </a>
+      <a href="/maraton-barcelona" class="guide-card">
+        <span class="guide-card-title">Maratón Barcelona</span>
+        <span class="guide-card-arrow">→</span>
+      </a>
+    </div>
   </div>
 </section>
 
