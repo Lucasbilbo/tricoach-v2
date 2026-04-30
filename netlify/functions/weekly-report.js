@@ -65,6 +65,59 @@ function sendEmail(to, subject, html) {
   })
 }
 
+function buildEmailHtmlFree(nombre, sesiones) {
+  const activas = sesiones.filter(s => s.tipo?.toLowerCase() !== 'descanso' && s.tipo?.toLowerCase() !== 'rest')
+  const completadas = activas.filter(s => s.completada)
+  const pct = activas.length > 0 ? Math.round((completadas.length / activas.length) * 100) : 0
+  const emoji = pct === 100 ? '🏆' : pct >= 70 ? '💪' : pct >= 40 ? '📈' : '💡'
+
+  return `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+    <body style="background:#080808;color:#f5f0e8;font-family:'Helvetica Neue',Arial,sans-serif;margin:0;padding:0;">
+      <div style="max-width:520px;margin:0 auto;padding:32px 24px;">
+        <div style="text-align:center;margin-bottom:24px;">
+          <span style="font-size:36px;font-weight:900;letter-spacing:-1px;color:#f5f0e8;">T<span style="color:#FF6B2B;">·</span></span>
+          <p style="color:#888;font-size:13px;margin:4px 0 0;">TriCoach AI</p>
+        </div>
+
+        <h1 style="font-size:24px;font-weight:700;margin-bottom:4px;">Tu resumen semanal, ${nombre || 'atleta'}</h1>
+        <p style="color:#888;font-size:14px;margin-bottom:24px;">Esto es lo que conseguiste esta semana</p>
+
+        <div style="background:#111;border:1px solid #222;border-radius:12px;padding:20px;margin-bottom:20px;text-align:center;">
+          <div style="font-size:48px;margin-bottom:8px;">${emoji}</div>
+          <div style="font-size:32px;font-weight:700;color:${pct === 100 ? '#4ade80' : '#FF6B2B'};">${pct}%</div>
+          <div style="color:#888;font-size:13px;margin-bottom:12px;">${completadas.length} de ${activas.length} sesiones completadas</div>
+          <div style="background:#1a1a1a;border-radius:99px;height:8px;overflow:hidden;">
+            <div style="height:100%;width:${pct}%;background:${pct === 100 ? '#4ade80' : '#FF6B2B'};border-radius:99px;"></div>
+          </div>
+        </div>
+
+        <div style="text-align:center;margin-bottom:20px;">
+          <a href="https://app.getricoach.com" style="background:#FF6B2B;color:#fff;padding:13px 28px;border-radius:24px;text-decoration:none;font-weight:700;font-size:15px;display:inline-block;">
+            Ver plan de la próxima semana →
+          </a>
+        </div>
+
+        <div style="background:#111;border:1px solid #333;border-radius:12px;padding:16px 20px;margin-bottom:24px;">
+          <p style="margin:0 0 10px;font-size:14px;color:#aaa;line-height:1.6;">
+            ¿Quieres ver el análisis completo cada semana — sesión por sesión, RPE, adherencia y mensaje del coach?
+          </p>
+          <a href="https://app.getricoach.com" style="color:#FF6B2B;font-weight:700;font-size:14px;text-decoration:none;">
+            Hazte Pro por 9,99€/mes →
+          </a>
+        </div>
+
+        <p style="color:#555;font-size:12px;text-align:center;">
+          © TriCoach AI · <a href="https://app.getricoach.com/privacidad" style="color:#555;">Privacidad</a>
+        </p>
+      </div>
+    </body>
+    </html>
+  `
+}
+
 function buildEmailHtml(nombre, sesiones) {
   const activas = sesiones.filter(s => s.tipo?.toLowerCase() !== 'descanso' && s.tipo?.toLowerCase() !== 'rest')
   const completadas = activas.filter(s => s.completada)
@@ -134,13 +187,13 @@ function buildEmailHtml(nombre, sesiones) {
         </div>
 
         <div style="text-align:center;margin-bottom:24px;">
-          <a href="https://tricoach-v2.netlify.app" style="background:#FF6B2B;color:#fff;padding:13px 28px;border-radius:24px;text-decoration:none;font-weight:700;font-size:15px;display:inline-block;">
+          <a href="https://app.getricoach.com" style="background:#FF6B2B;color:#fff;padding:13px 28px;border-radius:24px;text-decoration:none;font-weight:700;font-size:15px;display:inline-block;">
             Ver plan de la próxima semana →
           </a>
         </div>
 
         <p style="color:#555;font-size:12px;text-align:center;">
-          © TriCoach AI · <a href="https://tricoach-v2.netlify.app/privacidad" style="color:#555;">Privacidad</a>
+          © TriCoach AI · <a href="https://app.getricoach.com/privacidad" style="color:#555;">Privacidad</a>
         </p>
       </div>
     </body>
@@ -157,18 +210,18 @@ exports.handler = async () => {
   const monday = getMondayOfCurrentWeek()
   console.log(`[weekly-report] Generando informes para semana ${monday}`)
 
-  // Obtener todos los usuarios Pro
+  // Obtener todos los usuarios (Pro y Free)
   let profiles
   try {
-    profiles = await supabaseGet(`profiles?plan=eq.pro&select=id,email,nombre`)
+    profiles = await supabaseGet(`profiles?deleted_at=is.null&select=id,email,nombre,plan`)
   } catch (e) {
     console.error('[weekly-report] Error obteniendo perfiles:', e.message)
     return { statusCode: 500, body: 'Error fetching profiles' }
   }
 
   if (!Array.isArray(profiles) || profiles.length === 0) {
-    console.log('[weekly-report] No hay usuarios Pro')
-    return { statusCode: 200, body: 'No Pro users' }
+    console.log('[weekly-report] No hay usuarios')
+    return { statusCode: 200, body: 'No users' }
   }
 
   let enviados = 0
@@ -184,7 +237,10 @@ exports.handler = async () => {
       const plan = Array.isArray(plans) && plans[0]
       if (!plan?.sesiones || plan.sesiones.length === 0) continue
 
-      const html = buildEmailHtml(profile.nombre, plan.sesiones)
+      const esPro = profile.plan === 'pro'
+      const html = esPro
+        ? buildEmailHtml(profile.nombre, plan.sesiones)
+        : buildEmailHtmlFree(profile.nombre, plan.sesiones)
       const result = await sendEmail(
         profile.email,
         '📊 Tu resumen semanal de TriCoach',
