@@ -1,15 +1,17 @@
 # TriCoach AI — Contexto del proyecto
 
+> Última actualización: 30 abril 2026
+
 ## Qué es esto
 Entrenador IA conversacional para triatletas, runners y atletas de Hyrox hispanohablantes.
 App web React + Vite, backend Netlify Functions, base de datos Supabase.
-Freemium: Free (10 msg/día, plan básico) / Pro (9,99€/mes, Strava + plan adaptativo).
+Freemium: Free (25 msg/día, plan básico) / Pro (9,99€/mes, Strava + plan adaptativo + macrociclos).
 
 ## Stack
 - Frontend: React + Vite (JavaScript, NO TypeScript)
-- Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co)
+- Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co) — RLS activado
 - Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
-- Tests: Vitest (43 tests) + Playwright E2E (4 tests)
+- Tests: Vitest — **123 tests pasando** (20 archivos)
 - Deploy: Netlify (producción: https://tricoach-v2.netlify.app)
 - Pagos: Stripe (checkout + webhooks)
 - Email: Resend (coach@getricoach.com)
@@ -20,116 +22,172 @@ Freemium: Free (10 msg/día, plan básico) / Pro (9,99€/mes, Strava + plan ada
 - CommonJS SIEMPRE: `const x = require('x')` y `exports.handler = async (event) => {}`
 - NO usar @supabase/supabase-js — usar REST API con https nativo
 - Validar siempre el header `x-tricoach-secret` contra `process.env.TRICOACH_SECRET` — **TODAS las funciones sin excepción**
-- El modelo de Claude está fijo: `CLAUDE_MODEL = 'claude-sonnet-4-20250514'` en claude.js — nunca viene del frontend; el backend filtra `model` y `max_tokens` del body
+- Validar UUID antes de usar en queries: `const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i` — añadido en todas las funciones que reciben userId/planId
+- El modelo de Claude está fijo: `CLAUDE_MODEL = 'claude-sonnet-4-20250514'` en claude.js — nunca viene del frontend
 - No usar console.log en producción — solo console.error para errores reales
 
 Template mínimo para nueva función:
 ```javascript
 const FUNCTION_SECRET = process.env.TRICOACH_SECRET;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, x-tricoach-secret', 'Access-Control-Allow-Methods': 'POST, OPTIONS' };
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS, body: 'Method Not Allowed' };
   const secret = event.headers['x-tricoach-secret'];
-  if (FUNCTION_SECRET && secret !== FUNCTION_SECRET) return { statusCode: 401, headers: CORS, body: JSON.stringify({ error: 'Unauthorized' }) };
+  if (!FUNCTION_SECRET || secret !== FUNCTION_SECRET) return { statusCode: 401, headers: CORS, body: JSON.stringify({ error: 'Unauthorized' }) };
   let parsed;
   try { parsed = JSON.parse(event.body || '{}'); } catch { return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'JSON inválido' }) }; }
+  const { userId } = parsed;
+  if (!userId) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId requerido' }) };
+  if (!UUID_REGEX.test(userId)) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId inválido' }) };
   // ...
 };
 ```
 
-### Supabase desde Functions
-Patrón estándar para GET:
-```javascript
-const https = require('https')
-function supabaseGet(path) {
-  return new Promise((resolve, reject) => {
-    const options = {
-      hostname: 'luqpjgzpydquqturgjmt.supabase.co',
-      path: `/rest/v1/${path}`,
-      headers: {
-        'apikey': process.env.SUPABASE_SERVICE_KEY,
-        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_KEY}`
-      }
-    }
-    https.get(options, (res) => {
-      let data = ''
-      res.on('data', chunk => data += chunk)
-      res.on('end', () => resolve(JSON.parse(data)))
-    }).on('error', reject)
-  })
-}
+### Rate limiting (claude.js)
+El límite de mensajes usa una RPC atómica de Postgres para evitar race conditions:
+```
+POST /rest/v1/rpc/increment_messages_today
+{ p_user_id, p_limit, p_today }
+→ retorna nuevo contador, o -1 si límite alcanzado
+```
+**Función SQL requerida en Supabase** (ejecutar una vez en SQL Editor):
+```sql
+CREATE OR REPLACE FUNCTION increment_messages_today(p_user_id uuid, p_limit int, p_today text)
+RETURNS int LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE new_count int;
+BEGIN
+  UPDATE profiles
+  SET messages_today = CASE WHEN last_message_date::text = p_today THEN messages_today + 1 ELSE 1 END,
+      last_message_date = p_today::date
+  WHERE id = p_user_id AND (last_message_date::text != p_today OR messages_today < p_limit)
+  RETURNING messages_today INTO new_count;
+  RETURN COALESCE(new_count, -1);
+END; $$;
+GRANT EXECUTE ON FUNCTION increment_messages_today TO service_role;
+```
+
+### Soft delete (delete-account.js)
+`delete-account.js` NO borra el registro de `profiles` — hace `PATCH {deleted_at: now()}`.
+En `App.jsx`, `loadOrCreateProfile()` detecta `profile?.deleted_at` y hace `signOut()` mostrando pantalla de cuenta eliminada.
+**Migración requerida** (ejecutar una vez):
+```sql
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 ```
 
 ### Frontend
 - Sistema de diseño: variables CSS en src/index.css (--background, --primary, --card, etc.)
-- Fuentes: Playfair Display (serif, títulos) + Source Sans 3 (sans, texto)
+- Fuentes: **Barlow Condensed** (títulos h1/h2, weight 900) + **Barlow** (texto, --font-sans) — Google Fonts
 - Sin librerías de UI externas (no shadcn, no lucide-react, no Material UI)
 - Usar emojis o SVG inline para iconos
+- `buildSystemPrompt.js`: campos de texto libre truncados (contexto → 500 chars, objetivo → 200, nombre → 50, preferencias/intolerancias → 200)
 
 ### Tests
 - Ejecutar `npm test` al terminar SIEMPRE
-- 43 tests deben pasar — si alguno falla, arreglarlo antes de terminar
+- **123 tests deben pasar** — si alguno falla, arreglarlo antes de terminar
 - No borrar ni modificar tests existentes sin motivo explícito
+
+## Estado del proyecto — Fases completadas
+
+### Fase 7 — Mejoras visuales (abril 2026) ✅
+- Tipografía Barlow + Barlow Condensed (antes: Source Sans 3)
+- WeeklyPlan: cards con opacidad en días pasados, tags de zona/intensidad con colores semánticos, bloques de estructura con borde izquierdo
+- Chat: burbujas del coach con fondo #1C1C1E y borde naranja, avatar con glow
+- EditProfile: campos con border #2a2a2a, labels uppercase, personalidad como grupo de botones
+- Dashboard: capitalización correcta de fecha, botón Strava como pill, título sesión en blanco fijo
+
+### Fase 8 — Ajuste automático del plan (abril 2026) ✅
+- `src/lib/autoAdjust.js`: `checkShouldAdjust(plan, profile)` — detecta RPE medio ≥ 8, volumen Strava > 120%, y 2+ sesiones perdidas consecutivas
+- `src/components/AdjustmentBanner.jsx`: banner naranja con mensaje del coach tras ajuste automático
+- `netlify/functions/adjust-plan.js`: acepta `signal` además de `motivo`; añade `getMensajeAjuste()` al response
+- `src/lib/plans.js`: `autoAdjustPlan(userId, planId, signal)` — función helper
+- `WeeklyPlan.jsx`: `onComplete` del modal llama a `checkShouldAdjust` y dispara ajuste si hay señal; muestra AdjustmentBanner
+- `Dashboard.jsx`: tras Strava sync, evalúa señales y ajusta automáticamente
+- **Importante**: el flujo real de completar sesión pasa por `ModalCompletarSesion` → `onComplete()`, no por `handleCompletar()` de Dashboard
+
+### Auditoría técnica (abril 2026) ✅
+1. **Rate limiting atómico**: RPC Postgres en lugar de GET+PATCH (race condition eliminado)
+2. **Soft delete**: `delete-account.js` usa PATCH en lugar de DELETE en profiles; `App.jsx` bloquea cuentas con `deleted_at` set
+3. **UUID validation**: `UUID_REGEX` en 12 funciones (adjust-plan, claude, coach-intro, create-checkout, create-cycle, delete-account, generate-plan, intervals, recalculate-cycle, strava-activities, strava-match-activity, strava-sync)
+4. **Truncado de campos libres** en `buildSystemPrompt.js`
+5. **Bug consistencia 0%**: `Progress.jsx` usa `getHistorialPlanes` (semanas pasadas) en lugar de `getRecentPlans` (incluía semana actual incompleta); `calcularConsistencia` acepta `completada` como boolean/number/string
+6. **Sticky header**: `handleNavigate` en App.jsx resetea `.screen-enter` scrollTop además de `window.scrollTo(0,0)`
 
 ## Estructura de archivos completa
 
 ```
 tricoach-v2/
 ├── CLAUDE.md
+├── SPEC.md                    — arquitectura macrociclos (leer antes de tocar training_cycles)
+├── DESIGN.md                  — sistema de diseño de referencia
 ├── src/
 │   ├── components/
-│   │   ├── Login.jsx          — login con Google
-│   │   ├── Onboarding.jsx     — onboarding nuevo usuario
-│   │   ├── Chat.jsx           — chat con el coach IA
-│   │   ├── EditProfile.jsx    — editar perfil (página, no modal)
-│   │   ├── StravaConnect.jsx  — conectar Strava
-│   │   ├── WeeklyPlan.jsx     — plan semanal con cards
-│   │   ├── BottomNav.jsx      — navegación fija abajo
-│   │   ├── UpgradeModal.jsx   — modal upgrade Free→Pro con Stripe
-│   │   └── CookieBanner.jsx   — banner GDPR
+│   │   ├── Login.jsx
+│   │   ├── Onboarding.jsx
+│   │   ├── Chat.jsx           — chat con coach IA, rate limiting frontend
+│   │   ├── Dashboard.jsx      — pantalla "Hoy": sesión del día, Strava sync, auto-adjust
+│   │   ├── WeeklyPlan.jsx     — plan semanal, modal completar, botones ajuste
+│   │   ├── Progress.jsx       — estadísticas, consistencia (historialPlanes), gráfico semana
+│   │   ├── EditProfile.jsx    — editar perfil
+│   │   ├── BottomNav.jsx
+│   │   ├── UpgradeModal.jsx
+│   │   ├── CookieBanner.jsx
+│   │   ├── ModalCompletarSesion.jsx — modal con RPE + tiempo real + distancia + FC + notas; integra Strava
+│   │   ├── AdjustmentBanner.jsx     — banner naranja tras ajuste automático (Fase 8)
+│   │   ├── CicloCompletadoBanner.jsx — banner cuando macrociclo termina
+│   │   ├── SessionDetail.jsx
+│   │   ├── StravaConnect.jsx
+│   │   ├── ErrorBoundary.jsx
+│   │   └── WelcomeGuide.jsx
 │   ├── lib/
-│   │   ├── supabase.js        — cliente Supabase
-│   │   ├── profiles.js        — getProfile, updateProfile, checkLimit
-│   │   ├── messages.js        — getMessages, saveMessage
-│   │   ├── context.js         — memoria del coach
-│   │   └── plans.js           — getPlan, generatePlan, markSessionComplete,
-│   │                             getLastWeekPlan, adjustPlan, analizarPlan
-│   ├── pages/
-│   │   ├── Privacidad.jsx
-│   │   └── Terminos.jsx
+│   │   ├── supabase.js
+│   │   ├── profiles.js        — getProfile, updateProfile, canSendMessage, incrementMessageCount
+│   │   ├── messages.js
+│   │   ├── context.js
+│   │   ├── plans.js           — getPlan, generatePlan, markSessionComplete, adjustPlan,
+│   │   │                        autoAdjustPlan, getHistorialPlanes, calcularConsistencia, analizarPlan
+│   │   ├── autoAdjust.js      — checkShouldAdjust(plan, profile) — función pura, sin efectos
+│   │   └── cycles.js          — esCicloCompletado, etc.
 │   ├── prompts/
-│   │   └── buildSystemPrompt.js — system prompt dinámico (perfil + actividades + plan)
+│   │   └── buildSystemPrompt.js
 │   ├── test/
 │   │   ├── setup.js
 │   │   ├── example.test.jsx
 │   │   ├── supabase.test.js
-│   │   ├── auth.test.jsx
 │   │   ├── netlify-functions.test.js
 │   │   ├── profiles.test.js
-│   │   ├── onboarding.test.jsx
 │   │   ├── limits.test.js
-│   │   ├── systemPrompt.test.js
-│   │   ├── strava-activities.test.js
-│   │   ├── weeklyPlan.test.js
-│   │   ├── phase8.test.jsx
-│   │   ├── phase10.test.jsx
-│   │   └── e2e/auth.spec.js
-│   ├── index.css              — variables CSS del sistema de diseño
+│   │   ├── strava-match-activity.test.js
+│   │   ├── cycles.test.js
+│   │   ├── recalculate-cycle.test.js
+│   │   ├── ciclo-completado.test.js
+│   │   ├── autoRegenPlan.test.js
+│   │   ├── autoAdjust.test.js           — checkShouldAdjust (9 tests)
+│   │   ├── phase105.test.jsx
+│   │   └── (otros archivos de test)
+│   ├── index.css
 │   ├── App.jsx
 │   └── main.jsx
 ├── netlify/
 │   └── functions/
-│       ├── claude.js          — chat con Claude (modelo fijo, límite Free)
-│       ├── strava-auth.js     — OAuth Strava
-│       ├── strava-activities.js — actividades Strava + refresh token
-│       ├── generate-plan.js   — genera plan semanal con Claude
-│       ├── adjust-plan.js     — ajusta plan (lesión/viaje/día suelto)
-│       ├── create-checkout.js — crea Stripe Checkout Session
-│       ├── stripe-webhook.js  — webhook Stripe (activar/revocar Pro)
-│       └── delete-account.js  — borrar cuenta GDPR
-├── index.html                 — incluye fuentes Google Fonts
+│       ├── claude.js              — chat Claude, rate limiting atómico (RPC)
+│       ├── adjust-plan.js         — ajusta plan (lesión/viaje/día suelto/sobrecarga/sesiones_perdidas + signal)
+│       ├── generate-plan.js       — genera plan semanal
+│       ├── create-cycle.js        — crea macrociclo de entrenamiento
+│       ├── recalculate-cycle.js   — recalcula fases del ciclo tras cambio de carrera
+│       ├── coach-intro.js         — mensaje de bienvenida del coach
+│       ├── strava-auth.js         — OAuth Strava
+│       ├── strava-activities.js   — actividades Strava + refresh token
+│       ├── strava-sync.js         — sincronización automática sesiones Strava → plan
+│       ├── strava-match-activity.js — match actividad Strava con sesión del plan
+│       ├── intervals.js           — integración Intervals.icu (GET/POST/DELETE)
+│       ├── weekly-report.js       — informe semanal
+│       ├── create-checkout.js     — Stripe Checkout Session
+│       ├── stripe-webhook.js      — webhook Stripe (activar/revocar Pro)
+│       └── delete-account.js      — soft delete: PATCH profiles SET deleted_at, borra messages/plans
+├── index.html
 ├── netlify.toml
 ├── vite.config.js
 └── package.json
@@ -137,37 +195,73 @@ tricoach-v2/
 
 ## Schema Supabase
 
+> RLS activado en todas las tablas. Service key solo en Netlify Functions.
+
 ### tabla `profiles`
 ```
-id, email, nombre, deporte, nivel, objetivo, fecha_carrera,
-plan ('free'|'pro'), created_at, messages_today, last_message_date,
-personalidad ('cercano'|'estricto'|'gracioso'|'motivador'),
-contexto, strava_token, strava_refresh_token, strava_token_expires_at,
-stripe_customer_id, intervals_athlete_id, intervals_api_key
-```
-
-### tabla `messages`
-```
-id, user_id, role, content, created_at
+id (uuid pk), email, nombre, deporte, nivel, objetivo,
+fecha_carrera, plan ('free'|'pro'),
+created_at, messages_today, last_message_date,
+personalidad ('cercano'|'estricto'|'gracioso'|'motivador'|'cientifico'),
+contexto, nombre_coach,
+strava_token, strava_refresh_token, strava_token_expires_at,
+stripe_customer_id, stripe_subscription_id,
+intervals_athlete_id, intervals_api_key,
+active_cycle_id (uuid fk → training_cycles),
+fc_maxima, pace_5k, ftp_bici, peso, edad,
+deportes (jsonb — array multi-deporte),
+carreras (jsonb — array de carreras objetivo),
+objetivo_nutricional, preferencias_alimentarias, intolerancias,
+deleted_at (timestamptz — soft delete, requiere migración si no existe)
 ```
 
 ### tabla `plans`
 ```
-id, user_id, semana (date — lunes de la semana), sesiones (jsonb), created_at
+id (uuid pk), user_id (uuid fk), semana (date — lunes),
+sesiones (jsonb — array 7 objetos), created_at,
+volumen_planificado_min (int), volumen_real_min (int)
 ```
 
-Estructura de `sesiones` (array de 7 objetos):
+Estructura de una sesión en `sesiones`:
 ```json
 {
   "dia": "Lunes",
-  "tipo": "run|bike|swim|strength|rest",
+  "tipo": "Correr|Bici|Nadar|Fuerza|Brick|Descanso",
+  "subtipo": "Rodaje Z2",
   "descripcion": "string",
-  "distancia": "string",
-  "duracion": "string",
-  "intensidad": "string",
+  "duracion_min": 45,
+  "intensidad": "suave|moderada|fuerte|descanso",
+  "distancia_km": 6,
+  "zona_objetivo": "Z1-Z2|Z2-Z3|Z3-Z4|Z4-Z5",
+  "estructura": {
+    "calentamiento": "string",
+    "principal": "string",
+    "vuelta_calma": "string",
+    "rpe_objetivo": "5-6"
+  },
   "completada": false,
-  "rpe_usuario": null
+  "rpe": null,
+  "rpe_usuario": null,
+  "tiempo_real_min": null,
+  "distancia_real_km": null,
+  "fc_media_real": null,
+  "notas_usuario": null,
+  "via_strava": false
 }
+```
+
+### tabla `messages`
+```
+id (uuid pk), user_id (uuid fk), role, content, created_at
+```
+
+### tabla `training_cycles`
+```
+id (uuid pk), user_id (uuid fk),
+semanas_totales (int), fecha_inicio (date),
+fases (jsonb — array de { nombre, sem_inicio, sem_fin, objetivo }),
+carrera_nombre (text), estado ('active'|'completed'),
+created_at
 ```
 
 ## Variables de entorno
@@ -175,7 +269,7 @@ Estructura de `sesiones` (array de 7 objetos):
 Frontend (VITE_*):
 - VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
 - VITE_TRICOACH_SECRET
-- VITE_STRAVA_CLIENT_ID (208711), VITE_STRAVA_REDIRECT_URI
+- VITE_STRAVA_CLIENT_ID, VITE_STRAVA_REDIRECT_URI
 - VITE_STRIPE_PUBLISHABLE_KEY
 
 Backend (solo en Netlify Functions):
@@ -191,78 +285,64 @@ Backend (solo en Netlify Functions):
 
 | Feature | Free | Pro |
 |---------|------|-----|
-| Mensajes/día | 10 | Ilimitados |
-| Plan semanal | Básico (sin Strava) | Con datos Strava |
-| Análisis semana anterior | No | Sí |
-| Plan adaptativo | No | Sí |
+| Mensajes/día | 25 | 150 |
+| Plan semanal | Básico | Con datos Strava |
+| Macrociclo | Sí (genérico) | Sí (con carrera) |
+| Ajuste automático | Sí | Sí |
+| Strava sync | No | Sí |
+| Intervals.icu | No | Sí |
 
-Validación Free/Pro siempre en **backend** (claude.js, generate-plan.js) — nunca confiar solo en el frontend.
+Validación Free/Pro siempre en **backend** (claude.js) — nunca confiar solo en el frontend.
 
-## Flujo de trabajo
+## Flujos críticos
+
+### Completar sesión
+El flujo real es: botón "Completar" → `ModalCompletarSesion` → `guardar()` → `patchSesionCompleta()` → `onComplete(updatedPlan)` en `WeeklyPlan`.
+El `handleCompletar()` de Dashboard solo se usa para el picker inline de RPE en la pantalla de hoy.
+Ambos flujos llaman a `checkShouldAdjust` tras guardar y disparan `autoAdjustPlan` si hay señal.
+
+### Auto-ajuste del plan
+Señales detectadas por `checkShouldAdjust(plan, profile)`:
+1. RPE medio ≥ 8 en las últimas 3 sesiones completadas → `signal: 'sobrecarga'`
+2. Volumen Strava > 120% del planificado (últimas 3 sesiones) → `signal: 'sobrecarga'`
+3. 2+ sesiones perdidas consecutivas en días pasados → `signal: 'sesiones_perdidas'`
+
+### Consistencia en Progress
+`calcularConsistencia` recibe solo `getHistorialPlanes` (semanas pasadas, no la actual en curso).
+El `GraficoSemana` usa el prop `plan` de la semana actual pasado directamente desde App.jsx.
+
+## Tests — 123 pasando (20 archivos)
+
+Archivos clave:
+- `autoAdjust.test.js` — checkShouldAdjust (9 tests)
+- `cycles.test.js` — macrociclos (24 tests)
+- `strava-match-activity.test.js` (6 tests)
+- `autoRegenPlan.test.js` (8 tests)
+- `recalculate-cycle.test.js` (4 tests)
+- `limits.test.js` (4 tests)
+- `phase105.test.jsx`, `ciclo-completado.test.js`, `profiles.test.js`, etc.
+
+## Workflow
 1. `netlify dev` para desarrollo local → http://localhost:8888
-2. Claude Code implementa → `npm test` → `npm run build`
-3. `git add . && git commit -m "..." && git push`
+2. Claude Code implementa → `npm test && npm run build`
+3. `git add ... && git commit -m "..." && git push origin main`
 4. Netlify despliega automáticamente
 
 ## Eficiencia
 - Ejecuta directamente sin preámbulos ni explicaciones de lo que vas a hacer
-- Al terminar: resumen breve de cambios realizados (no de lo que ibas a hacer)
-- npm test && npm run build siempre al final en un solo comando
+- Al terminar: resumen breve de cambios realizados
+- `npm test && npm run build` siempre al final en un solo comando
 - No leas archivos que no sean necesarios para la tarea
-- No hagas búsquedas globales en el proyecto si sabes el archivo exacto
-- Si el prompt especifica el archivo, ve directo a él
-- No ejecutes npm test en medio de la tarea, solo al final
-- No confirmes con el usuario durante la ejecución, completa todo el prompt de una vez
-- Lee solo los archivos mencionados en el prompt, no explores el proyecto entero
-
-## Configuración del entorno
-- PATH de Claude Code: `export PATH="$HOME/.local/bin:$PATH"` — ya añadido permanentemente en `~/.zshrc`
-
-## Tests: 48 pasando
-- systemPrompt.test.js (10), strava-activities.test.js (4), weeklyPlan.test.js (4)
-- phase8.test.jsx (4), phase10.test.jsx (4), phase105.test.jsx (5), limits.test.js (4)
-- onboarding.test.jsx (3), netlify-functions.test.js (3)
-- profiles.test.js (2), supabase.test.js (2), auth.test.jsx (2), example.test.jsx (1)
-- E2E: auth.spec.js (4)
-
-## Workflow
-- Para tareas de 3+ pasos: escribe un plan breve antes de ejecutar
-- Si algo falla: para, replantea, no sigas empujando en la misma dirección
-- Nunca marques una tarea como completa sin demostrar que funciona
-
-## Bugs
-- Cuando hay un bug: busca la causa raíz, no parches temporales
-- Apunta a logs y tests fallando, luego resuélvelos
-- No pidas confirmación del usuario durante la ejecución
-
-## Calidad
-- Para cambios no triviales: pregúntate "¿hay una forma más elegante?"
-- Si un fix parece un hack: reimplementa desde la causa raíz
-- Cada cambio debe poder ser aprobado por un senior engineer
-
-## Lecciones aprendidas
-- Después de cualquier corrección del usuario: actualizar tasks/lessons.md con el patrón del error
-- Revisar tasks/lessons.md al inicio de cada sesión
-
-## Skills disponibles
-- bencium-innovative-ux-designer — diseño creativo y bold
-- interface-design — sistema de diseño persistente
-- tricoach-stack — stack y patrones de este proyecto
-- systematic-debugging — cuando hay bugs complejos
-- test-driven-development — para nuevas features
-- lean-startup — validar ideas antes de construir
-- hooked-ux — psicología de retención de usuarios
-- refactoring-ui — mejorar UI existente
-- ux-heuristics — auditoría de usabilidad
-- jobs-to-be-done — entender qué quiere el usuario
-
-## Referencia de diseño
-Lee DESIGN.md para el sistema de diseño de referencia (Linear.app).
-
-## Documentación de arquitectura
-Lee SPEC.md antes de cualquier tarea relacionada con macrociclos, planes, sesiones o training_cycles.
+- No hagas búsquedas globales si sabes el archivo exacto
+- No confirmes con el usuario durante la ejecución — completa todo el prompt de una vez
 
 ## Git
-- Después de cada commit, SIEMPRE ejecutar `git push origin main` inmediatamente
+- Después de cada commit: `git push origin main` inmediatamente
 - Nunca dar una tarea por terminada sin confirmar que el push se ha ejecutado
-- No asumir que Netlify ha desplegado — el deploy solo ocurre tras el push
+- Formato de commit: `tipo: descripción breve` (feat, fix, refactor, docs, test, chore)
+
+## Bugs conocidos / pendientes
+- `console.log('[DEBUG] checkShouldAdjust...')` aún presente en `autoAdjust.js` — eliminar antes de producción
+- La función SQL `increment_messages_today` debe ejecutarse manualmente en Supabase SQL Editor si no existe
+- La columna `deleted_at` en `profiles` requiere migración manual si no existe en el entorno
+- El auto-ajuste no dispara en WeeklyPlan cuando se completa desde el histórico de semanas pasadas (comportamiento esperado, no bug)
