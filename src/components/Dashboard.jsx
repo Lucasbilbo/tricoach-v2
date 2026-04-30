@@ -249,12 +249,13 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
     try {
       const updated = await markSessionComplete(plan.id, sesionHoy.dia, rpe)
       onPlanUpdate(updated)
-      // Auto-adjust si RPE >= 8 (señal de sobrecarga)
-      if (rpe >= 8) {
-        const result = await autoAdjustPlan(userId, plan.id, 'sobrecarga')
+      // Auto-adjust: evaluate on saved plan (includes the new RPE)
+      const { shouldAdjust, reason, signal } = checkShouldAdjust(updated, profile)
+      if (shouldAdjust) {
+        const result = await autoAdjustPlan(userId, plan.id, signal)
         if (result?.sesiones) {
           onPlanUpdate(result)
-          setAdjustBanner({ reason: 'RPE elevado', mensaje: result.mensaje || 'Tu coach ha ajustado el plan para los próximos días.' })
+          setAdjustBanner({ reason, mensaje: result.mensaje || 'Tu coach ha ajustado el plan para los próximos días.' })
         }
       }
     } catch (e) {

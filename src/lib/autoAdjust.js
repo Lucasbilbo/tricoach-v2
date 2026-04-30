@@ -9,6 +9,7 @@ const DIA_OFFSET = { Lunes: 0, Martes: 1, 'Miércoles': 2, Jueves: 3, Viernes: 4
  * @returns {{ shouldAdjust: boolean, reason: string, signal: string }}
  */
 export function checkShouldAdjust(plan, profile) {
+  console.log('[DEBUG] checkShouldAdjust llamado — plan.semana:', plan?.semana, '| sesiones:', plan?.sesiones?.length ?? 'null')
   if (!plan?.sesiones) return { shouldAdjust: false, reason: '', signal: '' }
 
   const sesiones = plan.sesiones

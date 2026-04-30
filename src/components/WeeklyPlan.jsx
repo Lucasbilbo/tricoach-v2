@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { generatePlan, getPlanForWeek, getNextWeekStart, adjustPlan, analizarPlan } from '../lib/plans'
+import { generatePlan, getPlanForWeek, getNextWeekStart, adjustPlan, autoAdjustPlan, analizarPlan } from '../lib/plans'
+import { checkShouldAdjust } from '../lib/autoAdjust'
 import ModalCompletarSesion from './ModalCompletarSesion'
 import AdjustmentBanner from './AdjustmentBanner'
 
@@ -212,10 +213,12 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
   }
 
   async function handleAjustar(motivo, descripcion = '') {
+    console.log('[handleAjustar] motivo:', motivo, '| planId:', plan?.id)
     setAjustando(motivo)
     setAjusteBanner(null)
     try {
       const updated = await adjustPlan(userId, plan.id, motivo, descripcion)
+      console.log('[handleAjustar] respuesta adjust-plan:', JSON.stringify(updated)?.slice(0, 200))
       onPlanUpdate(updated)
       if (updated?.mensaje) {
         const label = motivo === 'lesion' ? 'Lesión detectada'
@@ -1210,8 +1213,23 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
           planId={displayedPlan.id}
           profile={profile}
           onClose={() => setSesionParaCompletar(null)}
-          onComplete={(updatedPlan) => {
-            if (updatedPlan) onPlanUpdate(updatedPlan)
+          onComplete={async (updatedPlan) => {
+            if (updatedPlan) {
+              onPlanUpdate(updatedPlan)
+              // Auto-adjust: check RPE overload and missed sessions on the saved plan
+              const { shouldAdjust, reason, signal } = checkShouldAdjust(updatedPlan, profile)
+              if (shouldAdjust) {
+                try {
+                  const result = await autoAdjustPlan(userId, displayedPlan.id, signal)
+                  if (result?.sesiones) {
+                    onPlanUpdate(result)
+                    setAjusteBanner({ reason, mensaje: result.mensaje || 'Tu coach ha ajustado el plan.' })
+                  }
+                } catch (e) {
+                  console.error('Auto-adjust error:', e)
+                }
+              }
+            }
             setSesionParaCompletar(null)
           }}
         />
