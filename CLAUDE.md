@@ -297,9 +297,18 @@ Validación Free/Pro siempre en **backend** (claude.js) — nunca confiar solo e
 ## Flujos críticos
 
 ### Completar sesión
+⚠️ **Trampa frecuente**: hay DOS funciones de completar sesión con nombres similares:
+
+| Función | Archivo | Cuándo se usa |
+|---|---|---|
+| `patchSesionCompleta(planId, dia, campos)` | `ModalCompletarSesion.jsx` (local, Supabase directo) | Flujo principal — WeeklyPlan |
+| `markSessionComplete(planId, dia, rpe)` | `src/lib/plans.js` | Picker inline de Dashboard (flujo secundario) |
+
 El flujo real es: botón "Completar" → `ModalCompletarSesion` → `guardar()` → `patchSesionCompleta()` → `onComplete(updatedPlan)` en `WeeklyPlan`.
 El `handleCompletar()` de Dashboard solo se usa para el picker inline de RPE en la pantalla de hoy.
 Ambos flujos llaman a `checkShouldAdjust` tras guardar y disparan `autoAdjustPlan` si hay señal.
+
+Si añades lógica post-completar (auto-adjust, notificaciones, etc.) debes hacerlo en **ambos** sitios o solo en `onComplete` de WeeklyPlan y `handleCompletar` de Dashboard.
 
 ### Auto-ajuste del plan
 Señales detectadas por `checkShouldAdjust(plan, profile)`:
@@ -310,6 +319,25 @@ Señales detectadas por `checkShouldAdjust(plan, profile)`:
 ### Consistencia en Progress
 `calcularConsistencia` recibe solo `getHistorialPlanes` (semanas pasadas, no la actual en curso).
 El `GraficoSemana` usa el prop `plan` de la semana actual pasado directamente desde App.jsx.
+
+### `getRecentPlans` vs `getHistorialPlanes`
+| Función | Incluye | Usar para |
+|---|---|---|
+| `getRecentPlans(userId, n)` | Semana actual + pasadas | Mostrar historial completo |
+| `getHistorialPlanes(userId, n)` | Solo semanas pasadas (cutoff: 6 días atrás) | Stats de consistencia/adherencia |
+
+El cutoff de `getHistorialPlanes` es **6 días** (no 7) para cubrir el caso de que hoy sea domingo — la semana empezó el lunes y llevan 6 días completos.
+
+### Fechas de sesiones — patrón `DIA_OFFSET_MAP`
+`plan.semana` es siempre el **lunes de la semana en ISO date** (ej: `"2026-04-28"`).
+Para calcular la fecha real de cada sesión:
+```javascript
+const DIA_OFFSET_MAP = { Lunes: 0, Martes: 1, 'Miércoles': 2, Jueves: 3, Viernes: 4, Sábado: 5, Domingo: 6 }
+const base = new Date(plan.semana + 'T12:00:00') // T12 evita problemas de zona horaria
+base.setDate(base.getDate() + (DIA_OFFSET_MAP[sesion.dia] ?? 0))
+const fechaStr = base.toISOString().split('T')[0]
+```
+Este patrón se usa en `WeeklyPlan.jsx`, `autoAdjust.js` y donde se necesite comparar sesiones con la fecha actual.
 
 ## Tests — 123 pasando (20 archivos)
 
@@ -341,8 +369,34 @@ Archivos clave:
 - Nunca dar una tarea por terminada sin confirmar que el push se ha ejecutado
 - Formato de commit: `tipo: descripción breve` (feat, fix, refactor, docs, test, chore)
 
-## Bugs conocidos / pendientes
-- `console.log('[DEBUG] checkShouldAdjust...')` aún presente en `autoAdjust.js` — eliminar antes de producción
-- La función SQL `increment_messages_today` debe ejecutarse manualmente en Supabase SQL Editor si no existe
-- La columna `deleted_at` en `profiles` requiere migración manual si no existe en el entorno
-- El auto-ajuste no dispara en WeeklyPlan cuando se completa desde el histórico de semanas pasadas (comportamiento esperado, no bug)
+## Migraciones SQL pendientes en producción
+
+Ejecutar en Supabase SQL Editor si no están aplicadas:
+
+```sql
+-- 1. Soft delete en profiles
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
+
+-- 2. Rate limiting atómico (ver sección completa más arriba)
+CREATE OR REPLACE FUNCTION increment_messages_today(p_user_id uuid, p_limit int, p_today text)
+RETURNS int LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE new_count int;
+BEGIN
+  UPDATE profiles
+  SET messages_today = CASE WHEN last_message_date::text = p_today THEN messages_today + 1 ELSE 1 END,
+      last_message_date = p_today::date
+  WHERE id = p_user_id AND (last_message_date::text != p_today OR messages_today < p_limit)
+  RETURNING messages_today INTO new_count;
+  RETURN COALESCE(new_count, -1);
+END; $$;
+GRANT EXECUTE ON FUNCTION increment_messages_today TO service_role;
+```
+
+## Logs de debug pendientes de eliminar
+
+Antes de cualquier release a producción, eliminar:
+- `src/lib/autoAdjust.js` → `console.log('[DEBUG] checkShouldAdjust llamado...')` (línea ~12)
+- `src/components/WeeklyPlan.jsx` → `console.log('[handleAjustar]...')` dentro de `handleAjustar()`
+
+## Bugs conocidos
+- El auto-ajuste no dispara en WeeklyPlan cuando se completa desde el histórico de semanas pasadas — comportamiento esperado (no tiene sentido ajustar semanas ya cerradas)
