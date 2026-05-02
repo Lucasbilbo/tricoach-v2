@@ -861,6 +861,104 @@ Para el campo "estructura" de cada sesión activa:
 
   const plan = Array.isArray(inserted) ? inserted[0] : inserted;
 
+  // Sincronizar sesiones con Intervals.icu (awaited con timeout, no bloquea si falla)
+  if (profile.intervals_athlete_id && profile.intervals_api_key) {
+    try {
+      const DIA_OFFSET = { 'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4, 'Sábado': 5, 'Domingo': 6 };
+      const TIPO_MAP = {
+        'Correr': 'Run', 'Carrera': 'Run', 'Rodaje': 'Run',
+        'Bici': 'Ride', 'Ciclismo': 'Ride',
+        'Nadar': 'Swim', 'Natación': 'Swim',
+        'Fuerza': 'WeightTraining', 'Hyrox': 'WeightTraining',
+      };
+      const auth = Buffer.from(`API_KEY:${profile.intervals_api_key}`).toString('base64');
+      const lunes = new Date(weekStart + 'T12:00:00');
+
+      const sesionesActivas = planData.sesiones.filter(s => {
+        const t = s.tipo?.toLowerCase();
+        return t !== 'descanso' && t !== 'resto' && t !== 'rest';
+      });
+
+      const eventIds = [];
+
+      for (const sesion of sesionesActivas) {
+        const offset = DIA_OFFSET[sesion.dia] ?? 0;
+        const fecha = new Date(lunes);
+        fecha.setDate(lunes.getDate() + offset);
+        const dateStr = fecha.toISOString().slice(0, 10);
+
+        const desc = [
+          sesion.estructura?.calentamiento ? `Calentamiento: ${sesion.estructura.calentamiento}` : '',
+          sesion.estructura?.principal || '',
+          sesion.estructura?.vuelta_calma ? `Vuelta calma: ${sesion.estructura.vuelta_calma}` : '',
+          sesion.zona_objetivo ? `Zona objetivo: ${sesion.zona_objetivo}` : '',
+          sesion.estructura?.rpe_objetivo ? `RPE objetivo: ${sesion.estructura.rpe_objetivo}` : '',
+        ].filter(Boolean).join('\n');
+
+        const eventBody = JSON.stringify({
+          start_date_local: `${dateStr}T07:00:00`,
+          category: 'WORKOUT',
+          type: TIPO_MAP[sesion.tipo] || 'Workout',
+          name: `${sesion.subtipo || sesion.tipo} — ${sesion.duracion_min}min`,
+          ...(desc ? { description: desc } : {}),
+          moving_time: (sesion.duracion_min || 0) * 60,
+        });
+
+        const result = await withTimeout(new Promise((resolve) => {
+          const opts = {
+            hostname: 'intervals.icu',
+            path: `/api/v1/athlete/${profile.intervals_athlete_id}/events`,
+            method: 'POST',
+            headers: {
+              'Authorization': `Basic ${auth}`,
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(eventBody),
+            },
+          };
+          const req = https.request(opts, (r) => {
+            let d = '';
+            r.on('data', chunk => d += chunk);
+            r.on('end', () => { try { resolve({ status: r.statusCode, data: JSON.parse(d) }); } catch { resolve({ status: r.statusCode, data: null }); } });
+          });
+          req.on('error', (e) => resolve({ status: 500, data: null, err: e.message }));
+          req.write(eventBody);
+          req.end();
+        }), 5000, `Intervals timeout sesion ${sesion.dia}`);
+
+        if (result.status >= 200 && result.status < 300 && result.data?.id) {
+          eventIds.push({ dia: sesion.dia, id: result.data.id });
+        } else {
+          console.error(`[intervals] Error creando evento ${sesion.dia}: status ${result.status}`);
+        }
+      }
+
+      // Guardar IDs de eventos en el plan de Supabase
+      if (eventIds.length > 0 && plan?.id) {
+        const patchBody = JSON.stringify({ intervals_event_ids: eventIds });
+        await new Promise((resolve) => {
+          const opts = {
+            hostname,
+            path: `/rest/v1/plans?id=eq.${plan.id}`,
+            method: 'PATCH',
+            headers: {
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${supabaseKey}`,
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(patchBody),
+            },
+          };
+          const req = https.request(opts, (r) => { r.on('data', () => {}); r.on('end', resolve); });
+          req.on('error', resolve);
+          req.write(patchBody);
+          req.end();
+        });
+        console.error(`[intervals] ${eventIds.length} eventos sincronizados para plan ${plan.id}`);
+      }
+    } catch (e) {
+      console.error('[intervals] Error sincronizando plan:', e.message);
+    }
+  }
+
   return {
     statusCode: 200,
     headers: { ...CORS, 'Content-Type': 'application/json' },
