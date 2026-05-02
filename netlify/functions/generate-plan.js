@@ -483,7 +483,7 @@ exports.handler = async (event) => {
   // Obtener perfil del usuario (incluyendo campos de Strava y multi-deporte)
   const profiles = await supabaseGet(
     hostname,
-    `/rest/v1/profiles?id=eq.${userId}&select=deporte,nivel,objetivo,fecha_carrera,contexto,strava_token,strava_refresh_token,strava_token_expires_at,plan,created_at,deportes,carreras`,
+    `/rest/v1/profiles?id=eq.${userId}&select=deporte,nivel,objetivo,fecha_carrera,contexto,strava_token,strava_refresh_token,strava_token_expires_at,plan,created_at,deportes,carreras,intervals_athlete_id,intervals_api_key`,
     supabaseKey
   );
 
@@ -514,6 +514,37 @@ exports.handler = async (event) => {
           .map(a => `${a.type} ${(a.distance / 1000).toFixed(1)}km en ${Math.round(a.moving_time / 60)}min`)
           .join(', ');
       }
+    }
+  }
+
+  // Obtener wellness de Intervals.icu para usuarios Pro con credenciales (no bloqueante)
+  let wellnessData = null;
+  if (isPro && profile.intervals_athlete_id && profile.intervals_api_key) {
+    try {
+      const auth = Buffer.from(`API_KEY:${profile.intervals_api_key}`).toString('base64');
+      const today = new Date().toISOString().slice(0, 10);
+      const wResult = await withTimeout(new Promise((resolve) => {
+        const opts = {
+          hostname: 'intervals.icu',
+          path: `/api/v1/athlete/${profile.intervals_athlete_id}/wellness?oldest=${today}&newest=${today}`,
+          method: 'GET',
+          headers: { 'Authorization': `Basic ${auth}` },
+        };
+        const req = https.request(opts, (r) => {
+          let d = '';
+          r.on('data', chunk => d += chunk);
+          r.on('end', () => { try { resolve(JSON.parse(d)); } catch { resolve(null); } });
+        });
+        req.on('error', () => resolve(null));
+        req.end();
+      }), 5000, 'Intervals timeout');
+      const w = Array.isArray(wResult) ? wResult[0] : wResult;
+      if (w && (w.hrv != null || w.atl != null || w.tsb != null)) {
+        wellnessData = w;
+        console.log(`[intervals] wellness cargado — ATL: ${w.atl}, TSB: ${w.tsb}, HRV: ${w.hrv}`);
+      }
+    } catch {
+      // non-blocking — ignorar error
     }
   }
 
@@ -638,6 +669,16 @@ Nunca más de 2 días seguidos del mismo deporte.` : '';
       ? `\n\nCONTEXTO ESPECIAL ESTA SEMANA (tiene prioridad):\n${contexto_semana}\nAdapta el plan teniendo en cuenta esta información.`
       : '';
 
+    const wellnessWarning = (() => {
+      if (!wellnessData) return '';
+      const alertas = [];
+      if (wellnessData.atl != null && wellnessData.atl > 50) alertas.push(`fatiga alta (ATL ${Math.round(wellnessData.atl)})`);
+      if (wellnessData.tsb != null && wellnessData.tsb < -20) alertas.push(`forma negativa (TSB ${Math.round(wellnessData.tsb)})`);
+      if (wellnessData.hrv != null && wellnessData.hrv < 40) alertas.push(`HRV muy bajo (${wellnessData.hrv} ms)`);
+      if (alertas.length === 0) return '';
+      return `\n\n⚠️ ALERTA RECUPERACIÓN (Intervals.icu hoy): ${alertas.join(', ')}. Reduce el volumen total un 15-20% y evita sesiones de alta intensidad esta semana.`;
+    })();
+
     // Detectar carrera B o C en los próximos 14 días
     const hoy14 = new Date(hoyStr);
     hoy14.setDate(hoy14.getDate() + 14);
@@ -691,7 +732,7 @@ Objetivo: ${profile.objetivo || 'mejorar forma física'}
 ${carrerasTexto ? `Carreras/eventos próximos: ${carrerasTexto}` : ''}
 ${semanaLabel}
 ${profile.contexto ? `Contexto del atleta: ${profile.contexto}` : ''}${analisisSection}${macrocicloSection}
-${distribucionDeportes}${contextoSemanaSection}
+${distribucionDeportes}${contextoSemanaSection}${wellnessWarning}
 
 El plan empieza el ${weekStart}. Los días en orden son: ${dias.join(', ')}.
 

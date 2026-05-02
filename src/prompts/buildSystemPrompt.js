@@ -31,7 +31,7 @@ Usas frases poderosas, referencias a grandes atletas y haces que el usuario sien
 Cada recomendación tiene una razón fisiológica. Usas métricas exactas: zonas de FC (Z1-Z5), ritmos por km, vatios, V̇O2max, velocidad crítica, umbrales. Cuando el atleta te da resultados de entrenamientos, los analizas numéricamente. No das motivación vacía — das datos, progresión medible y explicaciones de por qué cada sesión tiene sentido fisiológicamente. Hablas de forma precisa y directa. Cuando no tienes datos suficientes, lo dices y pides los que necesitas.`,
 }
 
-export function buildSystemPrompt(profile, personalidad = 'cercano', actividades = null, plan = null, planProximaSemana = null, historialPlanes = [], cycle = null) {
+export function buildSystemPrompt(profile, personalidad = 'cercano', actividades = null, plan = null, planProximaSemana = null, historialPlanes = [], cycle = null, wellness = null) {
   const truncar = (str, max) => str && str.length > max ? str.slice(0, max) + '…' : str
 
   const ahora = new Date().toLocaleDateString('es-ES', {
@@ -128,6 +128,25 @@ PROTOCOLO DE SEGURIDAD: Si el atleta menciona dolor, molestias, pinchazos o cual
     : sinDatos
       ? '\nEl atleta tiene Strava conectado pero no hay actividades recientes. NO inventes datos de entrenamientos.'
       : ''
+
+  const wellnessSection = wellness ? (() => {
+    const hrv = wellness.hrv != null ? `${wellness.hrv} ms` : 'no disponible'
+    const atl = wellness.atl != null ? `${Math.round(wellness.atl)}` : 'no disponible'
+    const tsb = wellness.tsb != null ? `${Math.round(wellness.tsb)}` : 'no disponible'
+    const sleep = wellness.sleepSecs ? `${Math.round(wellness.sleepSecs / 3600 * 10) / 10}h` : 'no disponible'
+    const feel = wellness.feel != null ? String(wellness.feel) : 'no registrada'
+    const alertas = []
+    if (wellness.atl != null && wellness.atl > 50) alertas.push('fatiga alta (ATL > 50) — reduce intensidad esta sesión')
+    if (wellness.tsb != null && wellness.tsb < -20) alertas.push('forma negativa (TSB < -20) — el atleta está en deuda de recuperación')
+    if (wellness.hrv != null && wellness.hrv < 40) alertas.push('HRV muy bajo — prioriza recuperación')
+    return `\nDATOS DE INTERVALS.ICU (hoy):
+- HRV: ${hrv}
+- Fatiga (ATL): ${atl}
+- Forma (TSB): ${tsb}
+- Sueño: ${sleep}
+- Sensaciones del atleta: ${feel}
+${alertas.length > 0 ? `\n⚠️ ALERTAS: ${alertas.join('; ')}. Ajusta la intensidad recomendada a la baja y no propongas sesiones intensas hasta que los valores mejoren.` : 'Los valores de recuperación son normales. Puedes mantener la intensidad planificada.'}`
+  })() : ''
 
   const completadaLabel = (s) => {
     if (!s.completada) return ' (pendiente)'
@@ -392,7 +411,7 @@ Responde siempre en español, de forma clara y concisa.
 Usa datos concretos: distancias, tiempos, zonas de frecuencia cardíaca cuando sea relevante.
 Cuando tengas datos de Strava del atleta, úsalos activamente en tus respuestas. Son datos reales sincronizados de su cuenta Strava.
 ${protocoloSeguridad}
-${planDebug}${actividadesSection}${planSection}${reconocimientoSection}${historialSection}${alertaFatigaSection}${taperSection}${planProximaSemanaSection}${separacionPlanes}
+${planDebug}${actividadesSection}${wellnessSection}${planSection}${reconocimientoSection}${historialSection}${alertaFatigaSection}${taperSection}${planProximaSemanaSection}${separacionPlanes}
 ${nutritionSection}
 ${interpretacionTests}${ajusteInstructions}`
 }
