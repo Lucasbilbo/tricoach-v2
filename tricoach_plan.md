@@ -119,6 +119,13 @@ Entrenador IA conversacional para triatletas, runners, atletas de Hyrox y nadado
 - `weekly-report.js` — informe dominical Pro + Free (upsell), URL corregida a app.getricoach.com
 - `thursday-reminder.js` — recordatorio jueves 17h UTC a usuarios sin plan (scheduled)
 
+**Intervals.icu (completo)**
+- Wellness diario (HRV, ATL, TSB, sueño) inyectado en system prompt del coach
+- Wellness usado en generate-plan para reducir carga si hay fatiga acumulada
+- Plan generado sincronizado automáticamente con calendario Intervals (POST por sesión)
+- IDs de eventos guardados en plans.intervals_event_ids
+- Al desconectar: borrado de eventos en Intervals + limpieza en Supabase
+
 **Multi-deporte y Strava**
 - Fase 10.8 completada: diagnóstico multi-deporte, refresh token Strava en generate-plan, fallback deporteInfo
 - Fase 11.1 completada: `strava-feedback.js` — feedback automático del coach tras sincronizar actividad (solo Pro, fire-and-forget)
@@ -183,7 +190,7 @@ Entrenador IA conversacional para triatletas, runners, atletas de Hyrox y nadado
 
 ### FASE 12 — Integraciones avanzadas
 - Comentario automático del coach tras sincronizar sesión Strava (Pro)
-- Intervals.icu sincronización (Pro)
+- Intervals.icu sincronización (Pro) ✅
 - Zonas FC y potencia avanzadas desde Strava
 
 ### FASE 13 — App móvil
