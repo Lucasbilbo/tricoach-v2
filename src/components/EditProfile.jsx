@@ -270,10 +270,56 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade,
 
   async function handleDisconnectIntervals() {
     setIntervalsSaving(true)
+
+    // Calcular lunes de la semana actual
+    const now = new Date()
+    const day = now.getUTCDay()
+    const diff = day === 0 ? -6 : 1 - day
+    const lunes = new Date(now)
+    lunes.setUTCDate(now.getUTCDate() + diff)
+    const semanaActual = lunes.toISOString().split('T')[0]
+
+    // Borrar eventos Intervals del plan actual (best-effort, no bloquea)
+    try {
+      const { data: planes } = await supabase
+        .from('plans')
+        .select('intervals_event_ids')
+        .eq('user_id', profile.id)
+        .eq('semana', semanaActual)
+        .maybeSingle()
+
+      const eventIds = planes?.intervals_event_ids
+      if (Array.isArray(eventIds) && eventIds.length > 0) {
+        const secret = import.meta.env.VITE_TRICOACH_SECRET || ''
+        await Promise.all(
+          eventIds.map(item =>
+            fetch(`/.netlify/functions/intervals?userId=${profile.id}&id=${item.id}`, {
+              method: 'DELETE',
+              headers: { 'x-tricoach-secret': secret },
+            }).catch(() => {})
+          )
+        )
+      }
+    } catch {
+      // Si falla el borrado de eventos, continuar igualmente con la desconexión
+    }
+
+    // Limpiar credenciales en profiles
     const { error } = await supabase
       .from('profiles')
       .update({ intervals_athlete_id: null, intervals_api_key: null })
       .eq('id', profile.id)
+
+    // Limpiar intervals_event_ids del plan actual
+    supabase
+      .from('plans')
+      .update({ intervals_event_ids: null })
+      .eq('user_id', profile.id)
+      .eq('semana', semanaActual)
+      .then(({ error: planError }) => {
+        if (planError) console.error('[intervals] Error limpiando event IDs del plan:', planError.message)
+      })
+
     setIntervalsSaving(false)
     if (!error) {
       setIntervalsAthleteId('')
