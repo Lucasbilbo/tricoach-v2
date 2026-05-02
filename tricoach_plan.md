@@ -1,5 +1,5 @@
 # TriCoach AI — Plan de Producto
-_Versión 10.0 — Marzo 2026_
+_Versión 11.2 — Mayo 2026_
 
 ---
 
@@ -41,7 +41,7 @@ Entrenador IA conversacional para triatletas, runners, atletas de Hyrox y nadado
 
 **Base técnica**
 - React + Vite, Supabase, Google Auth, Netlify Functions
-- 48 tests pasando, E2E Playwright
+- 125 tests pasando, E2E Playwright
 - GDPR, cookies, borrado de cuenta
 - CLAUDE.md con workflow, calidad y sistema de lecciones aprendidas
 
@@ -115,17 +115,33 @@ Entrenador IA conversacional para triatletas, runners, atletas de Hyrox y nadado
 - Beta badge flotante con enlace a Tally feedback
 - Enlace "Reportar problema" en perfil y footer
 
+**Emails y retención**
+- `weekly-report.js` — informe dominical Pro + Free (upsell), URL corregida a app.getricoach.com
+- `thursday-reminder.js` — recordatorio jueves 17h UTC a usuarios sin plan (scheduled)
+
+**Multi-deporte y Strava**
+- Fase 10.8 completada: diagnóstico multi-deporte, refresh token Strava en generate-plan, fallback deporteInfo
+- Fase 11.1 completada: `strava-feedback.js` — feedback automático del coach tras sincronizar actividad (solo Pro, fire-and-forget)
+
 **SEO**
 - Google Search Console verificado ✅
 - Sitemap enviado a Google ✅
-- 5 páginas de contenido live:
+- 8 páginas de contenido live:
   - `/entrenamiento-zona-2` — calculadora FC interactiva
   - `/plan-media-maraton` — calculadora de ritmo por 10K
   - `/preparar-primer-triatlon` — guía transiciones T1/T2
   - `/plan-entrenamiento-triatlon` — volúmenes por nivel y distancia
   - `/plan-entrenamiento-hyrox` — 8 estaciones + estimador de tiempo
+  - `/maraton-valencia` — plan 16 semanas, diciembre 2026, IAAF Gold Label
+  - `/maraton-madrid` — plan Rock 'n' Roll Madrid, evergreen, gestión desnivel y calor
+  - `/maraton-barcelona` — plan Zurich Marató, evergreen, circuito costero y viento
+- Sección "Guías gratuitas" en landing enlazando las 8 páginas
+- Sitemap actualizado con las 3 URLs nuevas
 - Links internos entre todas las páginas SEO
 - Schema.org en landing y páginas de contenido
+
+**Perfil**
+- `EditProfile.jsx`: sección "Mis carreras" — ver, añadir y eliminar carreras desde el perfil
 
 **Bugs resueltos**
 - BUG-01: getMondayOfCurrentWeek fallaba el domingo
@@ -152,29 +168,18 @@ Entrenador IA conversacional para triatletas, runners, atletas de Hyrox y nadado
 - 25 usuarios iniciales, recoger feedback 2-3 semanas
 - Revisar modelo de negocio con datos reales
 
-### FASE 10.8 — Multi-deporte ← SIGUIENTE
+### FASE 10.8 — Multi-deporte ✅
 - Varios deportes y pruebas en el mismo perfil
 - Coach compagina disciplinas según proximidad de cada carrera
 
-### FASE 11.1 — Feedback automático post-entreno ⭐
-Cuando se sincroniza una actividad de Strava, el coach genera automáticamente:
-- Análisis de zonas cumplidas vs objetivo del plan
-- Comparativa con la semana anterior (ritmo, FC, volumen)
-- Ajuste automático del plan si el entrenamiento fue muy diferente a lo planificado
-- Notificación push / email con el análisis
+### FASE 11.1 — Feedback automático post-entreno ✅
+- `strava-feedback.js`: cuando se sincroniza actividad Strava, el coach genera feedback automático
+- Análisis de la sesión vs plan, tono conversacional, solo Pro, fire-and-forget
 
-Ejemplo: "Te mantuviste en zona 2 durante el 82% del entrenamiento, ideal para base aeróbica. Tu ritmo fue 6 segundos más rápido que la semana pasada."
-
-### FASE 11.2 — Informe semanal automático por email
-Cada domingo por la noche, email automático con:
-- Km totales de la semana
-- % de incremento/reducción respecto a semana anterior
-- Sesiones completadas vs planificadas (adherencia)
-- Qué viene la próxima semana y por qué
-- CTA a la app
-
-Stack: Resend + Supabase cron (domingo 20:00 Europe/Madrid)
-Disponible para todos los usuarios (Free y Pro)
+### FASE 11.2 — Informe semanal automático por email ✅
+- `weekly-report.js`: cada domingo 19h UTC, email con adherencia y resumen semanal
+- Pro: informe completo con tabla sesión por sesión + mensaje del coach
+- Free: resumen con % adherencia + bloque de upsell a Pro
 
 ### FASE 12 — Integraciones avanzadas
 - Comentario automático del coach tras sincronizar sesión Strava (Pro)
@@ -227,7 +232,7 @@ intervals_athlete_id, intervals_api_key, created_at
 - Email: Resend (coach@getricoach.com)
 - Dominio: getricoach.com (Porkbun) → Netlify
 - Analytics: Google Analytics GA4 (G-HKG9V6M7KF)
-- Tests: Vitest (48) + Playwright E2E
+- Tests: Vitest (125) + Playwright E2E
 - Claude Code v2.1.73 + everything-claude-code + UI UX Pro Max skill
 
 ---
@@ -235,8 +240,8 @@ intervals_athlete_id, intervals_api_key, created_at
 ## 📋 ESTRATEGIA DE ADQUISICIÓN
 
 **SEO (principal canal a largo plazo)**
-- 5 páginas live, indexadas en Google Search Console
-- Próximo: páginas de carreras populares (Maratón Valencia, Madrid, Barcelona)
+- 8 páginas live, indexadas en Google Search Console
+- Maratón Valencia, Madrid y Barcelona ya publicadas y enlazadas desde landing
 - Keywords objetivo: "entrenador triatlón online", "plan entrenamiento running IA", "coach Hyrox español"
 
 **Comunidad (canal de validación)**
