@@ -61,6 +61,7 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [stravaData, setStravaData] = useState(null)
+  const [wellnessData, setWellnessData] = useState(null)
   const [adjustLoading, setAdjustLoading] = useState(false)
   const [adjustApplied, setAdjustApplied] = useState(false)
   const [adjustToast, setAdjustToast] = useState(null)
@@ -144,7 +145,7 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
       const updatedMessages = [...messages, { role: 'user', content: userMessage }]
       setMessages(updatedMessages)
 
-      const systemPrompt = buildSystemPrompt(profile, profile.personalidad || 'cercano', stravaData, plan, planProximaSemana, historialPlanes || [], activeCycle || null)
+      const systemPrompt = buildSystemPrompt(profile, profile.personalidad || 'cercano', stravaData, plan, planProximaSemana, historialPlanes || [], activeCycle || null, wellnessData)
 
       const response = await fetch('/.netlify/functions/claude', {
         method: 'POST',
@@ -204,6 +205,25 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
       localStorage.removeItem('onboarding_just_completed')
     }
   }, [])
+
+  useEffect(() => {
+    if (!userId || !profile?.intervals_athlete_id || !profile?.intervals_api_key) return
+    const controller = new AbortController()
+    fetch(`/.netlify/functions/intervals?action=wellness&userId=${userId}`, {
+      method: 'GET',
+      headers: { 'x-tricoach-secret': import.meta.env.VITE_TRICOACH_SECRET || '' },
+      signal: controller.signal,
+    })
+      .then(r => r.json())
+      .then(data => {
+        const w = Array.isArray(data) ? data[0] : data
+        if (w && !w.error && (w.hrv != null || w.atl != null || w.tsb != null)) {
+          setWellnessData(w)
+        }
+      })
+      .catch(err => { if (err.name !== 'AbortError') console.error('[Chat] intervals wellness error:', err) })
+    return () => controller.abort()
+  }, [userId, profile?.intervals_athlete_id])
 
   useEffect(() => {
     if (!userId) return
