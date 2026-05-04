@@ -447,6 +447,92 @@ function esSemanaDescargaInline(numeroSemana, fase) {
   return numeroSemana % 4 === 0;
 }
 
+async function syncIntervalsCalendar(sesionesActivas, weekStart, athleteId, apiKey, hostname, supabaseKey, planId) {
+  const DIA_OFFSET = { 'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4, 'Sábado': 5, 'Domingo': 6 };
+  const TIPO_MAP = {
+    'Correr': 'Run', 'Carrera': 'Run', 'Rodaje': 'Run',
+    'Bici': 'Ride', 'Ciclismo': 'Ride',
+    'Nadar': 'Swim', 'Natación': 'Swim',
+    'Fuerza': 'WeightTraining', 'Hyrox': 'WeightTraining',
+  };
+  const auth = Buffer.from(`API_KEY:${apiKey}`).toString('base64');
+  const lunes = new Date(weekStart + 'T12:00:00');
+
+  function postIntervalsEvent(sesion) {
+    const offset = DIA_OFFSET[sesion.dia] ?? 0;
+    const fecha = new Date(lunes);
+    fecha.setDate(lunes.getDate() + offset);
+    const dateStr = fecha.toISOString().slice(0, 10);
+    const desc = [
+      sesion.estructura?.calentamiento ? `Calentamiento: ${sesion.estructura.calentamiento}` : '',
+      sesion.estructura?.principal || '',
+      sesion.estructura?.vuelta_calma ? `Vuelta calma: ${sesion.estructura.vuelta_calma}` : '',
+      sesion.zona_objetivo ? `Zona objetivo: ${sesion.zona_objetivo}` : '',
+      sesion.estructura?.rpe_objetivo ? `RPE objetivo: ${sesion.estructura.rpe_objetivo}` : '',
+    ].filter(Boolean).join('\n');
+    const eventBody = JSON.stringify({
+      start_date_local: `${dateStr}T07:00:00`,
+      category: 'WORKOUT',
+      type: TIPO_MAP[sesion.tipo] || 'Workout',
+      name: `${sesion.subtipo || sesion.tipo} — ${sesion.duracion_min}min`,
+      ...(desc ? { description: desc } : {}),
+      moving_time: (sesion.duracion_min || 0) * 60,
+    });
+    return withTimeout(new Promise((resolve) => {
+      const opts = {
+        hostname: 'intervals.icu',
+        path: `/api/v1/athlete/${athleteId}/events`,
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(eventBody),
+        },
+      };
+      const req = https.request(opts, (r) => {
+        let d = '';
+        r.on('data', chunk => d += chunk);
+        r.on('end', () => { try { resolve({ dia: sesion.dia, status: r.statusCode, data: JSON.parse(d) }); } catch { resolve({ dia: sesion.dia, status: r.statusCode, data: null }); } });
+      });
+      req.on('error', () => resolve({ dia: sesion.dia, status: 500, data: null }));
+      req.write(eventBody);
+      req.end();
+    }), 4000, `Intervals timeout ${sesion.dia}`).catch(() => ({ dia: sesion.dia, status: 500, data: null }));
+  }
+
+  const resultados = await withTimeout(
+    Promise.all(sesionesActivas.map(postIntervalsEvent)),
+    8000,
+    'Intervals sync timeout global'
+  );
+
+  const eventIds = resultados
+    .filter(r => r.status >= 200 && r.status < 300 && r.data?.id)
+    .map(r => ({ dia: r.dia, id: r.data.id }));
+
+  if (eventIds.length > 0 && planId) {
+    const patchBody = JSON.stringify({ intervals_event_ids: eventIds });
+    await new Promise((resolve) => {
+      const opts = {
+        hostname,
+        path: `/rest/v1/plans?id=eq.${planId}`,
+        method: 'PATCH',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(patchBody),
+        },
+      };
+      const req = https.request(opts, (r) => { r.on('data', () => {}); r.on('end', resolve); });
+      req.on('error', resolve);
+      req.write(patchBody);
+      req.end();
+    });
+    console.log(`[intervals] ${eventIds.length} eventos sincronizados para plan ${planId}`);
+  }
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS, body: 'Method Not Allowed' };
@@ -861,100 +947,14 @@ Para el campo "estructura" de cada sesión activa:
 
   const plan = Array.isArray(inserted) ? inserted[0] : inserted;
 
-  // Sincronizar sesiones con Intervals.icu (paralelo, timeout total 8s, no bloquea si falla)
+  // Disparar sync Intervals sin await — fire-and-forget para no bloquear el return
   if (profile.intervals_athlete_id && profile.intervals_api_key) {
-    try {
-      const DIA_OFFSET = { 'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4, 'Sábado': 5, 'Domingo': 6 };
-      const TIPO_MAP = {
-        'Correr': 'Run', 'Carrera': 'Run', 'Rodaje': 'Run',
-        'Bici': 'Ride', 'Ciclismo': 'Ride',
-        'Nadar': 'Swim', 'Natación': 'Swim',
-        'Fuerza': 'WeightTraining', 'Hyrox': 'WeightTraining',
-      };
-      const auth = Buffer.from(`API_KEY:${profile.intervals_api_key}`).toString('base64');
-      const lunes = new Date(weekStart + 'T12:00:00');
-
-      const sesionesActivas = planData.sesiones.filter(s => {
-        const t = s.tipo?.toLowerCase();
-        return t !== 'descanso' && t !== 'resto' && t !== 'rest';
-      });
-
-      function postIntervalsEvent(sesion) {
-        const offset = DIA_OFFSET[sesion.dia] ?? 0;
-        const fecha = new Date(lunes);
-        fecha.setDate(lunes.getDate() + offset);
-        const dateStr = fecha.toISOString().slice(0, 10);
-        const desc = [
-          sesion.estructura?.calentamiento ? `Calentamiento: ${sesion.estructura.calentamiento}` : '',
-          sesion.estructura?.principal || '',
-          sesion.estructura?.vuelta_calma ? `Vuelta calma: ${sesion.estructura.vuelta_calma}` : '',
-          sesion.zona_objetivo ? `Zona objetivo: ${sesion.zona_objetivo}` : '',
-          sesion.estructura?.rpe_objetivo ? `RPE objetivo: ${sesion.estructura.rpe_objetivo}` : '',
-        ].filter(Boolean).join('\n');
-        const eventBody = JSON.stringify({
-          start_date_local: `${dateStr}T07:00:00`,
-          category: 'WORKOUT',
-          type: TIPO_MAP[sesion.tipo] || 'Workout',
-          name: `${sesion.subtipo || sesion.tipo} — ${sesion.duracion_min}min`,
-          ...(desc ? { description: desc } : {}),
-          moving_time: (sesion.duracion_min || 0) * 60,
-        });
-        return withTimeout(new Promise((resolve) => {
-          const opts = {
-            hostname: 'intervals.icu',
-            path: `/api/v1/athlete/${profile.intervals_athlete_id}/events`,
-            method: 'POST',
-            headers: {
-              'Authorization': `Basic ${auth}`,
-              'Content-Type': 'application/json',
-              'Content-Length': Buffer.byteLength(eventBody),
-            },
-          };
-          const req = https.request(opts, (r) => {
-            let d = '';
-            r.on('data', chunk => d += chunk);
-            r.on('end', () => { try { resolve({ dia: sesion.dia, status: r.statusCode, data: JSON.parse(d) }); } catch { resolve({ dia: sesion.dia, status: r.statusCode, data: null }); } });
-          });
-          req.on('error', () => resolve({ dia: sesion.dia, status: 500, data: null }));
-          req.write(eventBody);
-          req.end();
-        }), 4000, `Intervals timeout ${sesion.dia}`).catch(() => ({ dia: sesion.dia, status: 500, data: null }));
-      }
-
-      const resultados = await withTimeout(
-        Promise.all(sesionesActivas.map(postIntervalsEvent)),
-        8000,
-        'Intervals sync timeout global'
-      );
-
-      const eventIds = resultados
-        .filter(r => r.status >= 200 && r.status < 300 && r.data?.id)
-        .map(r => ({ dia: r.dia, id: r.data.id }));
-
-      if (eventIds.length > 0 && plan?.id) {
-        const patchBody = JSON.stringify({ intervals_event_ids: eventIds });
-        await new Promise((resolve) => {
-          const opts = {
-            hostname,
-            path: `/rest/v1/plans?id=eq.${plan.id}`,
-            method: 'PATCH',
-            headers: {
-              'apikey': supabaseKey,
-              'Authorization': `Bearer ${supabaseKey}`,
-              'Content-Type': 'application/json',
-              'Content-Length': Buffer.byteLength(patchBody),
-            },
-          };
-          const req = https.request(opts, (r) => { r.on('data', () => {}); r.on('end', resolve); });
-          req.on('error', resolve);
-          req.write(patchBody);
-          req.end();
-        });
-        console.error(`[intervals] ${eventIds.length} eventos sincronizados para plan ${plan.id}`);
-      }
-    } catch (e) {
-      console.error('[intervals] Error sincronizando plan:', e.message);
-    }
+    const sesionesActivas = planData.sesiones.filter(s => {
+      const t = s.tipo?.toLowerCase();
+      return t !== 'descanso' && t !== 'resto' && t !== 'rest';
+    });
+    syncIntervalsCalendar(sesionesActivas, weekStart, profile.intervals_athlete_id, profile.intervals_api_key, hostname, supabaseKey, plan?.id)
+      .catch(err => console.error('[intervals] sync falló:', err.message));
   }
 
   return {
