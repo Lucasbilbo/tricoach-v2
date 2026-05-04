@@ -39,6 +39,26 @@
 
 ---
 
+## 2026-04-30 — Fechas en páginas SEO
+
+**Error:** Se incluyeron años pasados (2025, 2026) en H1 de páginas SEO de carreras de primavera
+(Madrid abril, Barcelona marzo) cuando ya habían pasado.
+**Fix:** Páginas de carreras de primavera → evergreen sin año en H1.
+Solo añadir año si la edición es futura y concreta (Valencia diciembre 2026).
+**Lección:** Antes de crear contenido con fechas, verificar si la carrera ya pasó este año.
+
+---
+
+## 2026-05-04 — Bugs críticos de fechas UTC vs local
+
+- `getMondayOfCurrentWeek()` en Netlify Functions debe usar UTC+2 (Madrid), no UTC puro — `getUTCDay()` en madrugada devuelve el día anterior y genera el plan para la semana equivocada.
+- `getPlanActual()` en el frontend debe usar `formatLocalDate()`, no `toISOString()` — la query `.lte('semana', today)` falla en UTC+2 porque `toISOString()` da la fecha de ayer por la noche.
+- El contexto del perfil acumula datos temporales de semanas anteriores — añadir advertencia explícita en `generate-plan.js` y `buildSystemPrompt.js` para que Claude los ignore.
+- El `useEffect` de auto-generación del plan siguiente no debe dispararse antes del jueves (`dayOfWeek < 4`) aunque todas las sesiones estén completadas — evita generar planes prematuramente.
+- El sync con Intervals.icu debe ser fire-and-forget real (sin `await` antes del `return`) — si se awaita, puede sumar 8-17s al tiempo de respuesta y causar timeout en Netlify (límite ~26s).
+
+---
+
 ## Patrones de código estándar para Netlify Functions
 
 ```javascript
