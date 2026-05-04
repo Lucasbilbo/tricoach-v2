@@ -861,7 +861,7 @@ Para el campo "estructura" de cada sesión activa:
 
   const plan = Array.isArray(inserted) ? inserted[0] : inserted;
 
-  // Sincronizar sesiones con Intervals.icu (awaited con timeout, no bloquea si falla)
+  // Sincronizar sesiones con Intervals.icu (paralelo, timeout total 8s, no bloquea si falla)
   if (profile.intervals_athlete_id && profile.intervals_api_key) {
     try {
       const DIA_OFFSET = { 'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4, 'Sábado': 5, 'Domingo': 6 };
@@ -879,14 +879,11 @@ Para el campo "estructura" de cada sesión activa:
         return t !== 'descanso' && t !== 'resto' && t !== 'rest';
       });
 
-      const eventIds = [];
-
-      for (const sesion of sesionesActivas) {
+      function postIntervalsEvent(sesion) {
         const offset = DIA_OFFSET[sesion.dia] ?? 0;
         const fecha = new Date(lunes);
         fecha.setDate(lunes.getDate() + offset);
         const dateStr = fecha.toISOString().slice(0, 10);
-
         const desc = [
           sesion.estructura?.calentamiento ? `Calentamiento: ${sesion.estructura.calentamiento}` : '',
           sesion.estructura?.principal || '',
@@ -894,7 +891,6 @@ Para el campo "estructura" de cada sesión activa:
           sesion.zona_objetivo ? `Zona objetivo: ${sesion.zona_objetivo}` : '',
           sesion.estructura?.rpe_objetivo ? `RPE objetivo: ${sesion.estructura.rpe_objetivo}` : '',
         ].filter(Boolean).join('\n');
-
         const eventBody = JSON.stringify({
           start_date_local: `${dateStr}T07:00:00`,
           category: 'WORKOUT',
@@ -903,8 +899,7 @@ Para el campo "estructura" de cada sesión activa:
           ...(desc ? { description: desc } : {}),
           moving_time: (sesion.duracion_min || 0) * 60,
         });
-
-        const result = await withTimeout(new Promise((resolve) => {
+        return withTimeout(new Promise((resolve) => {
           const opts = {
             hostname: 'intervals.icu',
             path: `/api/v1/athlete/${profile.intervals_athlete_id}/events`,
@@ -918,21 +913,24 @@ Para el campo "estructura" de cada sesión activa:
           const req = https.request(opts, (r) => {
             let d = '';
             r.on('data', chunk => d += chunk);
-            r.on('end', () => { try { resolve({ status: r.statusCode, data: JSON.parse(d) }); } catch { resolve({ status: r.statusCode, data: null }); } });
+            r.on('end', () => { try { resolve({ dia: sesion.dia, status: r.statusCode, data: JSON.parse(d) }); } catch { resolve({ dia: sesion.dia, status: r.statusCode, data: null }); } });
           });
-          req.on('error', (e) => resolve({ status: 500, data: null, err: e.message }));
+          req.on('error', () => resolve({ dia: sesion.dia, status: 500, data: null }));
           req.write(eventBody);
           req.end();
-        }), 5000, `Intervals timeout sesion ${sesion.dia}`);
-
-        if (result.status >= 200 && result.status < 300 && result.data?.id) {
-          eventIds.push({ dia: sesion.dia, id: result.data.id });
-        } else {
-          console.error(`[intervals] Error creando evento ${sesion.dia}: status ${result.status}`);
-        }
+        }), 4000, `Intervals timeout ${sesion.dia}`).catch(() => ({ dia: sesion.dia, status: 500, data: null }));
       }
 
-      // Guardar IDs de eventos en el plan de Supabase
+      const resultados = await withTimeout(
+        Promise.all(sesionesActivas.map(postIntervalsEvent)),
+        8000,
+        'Intervals sync timeout global'
+      );
+
+      const eventIds = resultados
+        .filter(r => r.status >= 200 && r.status < 300 && r.data?.id)
+        .map(r => ({ dia: r.dia, id: r.data.id }));
+
       if (eventIds.length > 0 && plan?.id) {
         const patchBody = JSON.stringify({ intervals_event_ids: eventIds });
         await new Promise((resolve) => {
