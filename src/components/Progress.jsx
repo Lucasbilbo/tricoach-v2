@@ -283,14 +283,26 @@ export default function Progress({ userId, profile, activeCycle, plan: planActua
       .finally(() => setLoadingActividades(false))
   }, [userId, profile?.strava_token])
 
-  const dias = diasRestantes(profile?.fecha_carrera)
+  // Carrera más próxima: array carreras[] con fecha futura, o fallback a fecha_carrera legacy
+  const hoy = new Date()
+  const carreraProxima = (() => {
+    const arr = Array.isArray(profile?.carreras) ? profile.carreras : []
+    const futuras = arr
+      .filter(c => c.fecha && new Date(c.fecha + 'T12:00:00') > hoy)
+      .sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
+    if (futuras.length > 0) return { fecha: futuras[0].fecha, nombre: futuras[0].nombre || futuras[0].tipo || null }
+    if (profile?.fecha_carrera) return { fecha: profile.fecha_carrera, nombre: null }
+    return null
+  })()
+
+  const dias = diasRestantes(carreraProxima?.fecha)
   const consistencia = planes ? calcularConsistencia(planes) : null
   const adherencia = planes ? calcularAdherencia(planes) : null
   const variacionVolumen = planes ? calcularVolumen(planes) : null
   const mensaje = getMensajeCoach(consistencia)
   const semanas = planes?.length || 0
 
-  const vacio = planes !== null && semanas === 0
+  const vacio = !planActual && (!planes || planes.length === 0)
 
   return (
     <div className="screen-enter" style={{
@@ -400,9 +412,10 @@ export default function Progress({ userId, profile, activeCycle, plan: planActua
             <p style={{ fontSize: 15, color: 'var(--muted-foreground)', marginBottom: 4, fontWeight: 600 }}>
               días
             </p>
-            {profile?.fecha_carrera && (
+            {carreraProxima?.fecha && (
               <p style={{ fontSize: 12, color: 'var(--muted-foreground)', opacity: 0.7 }}>
-                {new Date(profile.fecha_carrera + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+                {carreraProxima.nombre && <span>{carreraProxima.nombre} · </span>}
+                {new Date(carreraProxima.fecha + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
               </p>
             )}
           </div>
