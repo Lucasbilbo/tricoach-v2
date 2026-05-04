@@ -15,11 +15,13 @@ function getTodayDate() {
 
 function getMondayOfCurrentWeek() {
   const now = new Date();
-  const day = now.getUTCDay(); // 0=Sun, 1=Mon, ..., 6=Sat
-  const diff = day === 0 ? 1 : 1 - day;
-  const monday = new Date(now);
-  monday.setUTCDate(now.getUTCDate() + diff);
-  return monday.toISOString().split('T')[0];
+  // Usar hora de Madrid (UTC+2 verano, UTC+1 invierno) para evitar desfase nocturno
+  const madridOffset = 2 * 60; // UTC+2 (horario de verano)
+  const local = new Date(now.getTime() + madridOffset * 60 * 1000);
+  const day = local.getUTCDay(); // 0=Dom, 1=Lun, ..., 6=Sáb en hora local Madrid
+  const diff = day === 0 ? -6 : 1 - day;
+  local.setUTCDate(local.getUTCDate() + diff);
+  return local.toISOString().split('T')[0];
 }
 
 function getDiasDesdeDate(startStr, mondayStr) {

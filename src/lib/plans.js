@@ -41,10 +41,10 @@ function getLastWeekStart() {
 }
 
 export async function getPlanActual(userId) {
-  const today = new Date().toISOString().split('T')[0]
+  const today = formatLocalDate(new Date())
   const sixDaysAgo = new Date()
   sixDaysAgo.setDate(sixDaysAgo.getDate() - 6)
-  const sixDaysAgoStr = sixDaysAgo.toISOString().split('T')[0]
+  const sixDaysAgoStr = formatLocalDate(sixDaysAgo)
   const { data } = await supabase
     .from('plans')
     .select('*')

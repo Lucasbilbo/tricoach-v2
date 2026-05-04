@@ -253,6 +253,14 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
   }
 
   async function handleGenerarSiguiente() {
+    // Verificar si ya existe un plan en la DB antes de generar
+    const existente = await getPlanForWeek(userId, getNextWeekStart()).catch(() => null)
+    if (existente) {
+      setPlanSiguiente(existente)
+      setPlanSiguienteNoExiste(false)
+      onPlanProximaSemanaUpdate?.(existente)
+      return
+    }
     setGenerandoSiguiente(true)
     try {
       const nuevo = await generatePlan(userId, plan, getNextWeekStart())
