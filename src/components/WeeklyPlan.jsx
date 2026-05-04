@@ -99,6 +99,8 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
     const todasCompletadas = plan.sesiones.every(s => s.completada)
     if (!todasCompletadas) return
     if (planSiguiente) return
+    const dayOfWeek = new Date().getDay() // 0=domingo, 1=lunes...
+    if (dayOfWeek >= 1 && dayOfWeek <= 3) return // no auto-generar antes del jueves
     handleGenerarSiguiente()
   }, [plan, planSiguiente])
 
