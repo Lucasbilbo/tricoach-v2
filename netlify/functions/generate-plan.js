@@ -874,7 +874,9 @@ Para el campo "estructura" de cada sesión activa:
   * Nadar: estilo, distancia, descanso y ritmo por 100m (ej: "6x100m crol con 20seg, ritmo 2:00/100m")
   * Fuerza/Hyrox: ejercicios, series y repeticiones (ej: "Sentadilla 3x10, Remo 3x12, Core 3x15")
 - vuelta_calma: recuperación y estiramientos (10% del tiempo)
-- rpe_objetivo: rango RPE para el bloque principal (ej: "5-6", "7-8", "9-10")${proximaCarreraSection}`;
+- rpe_objetivo: rango RPE para el bloque principal (ej: "5-6", "7-8", "9-10")${proximaCarreraSection}
+
+IMPORTANTE: El campo contexto puede contener información de semanas anteriores que ya no es válida. Usa el contexto solo para datos permanentes (FC máxima, zonas, métricas de test, lesiones crónicas). Ignora cualquier mención a disponibilidad puntual, compromisos semanales o condicionantes temporales del contexto — esos datos son del pasado.`;
   }
 
 

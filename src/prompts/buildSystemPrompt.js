@@ -70,7 +70,7 @@ export function buildSystemPrompt(profile, personalidad = 'cercano', actividades
     ? `El próximo evento es "${carreraProxima.nombre || carreraProxima.tipo}" el ${fechaCarreraLegible}.`
     : ''
   const contexto = profile.contexto
-    ? `\nLo que sabes de este atleta de conversaciones anteriores:\n${truncar(profile.contexto, 500)}`
+    ? `\nLo que sabes de este atleta de conversaciones anteriores:\n${truncar(profile.contexto, 500)}\nNota: el contexto puede incluir datos temporales de semanas anteriores. Úsalo solo para métricas permanentes. Para disponibilidad semanal usa siempre profile.disponibilidad.`
     : ''
 
   const deporteInfo = {
