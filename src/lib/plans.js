@@ -6,13 +6,20 @@ export function esFormatoAntiguo(sesiones) {
   return activas.length > 0 && activas.every(s => !s.estructura)
 }
 
+function formatLocalDate(date) {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
 function getWeekStart() {
   const now = new Date()
   const day = now.getDay()
   const diff = day === 0 ? -6 : 1 - day
   const monday = new Date(now)
   monday.setDate(now.getDate() + diff)
-  return monday.toISOString().split('T')[0]
+  return formatLocalDate(monday)
 }
 
 export function getNextWeekStart() {
@@ -21,7 +28,7 @@ export function getNextWeekStart() {
   const diff = day === 0 ? 1 : 8 - day
   const monday = new Date(now)
   monday.setDate(now.getDate() + diff)
-  return monday.toISOString().split('T')[0]
+  return formatLocalDate(monday)
 }
 
 function getLastWeekStart() {
@@ -30,7 +37,7 @@ function getLastWeekStart() {
   const diff = day === 0 ? -6 : 1 - day
   const monday = new Date(now)
   monday.setDate(now.getDate() + diff - 7)
-  return monday.toISOString().split('T')[0]
+  return formatLocalDate(monday)
 }
 
 export async function getPlanActual(userId) {
