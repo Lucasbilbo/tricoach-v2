@@ -72,6 +72,7 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
   const recognitionRef = useRef(null)
   const transcriptRef = useRef('')
   const vozActivaRef = useRef(vozActiva)
+  const prevPlanRef = useRef(null)
 
   function showAdjustToast(msg, type) {
     setAdjustToast({ msg, type })
@@ -182,7 +183,7 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
       setMessages(finalMessages)
       leerEnVoz(assistantMessage)
 
-      updateContext(userId, finalMessages, profile.contexto).catch(() => {})
+      updateContext(userId, finalMessages.filter(m => !m.system), profile.contexto).catch(() => {})
 
     } catch (error) {
       console.error('Error:', error)
@@ -268,6 +269,49 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
     }
   }, [])
 
+  // Inyectar mensaje de sistema invisible cuando el plan cambia durante la conversación
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const prevPlan = prevPlanRef.current
+    prevPlanRef.current = plan
+
+    if (!plan || !prevPlan || prevPlan.id !== plan.id || messages.length === 0) return
+
+    const prevSesiones = prevPlan.sesiones || []
+    const currSesiones = plan.sesiones || []
+
+    const newlyCompleted = currSesiones.filter(s => {
+      const prev = prevSesiones.find(ps => ps.dia === s.dia)
+      return s.completada && prev && !prev.completada
+    })
+
+    const adjusted = currSesiones
+      .filter(s => {
+        const prev = prevSesiones.find(ps => ps.dia === s.dia)
+        return prev && (s.tipo !== prev.tipo || s.descripcion !== prev.descripcion)
+      })
+      .map(s => {
+        const prev = prevSesiones.find(ps => ps.dia === s.dia)
+        return `${prev.tipo} → ${s.tipo} el ${s.dia}`
+      })
+
+    if (newlyCompleted.length === 0 && adjusted.length === 0) return
+
+    const parts = []
+    if (newlyCompleted.length > 0) {
+      parts.push(`Sesiones completadas: ${newlyCompleted.map(s => `${s.tipo} el ${s.dia} ✓`).join(', ')}`)
+    }
+    if (adjusted.length > 0) {
+      parts.push(`Ajuste aplicado: ${adjusted.join(', ')}`)
+    }
+
+    setMessages(prev => [...prev, {
+      role: 'user',
+      content: `[SISTEMA: El plan ha sido actualizado. ${parts.join('. ')}.]`,
+      system: true,
+    }])
+  }, [plan])
+
 
   const messagesHoy = profile?.messages_today || 0
   const esFree = !profile?.plan || profile?.plan === 'free'
@@ -277,7 +321,8 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
   const remaining = esFree ? (25 - messagesHoy) : (150 - messagesHoy)
   const showCounter = !limitAlcanzado && (esFree ? remaining < 8 : remaining < 20)
 
-  const lastAssistantIdx = messages.reduce((last, m, i) => m.role === 'assistant' ? i : last, -1)
+  const visibleMessages = messages.filter(m => !m.system)
+  const lastAssistantIdx = visibleMessages.reduce((last, m, i) => m.role === 'assistant' ? i : last, -1)
 
   const coachInitial = (nombreCoach[0] || 'C').toUpperCase()
 
@@ -523,7 +568,7 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
               <p style={{ fontSize: 15 }}>Cuéntame cómo va el entrenamiento</p>
             </div>
           )}
-          {messages.map((msg, i) => (
+          {visibleMessages.map((msg, i) => (
             <div key={i} className="message-enter" style={{
               marginBottom: 16,
               display: 'flex',
