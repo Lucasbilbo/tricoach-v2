@@ -153,18 +153,54 @@ ${alertas.length > 0 ? `\n⚠️ ALERTAS: ${alertas.join('; ')}. Ajusta la inten
     return s.via_strava ? ' ✓ completada (Strava)' : ' ✓ completada (manual)'
   }
 
-  const hoyFormatted = new Date().toLocaleDateString('es-ES', {
-    day: 'numeric', month: 'long', timeZone: 'Europe/Madrid'
-  })
+  // ── DIA_OFFSET_MAP: semana empieza en lunes (índice 0) ──────────────────────
+  const DIA_OFFSET_MAP = { Lunes: 0, Martes: 1, 'Miércoles': 2, Jueves: 3, Viernes: 4, Sábado: 5, Domingo: 6 }
 
   const planSection = plan ? (() => {
     const nDias = plan.sesiones.length
     const nota = nDias < 7
       ? `\n(Este plan tiene ${nDias} día${nDias > 1 ? 's' : ''} porque se generó a mitad de semana. No es una semana completa.)`
       : ''
-    return `\nPLAN SEMANA ACTUAL (días restantes desde hoy, ${hoyFormatted}):\n${plan.sesiones.map(s =>
-      `${s.dia}: ${s.tipo} - ${s.descripcion}${completadaLabel(s)}`
-    ).join('\n')}${nota}`
+
+    // Fecha de hoy en zona horaria local (Madrid) — sv-SE da formato YYYY-MM-DD
+    const hoyLocalStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' })
+    // T12:00:00 evita que cambios de zona horaria desplacen el día
+    const lunesPlan = new Date(plan.semana + 'T12:00:00')
+
+    // Comprobar si el plan es de la semana actual
+    const hoyLocal = new Date(hoyLocalStr + 'T12:00:00')
+    const dowHoy = hoyLocal.getDay() // 0=Dom, 1=Lun, ..., 6=Sáb (JS nativo)
+    const diasDesdeElLunes = dowHoy === 0 ? 6 : dowHoy - 1 // distancia al lunes en semana lun-dom
+    const lunesSemanaActual = new Date(hoyLocal)
+    lunesSemanaActual.setDate(hoyLocal.getDate() - diasDesdeElLunes)
+    const lunesSemanaActualStr = lunesSemanaActual.toISOString().split('T')[0]
+    const advertenciaSemana = plan.semana < lunesSemanaActualStr
+      ? `\n⚠️ ADVERTENCIA: Este plan es de la semana anterior (${plan.semana}). El atleta todavía no tiene plan para esta semana.`
+      : ''
+
+    const lines = plan.sesiones.map(s => {
+      const offset = DIA_OFFSET_MAP[s.dia] ?? 0
+      const sesionDate = new Date(lunesPlan)
+      sesionDate.setDate(lunesPlan.getDate() + offset)
+      const sesionDateStr = sesionDate.toISOString().split('T')[0]
+
+      let label
+      if (sesionDateStr === hoyLocalStr) {
+        label = s.completada
+          ? (s.via_strava ? ' [HOY ✓ completada (Strava)]' : ' [HOY ✓ completada]')
+          : ' [HOY - pendiente]'
+      } else if (sesionDateStr < hoyLocalStr) {
+        label = s.completada
+          ? (s.via_strava ? ' ✓ completada (Strava)' : ' ✓ completada')
+          : ' [pasado - no realizada]'
+      } else {
+        label = s.completada ? ' ✓ completada' : ' (pendiente)'
+      }
+
+      return `${s.dia} (${sesionDateStr}): ${s.tipo} - ${s.descripcion}${label}`
+    })
+
+    return `\nPLAN SEMANA ACTUAL (semana del ${plan.semana}):${advertenciaSemana}\n${lines.join('\n')}${nota}`
   })() : ''
 
   const sesionesCompletadas = plan

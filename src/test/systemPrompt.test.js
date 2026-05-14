@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { buildSystemPrompt } from '../prompts/buildSystemPrompt'
 
 describe('System Prompt dinámico', () => {
@@ -209,5 +209,90 @@ describe('System Prompt dinámico', () => {
     const profile = { nombre: 'Lucas', deporte: 'running', nivel: 'intermedio', objetivo: 'bajar de 50min' }
     const prompt = buildSystemPrompt(profile, 'cercano', null, null, null, [], null)
     expect(prompt).not.toContain('MACROCICLO')
+  })
+
+  // ── Regresión: offset de días (semana lunes-based) ─────────────────────────
+  describe('etiquetas hoy/pasado/pendiente en plan semanal', () => {
+    const SEMANA = '2026-05-11' // lunes 11 mayo 2026
+    const profile = { nombre: 'Lucas', deporte: 'running', nivel: 'intermedio', objetivo: 'bajar' }
+    const sesionesBase = [
+      { dia: 'Lunes',      tipo: 'Correr',   descripcion: 'Rodaje Z2',   completada: false },
+      { dia: 'Martes',     tipo: 'Descanso', descripcion: 'Descanso',    completada: false },
+      { dia: 'Miércoles',  tipo: 'Bici',     descripcion: 'Rodaje fácil',completada: false },
+      { dia: 'Jueves',     tipo: 'Correr',   descripcion: 'Fartlek',     completada: false },
+      { dia: 'Viernes',    tipo: 'Nadar',    descripcion: 'Técnica',     completada: false },
+      { dia: 'Sábado',     tipo: 'Bici',     descripcion: 'Ruta larga',  completada: false },
+      { dia: 'Domingo',    tipo: 'Descanso', descripcion: 'Descanso',    completada: false },
+    ]
+
+    afterEach(() => { vi.useRealTimers() })
+
+    it('jueves: etiqueta [HOY] en Jueves, [pasado] en Lun/Mar/Mié, (pendiente) en Vie/Sáb/Dom', () => {
+      // 2026-05-14 = jueves (getDay()=4 en JS, índice 3 en lunes-based)
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date('2026-05-14T10:00:00Z')) // 10:00 UTC = 12:00 Madrid
+
+      const plan = { id: 'p1', semana: SEMANA, sesiones: sesionesBase, volumen_planificado_min: 250 }
+      const prompt = buildSystemPrompt(profile, 'cercano', null, plan)
+
+      // Jueves es hoy
+      expect(prompt).toContain('Jueves (2026-05-14): Correr - Fartlek [HOY - pendiente]')
+      // Días pasados sin completar
+      expect(prompt).toContain('Lunes (2026-05-11): Correr - Rodaje Z2 [pasado - no realizada]')
+      expect(prompt).toContain('Martes (2026-05-12): Descanso - Descanso [pasado - no realizada]')
+      expect(prompt).toContain('Miércoles (2026-05-13): Bici - Rodaje fácil [pasado - no realizada]')
+      // Días futuros
+      expect(prompt).toContain('Viernes (2026-05-15): Nadar - Técnica (pendiente)')
+      expect(prompt).toContain('Sábado (2026-05-16): Bici - Ruta larga (pendiente)')
+      expect(prompt).toContain('Domingo (2026-05-17): Descanso - Descanso (pendiente)')
+    })
+
+    it('lunes: solo lunes es [HOY], el resto (pendiente)', () => {
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date('2026-05-11T10:00:00Z')) // lunes
+
+      const plan = { id: 'p1', semana: SEMANA, sesiones: sesionesBase, volumen_planificado_min: 250 }
+      const prompt = buildSystemPrompt(profile, 'cercano', null, plan)
+
+      expect(prompt).toContain('Lunes (2026-05-11): Correr - Rodaje Z2 [HOY - pendiente]')
+      expect(prompt).toContain('Martes (2026-05-12): Descanso - Descanso (pendiente)')
+      expect(prompt).not.toContain('[pasado')
+    })
+
+    it('sesión completada en día pasado muestra ✓ completada, no [pasado]', () => {
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date('2026-05-14T10:00:00Z')) // jueves
+
+      const sesionesConCompletada = sesionesBase.map(s =>
+        s.dia === 'Lunes' ? { ...s, completada: true } : s
+      )
+      const plan = { id: 'p1', semana: SEMANA, sesiones: sesionesConCompletada, volumen_planificado_min: 250 }
+      const prompt = buildSystemPrompt(profile, 'cercano', null, plan)
+
+      expect(prompt).toContain('Lunes (2026-05-11): Correr - Rodaje Z2 ✓ completada')
+      expect(prompt).not.toContain('Lunes (2026-05-11): Correr - Rodaje Z2 [pasado')
+    })
+
+    it('plan de semana anterior activa advertencia de semana anterior', () => {
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date('2026-05-14T10:00:00Z')) // jueves semana 11-17 mayo
+
+      const planAnterior = { id: 'p-old', semana: '2026-05-04', sesiones: sesionesBase, volumen_planificado_min: 250 }
+      const prompt = buildSystemPrompt(profile, 'cercano', null, planAnterior)
+
+      expect(prompt).toContain('ADVERTENCIA')
+      expect(prompt).toContain('semana anterior')
+      expect(prompt).toContain('2026-05-04')
+    })
+
+    it('plan de semana actual NO activa advertencia de semana anterior', () => {
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date('2026-05-14T10:00:00Z'))
+
+      const plan = { id: 'p1', semana: SEMANA, sesiones: sesionesBase, volumen_planificado_min: 250 }
+      const prompt = buildSystemPrompt(profile, 'cercano', null, plan)
+
+      expect(prompt).not.toContain('semana anterior')
+    })
   })
 })
