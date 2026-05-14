@@ -1,5 +1,5 @@
 # TriCoach AI — Estado del Proyecto
-_Actualizado: 28 de abril 2026_
+_Actualizado: 6 de mayo 2026_
 
 ---
 
@@ -46,68 +46,32 @@ _Actualizado: 28 de abril 2026_
 ### Strava
 - Email enviado a developers@strava.com con 3 capturas (28 abril 2026)
 
+### Duraciones mínimas por fase
+- `validarDuracion(sesion, fase)` implementada en `generate-plan.js` línea 424
+- Aplicada post-generación sobre todas las sesiones (línea 924-928)
+- Minimos: base Correr 55min, Bici 80min / build Correr 65min, Bici 90min / etc.
+
+### Sistema A/B/C de carreras
+- Campo `prioridad: 'A' | 'B' | 'C'` soportado en el array `carreras` del perfil
+- `create-cycle.js` — selecciona carrera A como objetivo del ciclo
+- `generate-plan.js` — detecta carrera B/C en <14 días y aplica mini-taper / sesión de calidad
+- Tests en `src/test/race-priority.test.js`
+
+### Recalcular ciclo al cambiar carrera
+- `netlify/functions/recalculate-cycle.js` — recalcula fases desde la semana actual
+- Tests en `src/test/recalculate-cycle.test.js`
+
+### Ciclo genérico completado → renovar
+- `esCicloCompletado()` en `src/lib/cycles.js`
+- Llamada en `App.jsx` al cargar el ciclo activo
+- UI: `src/components/CicloCompletadoBanner.jsx` con botón "Empezar nuevo ciclo"
+- Tests en `src/test/ciclo-completado.test.js`
+
 ---
 
 ## 🔴 Pendiente prioritario
 
-### 1. Duraciones de sesiones — URGENTE
-Las sesiones generadas siguen saliendo con 45min (el mínimo). El prompt a Claude
-tiene las duraciones mínimas pero no las está respetando correctamente.
-Hay que reforzar el prompt con ejemplos concretos y validación post-generación.
-
-**Prompt para Claude Code:**
-```
-En generate-plan.js, las sesiones se están generando con duraciones de 45min
-cuando deberían ser más largas según la fase.
-
-1. Añadir validación post-generación: después de parsear el JSON de Claude,
-   comprobar que cada sesión activa (no descanso) cumple la duración mínima
-   según fase y tipo. Si no la cumple, corregirla al mínimo.
-
-2. Reforzar el prompt añadiendo ejemplos concretos:
-   "Ejemplos de duraciones correctas para fase BASE:
-   - Rodaje Z2: 55-70min (NO 45min)
-   - Rodaje largo: 80-110min
-   - Bici Z2: 80-120min
-   - Intervalos: 60-75min (incluye calentamiento y vuelta a la calma)"
-
-3. Función de validación:
-   function validarDuracion(sesion, fase) {
-     const minimos = {
-       base: { 'Correr': 55, 'Bici': 80, 'Nadar': 45, 'Fuerza': 50 },
-       build: { 'Correr': 65, 'Bici': 90, 'Nadar': 55, 'Fuerza': 55 },
-       peak: { 'Correr': 70, 'Bici': 100, 'Nadar': 60, 'Fuerza': 55 },
-       taper: { 'Correr': 35, 'Bici': 50, 'Nadar': 35, 'Fuerza': 40 },
-     }
-     const min = minimos[fase]?.[sesion.tipo] || 45
-     return Math.max(sesion.duracion_min, min)
-   }
-
-npm test && npm run build && git add . && git commit -m "fix: enforce minimum session durations by phase" && git push origin main
-```
-
-### 2. Sistema A/B/C de carreras
-Añadir campo `prioridad: 'A' | 'B' | 'C'` al array de carreras del perfil.
-- Carrera A: taper completo 2 semanas
-- Carrera B: mini-taper 4-5 días
-- Carrera C: sin taper, sesión de calidad
-
-Afecta a: onboarding paso 4, editar perfil, generate-plan.js
-
-### 3. Recalcular ciclo si cambia la carrera objetivo
-Si el usuario edita la fecha de su carrera A en el perfil:
-- Detectar el cambio
-- Recalcular las fases del ciclo activo desde la semana actual
-- Actualizar training_cycles en Supabase
-- Notificar al usuario: "He actualizado tu plan de temporada"
-
-### 4. Ciclo genérico completado → renovar
-Cuando un ciclo sin carrera llega a la semana 16:
-- Mostrar mensaje: "Tu ciclo de 16 semanas ha terminado. ¿Empezamos otro?"
-- Botón "Nuevo ciclo" → crear nuevo ciclo desde hoy
-- No renovar automáticamente sin confirmación
-
-### 5. Strava pendiente de aprobación
+### Strava pendiente de aprobación
 Email enviado el 28 de abril. Esperar respuesta (3-10 días laborables).
 Si no responden antes del 12 de mayo → reenviar con vídeo demo.
 
@@ -115,16 +79,13 @@ Si no responden antes del 12 de mayo → reenviar con vídeo demo.
 
 ## 🟡 Mejoras menores pendientes
 
-- El bloque principal de las sesiones no muestra el contenido expandido en algunos casos (solo título)
-- El "Buscando en Strava..." del modal no tiene timeout — si Strava tarda >5s, el usuario espera sin feedback
-- La pantalla de Progreso muestra "5% consistencia" con datos de test — revisar el cálculo cuando haya datos reales
-- Añadir pace_5k y FTP como campos opcionales en el onboarding paso 4 (ahora solo están en Perfil)
+- **Strava modal sin timeout** — `ModalCompletarSesion.jsx`: el fetch a `strava-match-activity` no tiene límite de tiempo. Si Strava tarda >5s, el spinner "Buscando en Strava..." no se detiene. Solución: añadir `setTimeout` de 5s que llame a `controller.abort()`.
+- **Pantalla Progreso — consistencia** — muestra "5% consistencia" con datos de test. Revisar el cálculo cuando haya datos reales de usuarios.
+- **pace_5k y FTP en onboarding** — ahora solo aparecen en la pantalla de Perfil. Valorar añadirlos como campos opcionales en el onboarding paso 4.
 
 ---
 
 ## 📋 Próximos sprints
 
-**Sprint actual** → fix duraciones (urgente)
-**Sprint 2** → Sistema A/B/C de carreras
-**Sprint 3** → Recalcular ciclo al cambiar carrera + ciclo completado
-**Sprint 4** → Strava integración completa (cuando se apruebe)
+**Sprint actual** → Strava aprobación + mejoras menores
+**Sprint 2** → Strava integración completa (cuando se apruebe)

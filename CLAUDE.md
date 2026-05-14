@@ -371,3 +371,14 @@ Archivos clave:
 
 ## Bugs conocidos
 - El auto-ajuste no dispara en WeeklyPlan cuando se completa desde el histórico de semanas pasadas — comportamiento esperado (no tiene sentido ajustar semanas ya cerradas)
+
+## Skills — invocar automáticamente cuando aplique
+
+| Situación | Skill |
+|-----------|-------|
+| Tocando `netlify/functions/` | `/netlify-functions-commonjs` — plantilla CommonJS, CORS, withTimeout, x-tricoach-secret |
+| Bug difícil de entender | `/systematic-debugging` |
+| A punto de decir "listo" | `/verification-before-completion` |
+| Feature en múltiples archivos | `/dispatching-parallel-agents` |
+| Código que usa `anthropic` SDK | `/claude-api` — prompt caching, token tracking |
+| Copy de landing o marketing | `/storybrand-messaging` |
