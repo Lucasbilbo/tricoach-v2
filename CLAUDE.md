@@ -11,7 +11,7 @@ Freemium: Free (25 msg/día, plan básico) / Pro (9,99€/mes, Strava + plan ada
 - Frontend: React + Vite (JavaScript, NO TypeScript)
 - Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co) — RLS activado
 - Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
-- Tests: Vitest — **123 tests pasando** (20 archivos)
+- Tests: Vitest — **124 tests pasando** (19 archivos)
 - Deploy: Netlify (producción: https://tricoach-v2.netlify.app)
 - Pagos: Stripe (checkout + webhooks)
 - Email: Resend (coach@getricoach.com)
@@ -339,7 +339,7 @@ const fechaStr = base.toISOString().split('T')[0]
 ```
 Este patrón se usa en `WeeklyPlan.jsx`, `autoAdjust.js` y donde se necesite comparar sesiones con la fecha actual.
 
-## Tests — 123 pasando (20 archivos)
+## Tests — 124 pasando (19 archivos)
 
 Archivos clave:
 - `autoAdjust.test.js` — checkShouldAdjust (9 tests)
