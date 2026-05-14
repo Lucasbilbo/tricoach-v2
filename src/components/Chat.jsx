@@ -55,6 +55,9 @@ const MicIcon = () => (
 
 const soportaVoz = typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)
 
+// Module-level cache — persists across tab navigation, resets on full page reload
+let stravaActivitiesCache = { fetched: false, data: null, ts: 0, userId: null }
+
 export default function Chat({ userId, profile, activeCycle, plan, planProximaSemana, historialPlanes, personalidad, onPersonalidadChange, onShowUpgrade, onPlanUpdate, prefillMessage }) {
   const [messages, setMessages] = useState([])
   const [welcomeOnboarding, setWelcomeOnboarding] = useState(null) // nombre del usuario si viene de onboarding
@@ -73,6 +76,7 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
   const transcriptRef = useRef('')
   const vozActivaRef = useRef(vozActiva)
   const prevPlanRef = useRef(null)
+  const localContextoRef = useRef(profile?.contexto)
 
   function showAdjustToast(msg, type) {
     setAdjustToast({ msg, type })
@@ -146,7 +150,8 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
       const updatedMessages = [...messages, { role: 'user', content: userMessage }]
       setMessages(updatedMessages)
 
-      const systemPrompt = buildSystemPrompt(profile, profile.personalidad || 'cercano', stravaData, plan, planProximaSemana, historialPlanes || [], activeCycle || null, wellnessData)
+      const profileActualizado = { ...profile, contexto: localContextoRef.current }
+      const systemPrompt = buildSystemPrompt(profileActualizado, profile.personalidad || 'cercano', stravaData, plan, planProximaSemana, historialPlanes || [], activeCycle || null, wellnessData)
 
       const response = await fetch('/.netlify/functions/claude', {
         method: 'POST',
@@ -189,7 +194,9 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
       setMessages(finalMessages)
       leerEnVoz(assistantMessage)
 
-      updateContext(userId, finalMessages.filter(m => !m.system), profile.contexto).catch(() => {})
+      updateContext(userId, finalMessages.filter(m => !m.system), localContextoRef.current).then(nuevoContexto => {
+        if (nuevoContexto) localContextoRef.current = nuevoContexto
+      }).catch(() => {})
 
     } catch (error) {
       console.error('Error:', error)
@@ -198,6 +205,11 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
       setLoading(false)
     }
   }
+
+  // Keep local context ref in sync when profile prop updates (e.g. initial load)
+  useEffect(() => {
+    localContextoRef.current = profile?.contexto
+  }, [profile?.contexto])
 
   useEffect(() => {
     getMessages(userId).then(msgs => {
@@ -234,6 +246,11 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
 
   useEffect(() => {
     if (!userId) return
+    const CACHE_MS = 5 * 60 * 1000 // 5 minutes
+    if (stravaActivitiesCache.fetched && stravaActivitiesCache.userId === userId && Date.now() - stravaActivitiesCache.ts < CACHE_MS) {
+      setStravaData(stravaActivitiesCache.data)
+      return
+    }
     const controller = new AbortController()
     fetch('/.netlify/functions/strava-activities', {
       method: 'POST',
@@ -246,7 +263,11 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
     })
       .then(r => r.json())
       .then(data => {
-        if (!data.error) setStravaData(data.sinStrava ? null : data)
+        if (!data.error) {
+          const value = data.sinStrava ? null : data
+          stravaActivitiesCache = { fetched: true, data: value, ts: Date.now(), userId }
+          setStravaData(value)
+        }
       })
       .catch(err => { if (err.name !== 'AbortError') console.error('[Chat] strava-activities error:', err) })
     return () => controller.abort()

@@ -245,7 +245,7 @@ Situación: ${motivoPrompt}
 
 Devuelve el plan ajustado manteniendo las sesiones completadas tal como están (con completada: true) y ajustando solo las pendientes.
 
-El JSON debe tener esta estructura exacta (7 sesiones, Lunes a Domingo). El campo "estructura" es OBLIGATORIO para sesiones no-descanso ajustadas:
+El JSON debe tener esta estructura exacta (${sesiones.length} sesiones, exactamente los mismos días que el plan original: ${sesiones.map(s => s.dia).join(', ')}). NO añadas ni elimines días. El campo "estructura" es OBLIGATORIO para sesiones no-descanso ajustadas:
 {
   "semana": "${planActual.semana}",
   "sesiones": [
@@ -292,8 +292,8 @@ Conserva el campo "completada: true" y TODOS los campos originales (incluyendo e
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'El plan ajustado no es JSON válido' }) };
   }
 
-  if (!planData.sesiones || planData.sesiones.length !== 7) {
-    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'El plan debe tener exactamente 7 sesiones' }) };
+  if (!planData.sesiones || planData.sesiones.length !== sesiones.length) {
+    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: `El plan ajustado debe tener exactamente ${sesiones.length} sesiones` }) };
   }
 
   // Actualizar plan en Supabase

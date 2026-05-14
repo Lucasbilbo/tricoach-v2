@@ -47,4 +47,5 @@ Genera la ficha técnica actualizada (máximo 150 palabras, sin paja):`
     .update({ contexto: nuevoContexto })
     .eq('id', userId)
   if (error) console.error('[context] Error guardando contexto:', error.message)
+  return nuevoContexto
 }
