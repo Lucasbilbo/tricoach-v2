@@ -1,6 +1,6 @@
 # TriCoach AI — Contexto del proyecto
 
-> Última actualización: 30 abril 2026
+> Última actualización: 14 mayo 2026
 
 ## Qué es esto
 Entrenador IA conversacional para triatletas, runners y atletas de Hyrox hispanohablantes.
@@ -11,7 +11,7 @@ Freemium: Free (25 msg/día, plan básico) / Pro (9,99€/mes, Strava + plan ada
 - Frontend: React + Vite (JavaScript, NO TypeScript)
 - Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co) — RLS activado
 - Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
-- Tests: Vitest — **124 tests pasando** (19 archivos)
+- Tests: Vitest — **124 tests pasando** (19 archivos) + Playwright E2E (3 specs)
 - Deploy: Netlify (producción: https://tricoach-v2.netlify.app)
 - Pagos: Stripe (checkout + webhooks)
 - Email: Resend (coach@getricoach.com)
@@ -86,7 +86,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 
 ### Tests
 - Ejecutar `npm test` al terminar SIEMPRE
-- **123 tests deben pasar** — si alguno falla, arreglarlo antes de terminar
+- **124 tests deben pasar** — si alguno falla, arreglarlo antes de terminar
 - No borrar ni modificar tests existentes sin motivo explícito
 
 ## Estado del proyecto — Fases completadas
@@ -115,6 +115,41 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 5. **Bug consistencia 0%**: `Progress.jsx` usa `getHistorialPlanes` (semanas pasadas) en lugar de `getRecentPlans` (incluía semana actual incompleta); `calcularConsistencia` acepta `completada` como boolean/number/string
 6. **Sticky header**: `handleNavigate` en App.jsx resetea `.screen-enter` scrollTop además de `window.scrollTo(0,0)`
 
+### Fase 10 — Macrociclos e infraestructura avanzada (abril–mayo 2026) ✅
+- Tabla `training_cycles` en Supabase, migración aplicada en producción
+- `src/lib/cycles.js` — calcularFases, getFaseActual, esSemanaDescarga, esCicloCompletado
+- `create-cycle.js` — idempotente, con y sin carrera objetivo
+- `App.jsx` — crea/carga ciclo activo al arrancar, pasa `activeCycle` a Dashboard/Chat/Progreso
+- Dashboard: barra "Semana X de Y · FASE BASE" con barra de progreso
+- Progreso: timeline horizontal BASE → BUILD → PEAK → TAPER con indicador actual
+- WeeklyPlan: cabecera con objetivo de la semana
+
+### Fase 10.5 — Sesiones con estructura real (mayo 2026) ✅
+- `generate-plan.js` — nuevo schema (calentamiento, principal, vuelta a la calma, zona_objetivo, rpe_objetivo)
+- `generate-plan.js` — guarda cycle_id, numero_semana, fase, objetivo_semana, volumen_planificado_min
+- `adjust-plan.js` — migra sesiones antiguas al nuevo formato antes de ajustar
+- `WeeklyPlan.jsx` — cards expandibles con 3 bloques de estructura
+- `ModalCompletarSesion.jsx` — RPE visual, tiempo real, distancia, FC, notas
+- `validarDuracion(sesion, fase)` — duraciones mínimas por deporte y fase
+
+### Fase 10.8 — Multi-deporte y sistema A/B/C de carreras (mayo 2026) ✅
+- Campo `prioridad: 'A' | 'B' | 'C'` en array `carreras` del perfil
+- `create-cycle.js` selecciona carrera A como objetivo del ciclo
+- `generate-plan.js` detecta carrera B/C en <14 días → mini-taper / sesión de calidad
+- `recalculate-cycle.js` — recalcula fases desde semana actual al cambiar carrera
+- Diagnóstico multi-deporte, refresh token Strava en generate-plan, fallback deporteInfo
+- Bugs de fechas UTC vs local corregidos (getMondayOfCurrentWeek UTC+2, getPlanActual fecha local)
+
+### Fase 11.1 — Feedback automático post-entreno (mayo 2026) ✅
+- `strava-feedback.js` — cuando se sincroniza actividad Strava, el coach genera feedback automático
+- Análisis sesión vs plan, tono conversacional, solo Pro, fire-and-forget desde strava-sync.js
+
+### Fase 11.2 — Informe semanal automático por email (mayo 2026) ✅
+- `weekly-report.js` — domingos 19h UTC: informe con adherencia y resumen semanal
+- `thursday-reminder.js` — jueves 17h UTC: recordatorio a usuarios sin plan próxima semana
+- Pro: informe completo tabla sesión a sesión + mensaje del coach
+- Free: resumen con % adherencia + bloque upsell a Pro
+
 ## Estructura de archivos completa
 
 ```
@@ -122,20 +157,30 @@ tricoach-v2/
 ├── CLAUDE.md
 ├── SPEC.md                    — arquitectura macrociclos (leer antes de tocar training_cycles)
 ├── DESIGN.md                  — sistema de diseño de referencia
+├── ESTADO_PROYECTO.md         — estado detallado, pendientes y próximos sprints
+├── tricoach_plan.md           — plan de producto v11.2
+├── tasks/
+│   ├── lessons.md             — lecciones aprendidas (leer siempre antes de empezar)
+│   └── PROMPTS_CLAUDE_CODE.md
+├── scripts/
+│   └── generate-icons.js
+├── supabase/
+│   └── migrations/
+│       └── 001_training_cycles.sql
 ├── src/
 │   ├── components/
 │   │   ├── Login.jsx
 │   │   ├── Onboarding.jsx
-│   │   ├── Chat.jsx           — chat con coach IA, rate limiting frontend
-│   │   ├── Dashboard.jsx      — pantalla "Hoy": sesión del día, Strava sync, auto-adjust
-│   │   ├── WeeklyPlan.jsx     — plan semanal, modal completar, botones ajuste
-│   │   ├── Progress.jsx       — estadísticas, consistencia (historialPlanes), gráfico semana
-│   │   ├── EditProfile.jsx    — editar perfil
+│   │   ├── Chat.jsx                  — chat con coach IA, rate limiting frontend
+│   │   ├── Dashboard.jsx             — pantalla "Hoy": sesión del día, Strava sync, auto-adjust
+│   │   ├── WeeklyPlan.jsx            — plan semanal, modal completar, botones ajuste
+│   │   ├── Progress.jsx              — estadísticas, consistencia (historialPlanes), gráfico semana
+│   │   ├── EditProfile.jsx           — editar perfil, sección "Mis carreras", datos rendimiento
 │   │   ├── BottomNav.jsx
 │   │   ├── UpgradeModal.jsx
 │   │   ├── CookieBanner.jsx
-│   │   ├── ModalCompletarSesion.jsx — modal con RPE + tiempo real + distancia + FC + notas; integra Strava
-│   │   ├── AdjustmentBanner.jsx     — banner naranja tras ajuste automático (Fase 8)
+│   │   ├── ModalCompletarSesion.jsx  — modal RPE + tiempo real + distancia + FC + notas; integra Strava
+│   │   ├── AdjustmentBanner.jsx      — banner naranja tras ajuste automático (Fase 8)
 │   │   ├── CicloCompletadoBanner.jsx — banner cuando macrociclo termina
 │   │   ├── SessionDetail.jsx
 │   │   ├── StravaConnect.jsx
@@ -149,44 +194,59 @@ tricoach-v2/
 │   │   ├── plans.js           — getPlan, generatePlan, markSessionComplete, adjustPlan,
 │   │   │                        autoAdjustPlan, getHistorialPlanes, calcularConsistencia, analizarPlan
 │   │   ├── autoAdjust.js      — checkShouldAdjust(plan, profile) — función pura, sin efectos
-│   │   └── cycles.js          — esCicloCompletado, etc.
+│   │   └── cycles.js          — calcularFases, getFaseActual, esSemanaDescarga, esCicloCompletado
+│   ├── pages/
+│   │   ├── Privacidad.jsx     — página política de privacidad
+│   │   └── Terminos.jsx       — página términos de servicio
 │   ├── prompts/
 │   │   └── buildSystemPrompt.js
 │   ├── test/
 │   │   ├── setup.js
-│   │   ├── example.test.jsx
-│   │   ├── supabase.test.js
-│   │   ├── netlify-functions.test.js
-│   │   ├── profiles.test.js
-│   │   ├── limits.test.js
-│   │   ├── strava-match-activity.test.js
-│   │   ├── cycles.test.js
-│   │   ├── recalculate-cycle.test.js
-│   │   ├── ciclo-completado.test.js
-│   │   ├── autoRegenPlan.test.js
-│   │   ├── autoAdjust.test.js           — checkShouldAdjust (9 tests)
-│   │   ├── phase105.test.jsx
-│   │   └── (otros archivos de test)
+│   │   ├── supabase.test.js           (2 tests)
+│   │   ├── netlify-functions.test.js  (6 tests)
+│   │   ├── profiles.test.js           (2 tests)
+│   │   ├── limits.test.js             (4 tests)
+│   │   ├── auth.test.jsx              (2 tests)
+│   │   ├── onboarding.test.jsx        (3 tests)
+│   │   ├── weeklyPlan.test.jsx        (5 tests)
+│   │   ├── systemPrompt.test.js       (22 tests)
+│   │   ├── strava-activities.test.js  (4 tests)
+│   │   ├── strava-match-activity.test.js (6 tests)
+│   │   ├── cycles.test.js             (24 tests)
+│   │   ├── recalculate-cycle.test.js  (4 tests)
+│   │   ├── ciclo-completado.test.js   (3 tests)
+│   │   ├── race-priority.test.js      (7 tests) — sistema A/B/C de carreras
+│   │   ├── autoRegenPlan.test.js      (8 tests)
+│   │   ├── autoAdjust.test.js         (9 tests) — checkShouldAdjust
+│   │   ├── phase8.test.jsx            (4 tests)
+│   │   ├── phase10.test.jsx           (4 tests)
+│   │   ├── phase105.test.jsx          (5 tests)
+│   │   └── e2e/
+│   │       ├── auth.spec.js
+│   │       ├── audit.spec.js
+│   │       └── coach-calendar-sync.spec.js
 │   ├── index.css
 │   ├── App.jsx
 │   └── main.jsx
 ├── netlify/
 │   └── functions/
-│       ├── claude.js              — chat Claude, rate limiting atómico (RPC)
-│       ├── adjust-plan.js         — ajusta plan (lesión/viaje/día suelto/sobrecarga/sesiones_perdidas + signal)
-│       ├── generate-plan.js       — genera plan semanal
-│       ├── create-cycle.js        — crea macrociclo de entrenamiento
-│       ├── recalculate-cycle.js   — recalcula fases del ciclo tras cambio de carrera
-│       ├── coach-intro.js         — mensaje de bienvenida del coach
-│       ├── strava-auth.js         — OAuth Strava
-│       ├── strava-activities.js   — actividades Strava + refresh token
-│       ├── strava-sync.js         — sincronización automática sesiones Strava → plan
+│       ├── claude.js                — chat Claude, rate limiting atómico (RPC)
+│       ├── adjust-plan.js           — ajusta plan (lesión/viaje/sobrecarga/sesiones_perdidas + signal)
+│       ├── generate-plan.js         — genera plan semanal con estructura real y contexto macrociclo
+│       ├── create-cycle.js          — crea macrociclo de entrenamiento (idempotente)
+│       ├── recalculate-cycle.js     — recalcula fases del ciclo tras cambio de carrera
+│       ├── coach-intro.js           — mensaje de bienvenida del coach
+│       ├── strava-auth.js           — OAuth Strava
+│       ├── strava-activities.js     — actividades Strava + refresh token
+│       ├── strava-sync.js           — sincronización automática sesiones Strava → plan
 │       ├── strava-match-activity.js — match actividad Strava con sesión del plan
-│       ├── intervals.js           — integración Intervals.icu (GET/POST/DELETE)
-│       ├── weekly-report.js       — informe semanal
-│       ├── create-checkout.js     — Stripe Checkout Session
-│       ├── stripe-webhook.js      — webhook Stripe (activar/revocar Pro)
-│       └── delete-account.js      — soft delete: PATCH profiles SET deleted_at, borra messages/plans
+│       ├── strava-feedback.js       — feedback automático post-entreno (Pro, fire-and-forget)
+│       ├── intervals.js             — integración Intervals.icu (GET/POST/DELETE)
+│       ├── weekly-report.js         — informe semanal [SCHEDULED: domingos 19h UTC]
+│       ├── thursday-reminder.js     — recordatorio semanal [SCHEDULED: jueves 17h UTC]
+│       ├── create-checkout.js       — Stripe Checkout Session
+│       ├── stripe-webhook.js        — webhook Stripe (activar/revocar Pro)
+│       └── delete-account.js        — soft delete: PATCH profiles SET deleted_at, borra messages/plans
 ├── index.html
 ├── netlify.toml
 ├── vite.config.js
@@ -339,16 +399,18 @@ const fechaStr = base.toISOString().split('T')[0]
 ```
 Este patrón se usa en `WeeklyPlan.jsx`, `autoAdjust.js` y donde se necesite comparar sesiones con la fecha actual.
 
-## Tests — 124 pasando (19 archivos)
+## Tests — 124 pasando (19 archivos) + 3 specs E2E Playwright
 
-Archivos clave:
-- `autoAdjust.test.js` — checkShouldAdjust (9 tests)
+Tests más pesados (referencia rápida):
+- `systemPrompt.test.js` — buildSystemPrompt (22 tests)
 - `cycles.test.js` — macrociclos (24 tests)
+- `autoAdjust.test.js` — checkShouldAdjust (9 tests)
+- `autoRegenPlan.test.js` — auto-regeneración plan (8 tests)
+- `race-priority.test.js` — sistema A/B/C carreras (7 tests)
 - `strava-match-activity.test.js` (6 tests)
-- `autoRegenPlan.test.js` (8 tests)
-- `recalculate-cycle.test.js` (4 tests)
-- `limits.test.js` (4 tests)
-- `phase105.test.jsx`, `ciclo-completado.test.js`, `profiles.test.js`, etc.
+- `netlify-functions.test.js` (6 tests)
+- `phase105.test.jsx` (5 tests)
+- `recalculate-cycle.test.js` (4 tests), `limits.test.js` (4 tests)
 
 ## Workflow
 1. `netlify dev` para desarrollo local → http://localhost:8888
