@@ -64,7 +64,7 @@ export async function getPlanProximaSemana(userId) {
 export async function getHistorialPlanes(userId, semanas = 4) {
   const sixDaysAgo = new Date()
   sixDaysAgo.setDate(sixDaysAgo.getDate() - 6)
-  const cutoff = sixDaysAgo.toISOString().split('T')[0]
+  const cutoff = formatLocalDate(sixDaysAgo) // usar fecha local, no UTC (evita desfase nocturno)
   const { data } = await supabase
     .from('plans')
     .select('*')

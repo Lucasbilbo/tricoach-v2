@@ -10,18 +10,19 @@ const FUNCTION_SECRET = process.env.TRICOACH_SECRET;
 const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
 
 function getTodayDate() {
-  return new Date().toISOString().split('T')[0];
+  // sv-SE locale gives YYYY-MM-DD in Madrid timezone (avoids UTC date mismatch late at night)
+  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
 }
 
 function getMondayOfCurrentWeek() {
-  const now = new Date();
-  // Usar hora de Madrid (UTC+2 verano, UTC+1 invierno) para evitar desfase nocturno
-  const madridOffset = 2 * 60; // UTC+2 (horario de verano)
-  const local = new Date(now.getTime() + madridOffset * 60 * 1000);
-  const day = local.getUTCDay(); // 0=Dom, 1=Lun, ..., 6=Sáb en hora local Madrid
+  // sv-SE locale gives the correct local date in Madrid (handles UTC+1 winter / UTC+2 summer)
+  // T12:00:00Z anchors to noon UTC so getUTCDay() is always the same day as the Madrid date
+  const madridDateStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
+  const d = new Date(madridDateStr + 'T12:00:00Z');
+  const day = d.getUTCDay(); // 0=Dom, 1=Lun, ..., 6=Sáb
   const diff = day === 0 ? -6 : 1 - day;
-  local.setUTCDate(local.getUTCDate() + diff);
-  return local.toISOString().split('T')[0];
+  d.setUTCDate(d.getUTCDate() + diff);
+  return d.toISOString().split('T')[0];
 }
 
 function getDiasDesdeDate(startStr, mondayStr) {

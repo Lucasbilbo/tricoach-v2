@@ -52,11 +52,14 @@ export function buildSystemPrompt(profile, personalidad = 'cercano', actividades
   const carrerasArr = Array.isArray(profile.carreras) && profile.carreras.length > 0
     ? profile.carreras
     : profile.fecha_carrera ? [{ nombre: 'Carrera objetivo', tipo: '', fecha: profile.fecha_carrera }] : []
-  const hoy = new Date()
+  const hoy = new Date() // usado solo para contar días (aritmética aproximada, no comparación de fechas)
+  // Comparar con fecha ISO local (sv-SE da YYYY-MM-DD en timezone Madrid)
+  // new Date('YYYY-MM-DD') se parsea como UTC midnight, lo que filtraría incorrectamente carreras de hoy
+  const hoyStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' })
   const carrerasFuturas = carrerasArr.filter(c => {
     if (!c.fecha) return false
-    const f = new Date(c.fecha)
-    return !isNaN(f.getTime()) && f > hoy
+    const f = new Date(c.fecha + 'T12:00:00') // T12 para validación de formato
+    return !isNaN(f.getTime()) && c.fecha >= hoyStr
   }).sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
   const carreraProxima = carrerasFuturas[0] || null
 

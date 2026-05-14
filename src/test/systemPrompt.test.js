@@ -211,6 +211,49 @@ describe('System Prompt dinámico', () => {
     expect(prompt).not.toContain('MACROCICLO')
   })
 
+  // ── Regresión: carreras futuras UTC midnight bug ────────────────────────────
+  describe('carrerasFuturas: comparación por string ISO, no por Date UTC', () => {
+    afterEach(() => { vi.useRealTimers() })
+
+    it('carrera en fecha de hoy se incluye en el prompt (no filtrada como pasada)', () => {
+      // Bug: new Date('2026-05-14') = UTC midnight. Si hoy es 10:00 UTC (12:00 Madrid)
+      // la carrera quedaba excluida porque UTC midnight < 10:00 UTC.
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date('2026-05-14T10:00:00Z')) // 12:00 Madrid (UTC+2)
+
+      const profile = {
+        nombre: 'Lucas', deporte: 'running', nivel: 'intermedio', objetivo: 'bajar',
+        carreras: [{ nombre: 'Carrera Hoy', tipo: 'running', fecha: '2026-05-14' }]
+      }
+      const prompt = buildSystemPrompt(profile)
+      expect(prompt).toContain('Carrera Hoy')
+    })
+
+    it('carrera de ayer NO se incluye en el prompt', () => {
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date('2026-05-14T10:00:00Z'))
+
+      const profile = {
+        nombre: 'Lucas', deporte: 'running', nivel: 'intermedio', objetivo: 'bajar',
+        carreras: [{ nombre: 'Carrera Ayer', tipo: 'running', fecha: '2026-05-13' }]
+      }
+      const prompt = buildSystemPrompt(profile)
+      expect(prompt).not.toContain('Carrera Ayer')
+    })
+
+    it('carrera mañana siempre se incluye', () => {
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date('2026-05-14T10:00:00Z'))
+
+      const profile = {
+        nombre: 'Lucas', deporte: 'running', nivel: 'intermedio', objetivo: 'bajar',
+        carreras: [{ nombre: 'Carrera Mañana', tipo: 'running', fecha: '2026-05-15' }]
+      }
+      const prompt = buildSystemPrompt(profile)
+      expect(prompt).toContain('Carrera Mañana')
+    })
+  })
+
   // ── Regresión: offset de días (semana lunes-based) ─────────────────────────
   describe('etiquetas hoy/pasado/pendiente en plan semanal', () => {
     const SEMANA = '2026-05-11' // lunes 11 mayo 2026

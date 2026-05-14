@@ -22,6 +22,16 @@ const STRAVA_TIPO_MAP = {
   Crossfit: 'Fuerza',
 };
 
+// sv-SE locale gives YYYY-MM-DD in Madrid timezone; T12:00:00Z anchors to noon UTC (safe across DST)
+function getMondayOfCurrentWeek() {
+  const madridDateStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
+  const d = new Date(madridDateStr + 'T12:00:00Z');
+  const day = d.getUTCDay(); // 0=Dom, 1=Lun, ...
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setUTCDate(d.getUTCDate() + diff);
+  return d.toISOString().split('T')[0];
+}
+
 function supabaseRequest(method, path, body, supabaseUrl, supabaseKey) {
   return new Promise((resolve, reject) => {
     const bodyStr = body ? JSON.stringify(body) : null;
@@ -158,8 +168,9 @@ exports.handler = async (event) => {
     accessToken = refreshed;
   }
 
-  // Get active plan
-  const plans = await supabaseRequest('GET', `plans?user_id=eq.${userId}&order=semana.desc&limit=1`, null, supabaseUrl, supabaseKey);
+  // Get active plan — filter by semana <= lunes actual to avoid syncing against next week's plan
+  const monday = getMondayOfCurrentWeek();
+  const plans = await supabaseRequest('GET', `plans?user_id=eq.${userId}&semana=lte.${monday}&order=semana.desc&limit=1`, null, supabaseUrl, supabaseKey);
   const plan = Array.isArray(plans) ? plans[0] : null;
 
   if (!plan || !plan.sesiones) {
@@ -187,8 +198,8 @@ exports.handler = async (event) => {
   // Día mapping — plan sesiones have dia (weekday name), we need to find the date
   const DIAS_ES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
-  // Use plan.semana as reference Monday
-  const semanaDate = new Date(plan.semana + 'T00:00:00');
+  // Use plan.semana as reference Monday — T12:00:00 avoids UTC midnight / DST edge cases
+  const semanaDate = new Date(plan.semana + 'T12:00:00');
 
   const sesiones = plan.sesiones;
   let sincronizadas = 0;

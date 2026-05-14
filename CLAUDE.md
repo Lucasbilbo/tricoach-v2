@@ -11,7 +11,7 @@ Freemium: Free (25 msg/día, plan básico) / Pro (9,99€/mes, Strava + plan ada
 - Frontend: React + Vite (JavaScript, NO TypeScript)
 - Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co) — RLS activado
 - Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
-- Tests: Vitest — **128 tests pasando** (19 archivos) + Playwright E2E (3 specs)
+- Tests: Vitest — **131 tests pasando** (19 archivos) + Playwright E2E (3 specs)
 - Deploy: Netlify (producción: https://tricoach-v2.netlify.app)
 - Pagos: Stripe (checkout + webhooks)
 - Email: Resend (coach@getricoach.com)
@@ -86,7 +86,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 
 ### Tests
 - Ejecutar `npm test` al terminar SIEMPRE
-- **128 tests deben pasar** — si alguno falla, arreglarlo antes de terminar
+- **131 tests deben pasar** — si alguno falla, arreglarlo antes de terminar
 - No borrar ni modificar tests existentes sin motivo explícito
 
 ## Estado del proyecto — Fases completadas
@@ -209,7 +209,7 @@ tricoach-v2/
 │   │   ├── auth.test.jsx              (2 tests)
 │   │   ├── onboarding.test.jsx        (3 tests)
 │   │   ├── weeklyPlan.test.jsx        (5 tests)
-│   │   ├── systemPrompt.test.js       (27 tests)
+│   │   ├── systemPrompt.test.js       (30 tests)
 │   │   ├── strava-activities.test.js  (4 tests)
 │   │   ├── strava-match-activity.test.js (6 tests)
 │   │   ├── cycles.test.js             (24 tests)
@@ -402,7 +402,7 @@ Este patrón se usa en `WeeklyPlan.jsx`, `autoAdjust.js` y donde se necesite com
 ## Tests — 123 pasando (19 archivos) + 3 specs E2E Playwright
 
 Tests más pesados (referencia rápida):
-- `systemPrompt.test.js` — buildSystemPrompt (27 tests)
+- `systemPrompt.test.js` — buildSystemPrompt (30 tests)
 - `cycles.test.js` — macrociclos (24 tests)
 - `autoAdjust.test.js` — checkShouldAdjust (9 tests)
 - `autoRegenPlan.test.js` — auto-regeneración plan (8 tests)
