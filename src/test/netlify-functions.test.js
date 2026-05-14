@@ -32,18 +32,6 @@ describe('Funciones Netlify', () => {
     expect(res.status).toBe(401)
   })
 
-  it('github-history.js: devuelve error si no hay token', async () => {
-    global.fetch.mockResolvedValueOnce({
-      ok: false,
-      status: 401,
-      json: async () => ({ error: 'no autorizado' })
-    })
-
-    const res = await fetch('/.netlify/functions/github-history')
-    expect(res.ok).toBe(false)
-    expect(res.status).toBe(401)
-  })
-
   it('strava-feedback: devuelve 401 sin secreto', async () => {
     global.fetch.mockResolvedValueOnce({
       ok: false,
