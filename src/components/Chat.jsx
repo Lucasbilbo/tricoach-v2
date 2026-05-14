@@ -5,7 +5,7 @@ import { buildSystemPrompt } from '../prompts/buildSystemPrompt'
 import { updateContext } from '../lib/context'
 import { adjustPlan, generatePlan } from '../lib/plans'
 
-const AJUSTE_RE = /actualiz|cambiar|modificar|ajustar/i
+export const AJUSTE_RE = /\b(lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo)\b[\s\S]{0,150}\b(correr|bici|nadar|fuerza|brick|descanso|descansar)\b|\b(correr|bici|nadar|fuerza|brick|descanso)\b[\s\S]{0,150}\b(lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo)\b/i
 const GENERAR_RE = /generar|empezar|vamos|adelante|\bno\b|\bnada\b/i
 
 function renderMarkdown(text) {
@@ -160,7 +160,13 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
           messages: [
             ...messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
             { role: 'user', content: userMessage }
-          ],
+          ].reduce((acc, m) => {
+            const last = acc[acc.length - 1]
+            if (last && last.role === m.role) {
+              return [...acc.slice(0, -1), { ...last, content: last.content + '\n' + m.content }]
+            }
+            return [...acc, m]
+          }, []),
         }),
       })
 
@@ -251,6 +257,16 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
   }, [messages])
 
   useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    function onResize() {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+    vv.addEventListener('resize', onResize)
+    return () => vv.removeEventListener('resize', onResize)
+  }, [])
+
+  useEffect(() => {
     if (prefillMessage) setInput(prefillMessage)
   }, [prefillMessage])
 
@@ -323,6 +339,21 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
 
   const visibleMessages = messages.filter(m => !m.system)
   const lastAssistantIdx = visibleMessages.reduce((last, m, i) => m.role === 'assistant' ? i : last, -1)
+
+  const DIAS_SEMANA_CHAT = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+  const diaHoy = DIAS_SEMANA_CHAT[new Date().getDay()]
+  const sesionHoy = plan?.sesiones?.find(s => s.dia === diaHoy && s.tipo?.toLowerCase() !== 'descanso') || null
+  const sugerencias = sesionHoy
+    ? [
+        `¿Cómo ha ido el ${sesionHoy.tipo.toLowerCase()} de hoy?`,
+        `Tengo dudas sobre la sesión de ${sesionHoy.tipo.toLowerCase()} de hoy`,
+        'Resumen de la semana',
+      ]
+    : [
+        'Resumen de la semana',
+        'Necesito ajustar el plan',
+        '¿Cómo está mi progreso?',
+      ]
 
   const coachInitial = (nombreCoach[0] || 'C').toUpperCase()
 
@@ -562,10 +593,32 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
                 )}}
               />
             </div>
-          ) : messages.length === 0 && (
+          ) : visibleMessages.length === 0 && (
             <div style={{ textAlign: 'center', color: 'var(--muted-foreground)', marginTop: 48 }}>
               <div style={{ fontSize: 40, marginBottom: 12 }}>💬</div>
-              <p style={{ fontSize: 15 }}>Cuéntame cómo va el entrenamiento</p>
+              <p style={{ fontSize: 15, marginBottom: 20 }}>Cuéntame cómo va el entrenamiento</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
+                {sugerencias.map((s, i) => (
+                  <button
+                    key={i}
+                    onClick={() => { setInput(s); setShouldAutoSend(true) }}
+                    style={{
+                      background: 'var(--card)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 20,
+                      color: 'var(--foreground)',
+                      fontFamily: 'var(--font-sans)',
+                      fontSize: 14,
+                      padding: '8px 16px',
+                      cursor: 'pointer',
+                      maxWidth: 280,
+                      textAlign: 'center',
+                    }}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
           {visibleMessages.map((msg, i) => (

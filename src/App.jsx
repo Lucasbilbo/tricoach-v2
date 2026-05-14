@@ -217,10 +217,10 @@ function App() {
         if (updated.semana === nextMonday) {
           setPlanProximaSemana(updated)
         } else {
-          const today = new Date().toISOString().split('T')[0]
+          const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' })
           const sixDaysAgo = new Date()
           sixDaysAgo.setDate(sixDaysAgo.getDate() - 6)
-          if (updated.semana <= today && updated.semana >= sixDaysAgo.toISOString().split('T')[0]) {
+          if (updated.semana <= today && updated.semana >= sixDaysAgo.toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' })) {
             setPlan(updated)
           }
         }
