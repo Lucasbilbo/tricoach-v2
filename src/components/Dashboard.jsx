@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { markSessionComplete, autoAdjustPlan } from '../lib/plans'
 import { checkShouldAdjust } from '../lib/autoAdjust'
 import CicloCompletadoBanner from './CicloCompletadoBanner'
@@ -126,36 +126,12 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
   const [adjustBanner, setAdjustBanner] = useState(null) // { reason, mensaje }
   const [intervalsLoading, setIntervalsLoading] = useState(false)
   const [intervalsToast, setIntervalsToast] = useState(null)
-  const syncedRef = useRef(false)
   const [showPwaBanner, setShowPwaBanner] = useState(() => {
     const esMovil = /iPhone|iPad|Android/i.test(navigator.userAgent)
     const esStandalone = window.matchMedia?.('(display-mode: standalone)').matches ?? false
     const yaVisto = localStorage.getItem('pwa_banner_visto')
     return esMovil && !esStandalone && !yaVisto
   })
-
-  useEffect(() => {
-    if (!userId || !plan || !profile?.strava_token || syncedRef.current) return
-    syncedRef.current = true
-
-    fetch('/.netlify/functions/strava-sync', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-tricoach-secret': import.meta.env.VITE_TRICOACH_SECRET || ''
-      },
-      body: JSON.stringify({ userId })
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (data.sincronizadas > 0 && data.sesiones) {
-          onPlanUpdate({ ...plan, sesiones: data.sesiones })
-          setSyncToast(`✓ ${data.sincronizadas} sesión${data.sincronizadas > 1 ? 'es' : ''} sincronizada${data.sincronizadas > 1 ? 's' : ''} con Strava`)
-          setTimeout(() => setSyncToast(null), 4000)
-        }
-      })
-      .catch(() => {})
-  }, [userId, plan, profile])
 
   const today = DIAS_SEMANA[new Date().getDay()]
   const sesionHoy = plan?.sesiones?.find(s => s.dia === today) || null

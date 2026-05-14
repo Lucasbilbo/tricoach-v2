@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from './lib/supabase'
 import { getProfile, createProfile, updateProfile } from './lib/profiles'
 import { getPlanActual, getPlanProximaSemana, getHistorialPlanes, generatePlan, markSessionComplete, getNextWeekStart, esFormatoAntiguo } from './lib/plans'
@@ -38,6 +38,8 @@ function App() {
   const [cicloRenovadoSuccess, setCicloRenovadoSuccess] = useState(false)
   const [renovandoCiclo, setRenovandoCiclo] = useState(false)
   const [cuentaEliminada, setCuentaEliminada] = useState(false)
+  const stravaSyncedRef = useRef(false)
+  const [stravaSyncToast, setStravaSyncToast] = useState(null)
 
   async function loadOrCreateProfile(user) {
     let profile = await getProfile(user.id)
@@ -89,6 +91,25 @@ function App() {
     ) + 1)
     setCicloCompletado(esCicloCompletado(activeCycle, semanaActual))
   }, [activeCycle])
+
+  useEffect(() => {
+    if (!session?.user?.id || !plan || !profile?.strava_token || stravaSyncedRef.current) return
+    stravaSyncedRef.current = true
+    fetch('/.netlify/functions/strava-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-tricoach-secret': import.meta.env.VITE_TRICOACH_SECRET || '' },
+      body: JSON.stringify({ userId: session.user.id })
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.sincronizadas > 0 && data.sesiones) {
+          setPlan(prev => prev ? { ...prev, sesiones: data.sesiones } : prev)
+          setStravaSyncToast(`✓ ${data.sincronizadas} sesión${data.sincronizadas > 1 ? 'es' : ''} sincronizada${data.sincronizadas > 1 ? 's' : ''} con Strava`)
+          setTimeout(() => setStravaSyncToast(null), 4000)
+        }
+      })
+      .catch(() => {})
+  }, [session?.user?.id, plan?.id, profile?.strava_token]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleRenovarCiclo() {
     if (!session?.user?.id) return
@@ -276,6 +297,27 @@ function App() {
           whiteSpace: 'nowrap',
         }}>
           🔄 ¡Nuevo ciclo iniciado! Semana 1 de 16
+        </div>
+      )}
+
+      {stravaSyncToast && (
+        <div style={{
+          position: 'fixed',
+          top: 16,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'var(--success)',
+          color: 'oklch(0.13 0.01 60)',
+          borderRadius: 'var(--radius)',
+          padding: '10px 20px',
+          fontWeight: 600,
+          fontSize: 14,
+          zIndex: 200,
+          fontFamily: 'var(--font-sans)',
+          boxShadow: '0 4px 20px oklch(0 0 0 / 0.3)',
+          whiteSpace: 'nowrap',
+        }}>
+          {stravaSyncToast}
         </div>
       )}
 
