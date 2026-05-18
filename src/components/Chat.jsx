@@ -146,7 +146,7 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
     setAdjustApplied(false)
 
     try {
-      await saveMessage(userId, 'user', userMessage)
+      if (userMessage) await saveMessage(userId, 'user', userMessage)
       const updatedMessages = [...messages, { role: 'user', content: userMessage }]
       setMessages(updatedMessages)
 
@@ -195,7 +195,7 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
       const data = await response.json()
       const assistantMessage = data.content?.[0]?.text || 'Error al responder'
 
-      await saveMessage(userId, 'assistant', assistantMessage)
+      if (assistantMessage) await saveMessage(userId, 'assistant', assistantMessage)
 
       const finalMessages = [...updatedMessages, { role: 'assistant', content: assistantMessage }]
       setMessages(finalMessages)

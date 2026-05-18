@@ -125,10 +125,6 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'JSON inválido' }) };
   }
 
-  console.error('[CLAUDE DEBUG] messages count:', parsed.messages?.length)
-  console.error('[CLAUDE DEBUG] first 3 roles:', parsed.messages?.slice(0,3).map(m=>({role:m.role,len:m.content?.length})))
-  console.error('[CLAUDE DEBUG] system prompt len:', parsed.system?.length)
-
   if (!parsed.messages || !Array.isArray(parsed.messages) || parsed.messages.length === 0) {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'messages requerido' }) };
   }
@@ -186,9 +182,21 @@ exports.handler = async (event) => {
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'API key not configured' }) };
   }
 
-  const { userId: _u, model: _m, max_tokens: _mt, ...parsedClean } = parsed;
+  const cleanMessages = parsed.messages
+    .filter(m => m.content !== null && m.content !== undefined && m.content !== '')
+    .filter(m => m.role === 'user' || m.role === 'assistant')
+
+  const firstUser = cleanMessages.findIndex(m => m.role === 'user')
+  const finalMessages = firstUser > 0 ? cleanMessages.slice(firstUser) : cleanMessages
+
+  if (finalMessages.length === 0) {
+    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'No hay mensajes válidos' }) }
+  }
+
+  const { userId: _u, model: _m, max_tokens: _mt, messages: _msgs, ...parsedClean } = parsed;
   const body = JSON.stringify({
     ...parsedClean,
+    messages: finalMessages,
     model: CLAUDE_MODEL,
     max_tokens: CLAUDE_MAX_TOKENS,
   });
