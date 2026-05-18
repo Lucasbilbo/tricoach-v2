@@ -125,6 +125,10 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'JSON inválido' }) };
   }
 
+  console.error('[CLAUDE DEBUG] messages count:', parsed.messages?.length)
+  console.error('[CLAUDE DEBUG] first 3 roles:', parsed.messages?.slice(0,3).map(m=>({role:m.role,len:m.content?.length})))
+  console.error('[CLAUDE DEBUG] system prompt len:', parsed.system?.length)
+
   if (!parsed.messages || !Array.isArray(parsed.messages) || parsed.messages.length === 0) {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'messages requerido' }) };
   }
