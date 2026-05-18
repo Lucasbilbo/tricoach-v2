@@ -153,6 +153,22 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
       const profileActualizado = { ...profile, contexto: localContextoRef.current }
       const systemPrompt = buildSystemPrompt(profileActualizado, profile.personalidad || 'cercano', stravaData, plan, planProximaSemana, historialPlanes || [], activeCycle || null, wellnessData)
 
+      // Build messages: merge consecutive same-role (fixes Anthropic validation),
+      // then drop any leading assistant messages (coach intro is saved as assistant
+      // in Supabase and would be the first item — Anthropic requires first msg = user).
+      const rawMessages = [
+        ...messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
+        { role: 'user', content: userMessage }
+      ].reduce((acc, m) => {
+        const last = acc[acc.length - 1]
+        if (last && last.role === m.role) {
+          return [...acc.slice(0, -1), { ...last, content: last.content + '\n' + m.content }]
+        }
+        return [...acc, m]
+      }, [])
+      const firstUserIdx = rawMessages.findIndex(m => m.role === 'user')
+      const apiMessages = firstUserIdx > 0 ? rawMessages.slice(firstUserIdx) : rawMessages
+
       const response = await fetch('/.netlify/functions/claude', {
         method: 'POST',
         headers: {
@@ -162,16 +178,7 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
         body: JSON.stringify({
           userId,
           system: systemPrompt,
-          messages: [
-            ...messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
-            { role: 'user', content: userMessage }
-          ].reduce((acc, m) => {
-            const last = acc[acc.length - 1]
-            if (last && last.role === m.role) {
-              return [...acc.slice(0, -1), { ...last, content: last.content + '\n' + m.content }]
-            }
-            return [...acc, m]
-          }, []),
+          messages: apiMessages,
         }),
       })
 
