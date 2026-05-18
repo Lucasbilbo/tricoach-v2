@@ -280,10 +280,12 @@ ${alertas.length > 0 ? `\n⚠️ ALERTAS: ${alertas.join('; ')}. Ajusta la inten
     : ''
 
   // ── 3. Modo taper automático ─────────────────────────────────────────────────
+  // Usa carreraProxima (ya resuelto desde carreras[] o fecha_carrera legacy) para
+  // que el taper funcione con el sistema A/B/C de carreras (Fase 10.8)
   const taperSection = (() => {
-    if (!profile.fecha_carrera) return ''
+    if (!carreraProxima?.fecha) return ''
     const hoy = new Date()
-    const carrera = new Date(profile.fecha_carrera + 'T12:00:00')
+    const carrera = new Date(carreraProxima.fecha + 'T12:00:00')
     const diasRestantes = Math.ceil((carrera - hoy) / (1000 * 60 * 60 * 24))
     if (diasRestantes > 0 && diasRestantes <= 14) {
       return `\nMODO TAPER ACTIVO: La carrera es en ${diasRestantes} día${diasRestantes > 1 ? 's' : ''}. Prioriza el descanso y la frescura muscular por encima de cualquier ganancia de forma. No propongas sesiones largas ni intensas. El trabajo ya está hecho — ahora toca llegar fresco.`
@@ -378,7 +380,7 @@ IMPORTANTE: Tono natural, no clínico. No das listas de macros sin que te pregun
       ? (planAnterior.volumen_real_min || planAnterior.volumen_planificado_min || 0)
       : 0
 
-    const hoyStr = new Date().toISOString().split('T')[0]
+    const hoyStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' })
     const semanaActual = Math.max(1, Math.round((new Date(hoyStr) - new Date(cycle.fecha_inicio)) / (7 * 24 * 60 * 60 * 1000)) + 1)
     const faseActual = cycle.fases.find(f => semanaActual >= f.sem_inicio && semanaActual <= f.sem_fin) || cycle.fases[0]
     const semanasRestantes = cycle.semanas_totales - semanaActual

@@ -18,6 +18,10 @@ export function calcularFases(fechaInicio, fechaFin) {
     (new Date(fechaFin) - new Date(fechaInicio)) / (7 * 24 * 60 * 60 * 1000)
   )
 
+  if (totalSemanas < 3) {
+    throw new Error(`El ciclo debe tener al menos 3 semanas (recibido: ${totalSemanas})`)
+  }
+
   if (totalSemanas <= 6) {
     return [
       { nombre: 'peak',  sem_inicio: 1, sem_fin: totalSemanas - 2 },
@@ -88,11 +92,18 @@ export function getNumeroSemana(fechaInicio, fechaSemanaActual) {
 }
 
 /**
- * Devuelve true si el ciclo genérico (sin fecha_carrera) ha llegado a su última semana.
- * Los ciclos con carrera nunca se consideran "completados" por esta función —
- * su finalización la gestiona la propia fecha de la carrera.
+ * Devuelve true si el ciclo ha terminado.
+ * - Ciclos genéricos (sin carrera_nombre ni fecha_carrera): completados al llegar
+ *   a la semana final (sem >= semanas_totales).
+ * - Ciclos con carrera: completados con 4 semanas de gracia tras la última semana
+ *   (fallback para ciclos cuyo estado en Supabase no se actualizó).
  */
 export function esCicloCompletado(cycle, numeroSemanaActual) {
-  if (!cycle || cycle.fecha_carrera) return false
-  return numeroSemanaActual >= cycle.semanas_totales
+  if (!cycle) return false
+  if (!cycle.fecha_carrera && !cycle.carrera_nombre) {
+    // Ciclo genérico: completado al llegar a la semana final
+    return numeroSemanaActual >= cycle.semanas_totales
+  }
+  // Ciclo con carrera: gracia de 4 semanas tras la última planificada
+  return numeroSemanaActual > cycle.semanas_totales + 4
 }

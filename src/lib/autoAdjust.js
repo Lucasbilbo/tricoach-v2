@@ -18,7 +18,7 @@ export function checkShouldAdjust(plan, profile) {
     s => s.completada && (s.rpe != null || s.rpe_usuario != null)
   )
   const ultimas3Rpe = completadasConRpe.slice(-3)
-  if (ultimas3Rpe.length >= 1) {
+  if (ultimas3Rpe.length >= 2) {
     const rpeMedia = ultimas3Rpe.reduce((sum, s) => sum + (s.rpe ?? s.rpe_usuario), 0) / ultimas3Rpe.length
     if (rpeMedia >= 8) {
       return { shouldAdjust: true, reason: 'RPE elevado — reduciendo carga', signal: 'sobrecarga' }
@@ -39,11 +39,11 @@ export function checkShouldAdjust(plan, profile) {
 
   // Señal 3: 2+ sesiones perdidas consecutivas (días ya pasados, no completadas, no descanso)
   if (plan.semana) {
-    const todayStr = new Date().toISOString().split('T')[0]
+    const todayStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' })
     const lunes = new Date(plan.semana + 'T12:00:00')
     let consec = 0
     for (const s of sesiones) {
-      if (s.tipo?.toLowerCase() === 'descanso') { consec = 0; continue }
+      if (s.tipo?.toLowerCase() === 'descanso') { continue }
       const offset = DIA_OFFSET[s.dia] ?? 0
       const d = new Date(lunes)
       d.setDate(lunes.getDate() + offset)

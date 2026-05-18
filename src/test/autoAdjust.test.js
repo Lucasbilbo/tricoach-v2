@@ -114,4 +114,26 @@ describe('checkShouldAdjust', () => {
     const result = checkShouldAdjust(plan, {})
     expect(result.shouldAdjust).toBe(false)
   })
+
+  // ── Regresión BUG 2: señal 1 no debe disparar con 1 sola sesión RPE alto ──
+  it('1 sola sesión con RPE alto no dispara sobrecarga (mínimo 2)', () => {
+    const plan = makePlan([
+      makeSesion('Lunes', { completada: true, rpe: 9 }),
+    ])
+    const result = checkShouldAdjust(plan, {})
+    expect(result.shouldAdjust).toBe(false)
+  })
+
+  // ── Regresión BUG 6: descansos intercalados no deben romper contador sesiones perdidas ──
+  it('descanso intercalado entre sesiones perdidas no reinicia el contador', () => {
+    // Lunes: perdida, Martes: descanso, Miércoles: perdida → debe activar señal
+    const plan = makePlan([
+      makeSesion('Lunes', { completada: false }),
+      makeSesion('Martes', { tipo: 'Descanso', completada: false }),
+      makeSesion('Miércoles', { completada: false }),
+    ])
+    const result = checkShouldAdjust(plan, {})
+    expect(result.shouldAdjust).toBe(true)
+    expect(result.signal).toBe('sesiones_perdidas')
+  })
 })

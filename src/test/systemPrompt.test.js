@@ -107,6 +107,31 @@ describe('System Prompt dinámico', () => {
     expect(prompt).not.toContain('MODO TAPER ACTIVO')
   })
 
+  // ── Regresión BUG 1: taperSection debe funcionar con sistema A/B/C de carreras ──
+  it('activa modo taper con carrera del sistema A/B/C (profile.carreras[])', () => {
+    const proxima = new Date()
+    proxima.setDate(proxima.getDate() + 7)
+    const profile = {
+      nombre: 'Lucas', deporte: 'running', nivel: 'intermedio', objetivo: 'bajar de 50min',
+      // Sin fecha_carrera legacy — solo el sistema nuevo
+      carreras: [{ nombre: 'Carrera A', tipo: 'running', prioridad: 'A', fecha: proxima.toISOString().split('T')[0] }],
+    }
+    const prompt = buildSystemPrompt(profile)
+    expect(prompt).toContain('MODO TAPER ACTIVO')
+    expect(prompt).toContain('llegar fresco')
+  })
+
+  it('NO activa taper con carrera lejana en sistema A/B/C', () => {
+    const lejana = new Date()
+    lejana.setDate(lejana.getDate() + 30)
+    const profile = {
+      nombre: 'Lucas', deporte: 'running', nivel: 'intermedio', objetivo: 'bajar de 50min',
+      carreras: [{ nombre: 'Carrera A', tipo: 'running', prioridad: 'A', fecha: lejana.toISOString().split('T')[0] }],
+    }
+    const prompt = buildSystemPrompt(profile)
+    expect(prompt).not.toContain('MODO TAPER ACTIVO')
+  })
+
   it('activa alerta fatiga cuando RPE medio > 8 en últimas 2 semanas', () => {
     const profile = { nombre: 'Lucas', deporte: 'running', nivel: 'intermedio', objetivo: 'bajar de 50min' }
     const historial = [

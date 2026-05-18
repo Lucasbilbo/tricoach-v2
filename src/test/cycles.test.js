@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { calcularFases, getFaseActual, esSemanaDescarga, getNumeroSemana } from '../lib/cycles'
+import { calcularFases, getFaseActual, esSemanaDescarga, getNumeroSemana, esCicloCompletado } from '../lib/cycles'
 
 // Helper: build a fechaFin string N weeks from a given start
 function addWeeks(startStr, weeks) {
@@ -116,5 +116,34 @@ describe('getNumeroSemana', () => {
   })
   it('doce semanas después → 13', () => {
     expect(getNumeroSemana('2025-01-06', '2025-03-31')).toBe(13)
+  })
+})
+
+// ── Regresión BUG 3: calcularFases con < 3 semanas debe lanzar error ──
+describe('calcularFases — guard mínimo', () => {
+  it('2 semanas lanza error', () => {
+    expect(() => calcularFases(START, addWeeks(START, 2))).toThrow()
+  })
+  it('1 semana lanza error', () => {
+    expect(() => calcularFases(START, addWeeks(START, 1))).toThrow()
+  })
+  it('3 semanas no lanza error', () => {
+    expect(() => calcularFases(START, addWeeks(START, 3))).not.toThrow()
+  })
+})
+
+// ── Regresión BUG 7: esCicloCompletado con gracia para ciclos con carrera ──
+describe('esCicloCompletado — gracia 4 semanas para ciclos con carrera', () => {
+  it('ciclo con carrera_nombre no completa en la semana final', () => {
+    const cycle = { semanas_totales: 16, carrera_nombre: 'Madrid Marathon' }
+    expect(esCicloCompletado(cycle, 16)).toBe(false)
+  })
+  it('ciclo con carrera_nombre no completa justo tras el final (sem 20)', () => {
+    const cycle = { semanas_totales: 16, carrera_nombre: 'Madrid Marathon' }
+    expect(esCicloCompletado(cycle, 20)).toBe(false)
+  })
+  it('ciclo con carrera_nombre completa tras 4 semanas de gracia (sem 21)', () => {
+    const cycle = { semanas_totales: 16, carrera_nombre: 'Madrid Marathon' }
+    expect(esCicloCompletado(cycle, 21)).toBe(true)
   })
 })
