@@ -4,7 +4,7 @@ const MAX_BODY_BYTES = 64 * 1024;
 const FUNCTION_SECRET = process.env.TRICOACH_SECRET;
 
 const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
-const CLAUDE_MAX_TOKENS = 1000;
+const CLAUDE_MAX_TOKENS = 2048;
 
 const DAILY_LIMIT = { free: 25, pro: 150 };
 
@@ -146,11 +146,13 @@ exports.handler = async (event) => {
     const hostname = new URL(supabaseUrl).hostname;
 
     // Read plan to determine the right limit, then atomically increment
-    const profile = await supabaseGet(
-      hostname,
-      `/rest/v1/profiles?id=eq.${userId}&select=plan`,
-      supabaseKey
-    );
+    // Both Supabase calls are wrapped with a 5s timeout — if Supabase is slow the handler
+    // must not hang until Netlify's 26s function timeout kills the request.
+    const profile = await withTimeout(
+      supabaseGet(hostname, `/rest/v1/profiles?id=eq.${userId}&select=plan`, supabaseKey),
+      5000,
+      'Supabase profile timeout'
+    ).catch(() => null);
 
     if (profile) {
       const today = new Date().toISOString().split('T')[0];
@@ -158,21 +160,20 @@ exports.handler = async (event) => {
       const limit = DAILY_LIMIT[plan] ?? DAILY_LIMIT.free;
 
       // Single atomic operation: increment if under limit, reset if new day, return -1 if blocked
-      const newCount = await supabaseRpc(
-        hostname,
-        '/rest/v1/rpc/increment_messages_today',
-        supabaseKey,
-        { p_user_id: userId, p_limit: limit, p_today: today }
-      );
+      const newCount = await withTimeout(
+        supabaseRpc(hostname, '/rest/v1/rpc/increment_messages_today', supabaseKey, { p_user_id: userId, p_limit: limit, p_today: today }),
+        5000,
+        'Supabase RPC timeout'
+      ).catch(() => null);
 
-      if (newCount === -1 || newCount === null) {
-        console.log('[RateLimit] Usuario bloqueado:', userId, 'plan:', plan, 'limit:', limit);
+      if (newCount === -1) {
         return {
           statusCode: 429,
           headers: CORS,
           body: JSON.stringify({ error: 'Has alcanzado el límite de mensajes de hoy' })
         };
       }
+      // newCount === null means Supabase failed/timed out — allow the message rather than blocking
     }
   }
 
