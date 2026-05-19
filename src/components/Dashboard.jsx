@@ -117,44 +117,18 @@ const FASE_COLORS = {
   taper: '#8B5CF6',
 }
 
-function SportIcon({ tipo, size = 18, color = 'currentColor' }) {
+function SportIcon({ tipo, size = 18, color = 'currentColor', opacity = 1 }) {
   const paths = {
-    Correr: (
-      <>
-        <path d="M13 4a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/>
-        <path d="M7.5 16.5 10 19l2-4 3 3 1.5-4"/>
-        <path d="M5 10.5c1-1 2-1.5 3-1.5s2 .5 2.5 1.5L12 13l3-2.5c1-1 2.5-1 3.5 0"/>
-      </>
-    ),
-    Nadar: (
-      <>
-        <path d="M2 12c1.5-2 3-2 4.5 0s3 2 4.5 0 3-2 4.5 0 3 2 4.5 0"/>
-        <path d="M2 17c1.5-2 3-2 4.5 0s3 2 4.5 0 3-2 4.5 0 3 2 4.5 0"/>
-        <circle cx="15" cy="5" r="2"/>
-        <path d="M15 7v3l3 2"/>
-      </>
-    ),
-    Bici: (
-      <>
-        <circle cx="5" cy="17" r="3"/>
-        <circle cx="19" cy="17" r="3"/>
-        <path d="M9 17H5l2-7h5l3 4h2"/>
-        <path d="M14 10h3l2 4"/>
-      </>
-    ),
-    Fuerza: (
-      <>
-        <path d="M6.5 6.5h11"/>
-        <path d="M4 9.5h16"/>
-        <rect x="2" y="9.5" width="2" height="5" rx="1"/>
-        <rect x="20" y="9.5" width="2" height="5" rx="1"/>
-        <rect x="6" y="7" width="12" height="10" rx="1"/>
-      </>
-    ),
+    Correr: 'M12 3c0 1.1-.9 2-2 2S8 4.1 8 3s.9-2 2-2 2 .9 2 2zm-3 17v-5H7l2.5-7h5L17 15h-2v5h-4z',
+    Bici: 'M5 17a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm14 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM12 6l-2 6h4l2-5-4-1z',
+    Nadar: 'M2 12c2-3 4-3 6 0s4 3 6 0 4-3 6 0M2 17c2-3 4-3 6 0s4 3 6 0 4-3 6 0',
+    Fuerza: 'M6 6h12M4 9h16M8 9v10M16 9v10',
   }
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      {paths[tipo] || <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/>}
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke={color} strokeWidth="1.8" strokeLinecap="round"
+      strokeLinejoin="round" style={{ opacity }} aria-hidden="true">
+      <path d={paths[tipo] || paths.Correr} />
     </svg>
   )
 }
@@ -351,7 +325,7 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
           fontSize: 13,
           fontFamily: 'var(--font-sans)',
         }}>
-          <span>📲 Instala TriCoach en tu móvil — pulsa <strong>⎙</strong> → <strong>Añadir a pantalla de inicio</strong></span>
+          <span>Instala TriCoach en tu móvil — pulsa <strong>Compartir</strong> → <strong>Añadir a pantalla de inicio</strong></span>
           <button
             onClick={() => {
               localStorage.setItem('pwa_banner_visto', 'true')
@@ -413,7 +387,7 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
                 marginTop: 2,
               }}
             >
-              {stravaSyncLoading ? '⏳ Sincronizando...' : '🔄 Sincronizar Strava'}
+              {stravaSyncLoading ? 'Sincronizando...' : 'Sincronizar Strava'}
             </button>
           )}
         </div>
@@ -424,26 +398,9 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
         {/* Skeleton loader */}
         {loading && (
           <>
-            <div style={{
-              background: 'var(--card)',
-              borderRadius: 'var(--radius)',
-              height: 200,
-              marginBottom: 12,
-              animation: 'pulse 1.5s ease-in-out infinite',
-            }} />
-            <div style={{
-              background: 'var(--card)',
-              borderRadius: 'var(--radius)',
-              height: 48,
-              marginBottom: 8,
-              animation: 'pulse 1.5s ease-in-out infinite',
-            }} />
-            <div style={{
-              background: 'var(--card)',
-              borderRadius: 'var(--radius)',
-              height: 48,
-              animation: 'pulse 1.5s ease-in-out infinite',
-            }} />
+            <div style={{ background: 'var(--card)', borderRadius: 'var(--radius)', height: 200, marginBottom: 12, animation: 'pulse 1.5s ease-in-out infinite' }} />
+            <div style={{ background: 'var(--card)', borderRadius: 'var(--radius)', height: 48, marginBottom: 8, animation: 'pulse 1.5s ease-in-out infinite' }} />
+            <div style={{ background: 'var(--card)', borderRadius: 'var(--radius)', height: 48, animation: 'pulse 1.5s ease-in-out infinite' }} />
           </>
         )}
 
@@ -457,7 +414,14 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
             textAlign: 'center',
             marginTop: 32,
           }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>📅</div>
+            <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            </div>
             <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, marginBottom: 8 }}>
               Sin plan esta semana
             </h3>
@@ -523,30 +487,12 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
                 <span style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>
                   Semana {semanaActual} de {activeCycle.semanas_totales}
                 </span>
-                <span style={{
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: faseColor,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: faseColor, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   Fase {faseActual?.nombre || '–'}
                 </span>
               </div>
-              <div style={{
-                height: 6,
-                background: 'var(--secondary)',
-                borderRadius: 99,
-                overflow: 'hidden',
-                marginBottom: 8,
-              }}>
-                <div style={{
-                  height: '100%',
-                  width: `${pct}%`,
-                  background: faseColor,
-                  borderRadius: 99,
-                  transition: 'width 0.6s ease',
-                }} />
+              <div style={{ height: 6, background: 'var(--secondary)', borderRadius: 99, overflow: 'hidden', marginBottom: 8 }}>
+                <div style={{ height: '100%', width: `${pct}%`, background: faseColor, borderRadius: 99, transition: 'width 0.6s ease' }} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>
@@ -572,57 +518,75 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
           )
         })()}
 
-        {/* Today's session */}
+        {/* ── HERO CARD — sesión de hoy ── */}
         {!loading && sesionHoy && (
           <>
             <div style={{
               background: sesionHoy.completada
-                ? `radial-gradient(ellipse at 70% 0%, oklch(0.7 0.14 180 / 0.05) 0%, transparent 60%), var(--card)`
-                : `radial-gradient(ellipse at 70% 0%, ${sportColor}10 0%, transparent 60%), var(--card)`,
+                ? `radial-gradient(ellipse at 80% 10%, oklch(0.7 0.14 180 / 0.06) 0%, transparent 70%), var(--card)`
+                : `radial-gradient(ellipse at 80% 10%, ${sportColor}06 0%, transparent 70%), var(--card)`,
               border: sesionHoy.completada
                 ? '1px solid oklch(0.7 0.14 180 / 0.2)'
                 : `1px solid ${sportColor}22`,
+              borderLeft: sesionHoy.completada
+                ? '3px solid oklch(0.7 0.14 180 / 0.5)'
+                : `3px solid ${sportColor}`,
               borderRadius: 16,
-              padding: '28px 20px',
+              padding: '20px 20px',
               marginBottom: 16,
-              minHeight: '50vh',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-              textAlign: 'center',
               position: 'relative',
               overflow: 'hidden',
             }}>
-              {/* Sport color accent line at top */}
-              {!sesionHoy.completada && (
+              {/* Ghost illustration */}
+              {!esDescanso && (
                 <div style={{
-                  position: 'absolute', top: 0, left: 0, right: 0,
-                  height: 2,
-                  background: `linear-gradient(90deg, ${sportColor}70, transparent)`,
-                  borderRadius: '16px 16px 0 0',
-                }} />
+                  position: 'absolute',
+                  right: -8,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  pointerEvents: 'none',
+                }}>
+                  <SportIcon tipo={sesionHoy.tipo} size={120} color={sportColor} opacity={0.06} />
+                </div>
               )}
-              <div style={{
-                marginBottom: 20,
-                lineHeight: 1,
-                filter: `drop-shadow(0 8px 24px ${sportColor}55)`,
-              }}>
-                <SportIcon tipo={sesionHoy.tipo} size={96} color={sportColor} />
+
+              {/* Top row: sport badge + HOY */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  background: `${sportColor}18`,
+                  border: `1px solid ${sportColor}30`,
+                  borderRadius: 99,
+                  padding: '4px 10px 4px 6px',
+                }}>
+                  <SportIcon tipo={sesionHoy.tipo} size={14} color={sportColor} />
+                  <span style={{ fontSize: 12, fontWeight: 600, color: sportColor, letterSpacing: '0.02em' }}>
+                    {sesionHoy.tipo}
+                  </span>
+                </div>
+                <span style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
+                  color: 'var(--muted-foreground)', textTransform: 'uppercase',
+                }}>
+                  HOY
+                </span>
               </div>
 
+              {/* Rest day */}
               {esDescanso && (
                 <>
                   <h2 style={{
                     fontFamily: 'var(--font-serif)',
-                    fontSize: 28,
+                    fontSize: 22,
                     fontWeight: 700,
                     marginBottom: 8,
                     color: 'var(--foreground)',
                   }}>
-                    Hoy descansas
+                    Día de descanso
                   </h2>
-                  <p style={{ color: 'var(--muted-foreground)', fontSize: 14, lineHeight: 1.5, marginBottom: 24, padding: '0 8px', maxWidth: 340 }}>
+                  <p style={{ color: 'var(--muted-foreground)', fontSize: 14, lineHeight: 1.5, marginBottom: 20 }}>
                     El descanso es parte del entrenamiento
                   </p>
                   <button
@@ -644,10 +608,14 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
                 </>
               )}
 
+              {/* Active session */}
               {!esDescanso && (
                 <>
                   {esSesionTest && (
                     <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
                       background: `${sportColor}22`,
                       color: sportColor,
                       border: `1px solid ${sportColor}44`,
@@ -655,11 +623,11 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
                       padding: '3px 12px',
                       fontSize: 11,
                       fontWeight: 700,
-                      marginBottom: 14,
+                      marginBottom: 12,
                       letterSpacing: '0.08em',
                       textTransform: 'uppercase',
                     }}>
-                      📊 Sesión Test
+                      Sesión Test
                     </div>
                   )}
                   {(() => {
@@ -667,101 +635,135 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
                     if (!badge) return null
                     return (
                       <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5,
                         background: 'var(--secondary)',
                         border: '1px solid var(--border)',
                         borderRadius: 99,
                         padding: '3px 12px',
                         fontSize: 11,
                         fontWeight: 600,
-                        marginBottom: 14,
+                        marginBottom: 12,
                         color: 'var(--muted-foreground)',
                         letterSpacing: '0.04em',
                       }}>
-                        🎯 Para tu {badge}
+                        Para tu {badge}
                       </div>
                     )
                   })()}
+
+                  {/* Title */}
                   <h2 style={{
                     fontFamily: 'var(--font-serif)',
-                    fontSize: 36,
+                    fontSize: 22,
                     fontWeight: 700,
-                    marginBottom: 12,
+                    marginBottom: 16,
                     color: '#FFFFFF',
-                    letterSpacing: '-0.5px',
+                    lineHeight: 1.2,
                   }}>
-                    {sesionHoy.tipo}
+                    {sesionHoy.subtipo || sesionHoy.tipo}
                   </h2>
+
+                  {/* Metadata: duration + intensity */}
                   {sesionHoy.duracion_min > 0 && (
-                    <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
-                      <span style={{
-                        background: 'var(--secondary)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 99,
-                        padding: '4px 12px',
-                        fontSize: 13,
-                        color: 'var(--foreground)',
-                        fontWeight: 600,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 5,
-                      }}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7, flexShrink: 0 }}>
-                          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                        </svg>
-                        {sesionHoy.duracion_min} min
-                      </span>
-                      {sesionHoy.intensidad && (
-                        <span style={{
-                          background: `${sportColor}15`,
-                          border: `1px solid ${sportColor}30`,
-                          borderRadius: 99,
-                          padding: '4px 12px',
-                          fontSize: 13,
-                          color: sportColor,
+                    <div style={{ display: 'flex', gap: 24, alignItems: 'flex-end', marginBottom: 16 }}>
+                      <div>
+                        <div style={{
+                          fontSize: 10,
                           fontWeight: 600,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 5,
+                          letterSpacing: '0.1em',
+                          color: 'var(--muted-foreground)',
+                          textTransform: 'uppercase',
+                          marginBottom: 2,
                         }}>
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7, flexShrink: 0 }}>
-                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                          </svg>
-                          {sesionHoy.intensidad}
-                        </span>
+                          Duración
+                        </div>
+                        <div style={{
+                          fontFamily: 'var(--font-serif)',
+                          fontSize: 28,
+                          fontWeight: 700,
+                          color: '#FFFFFF',
+                          lineHeight: 1,
+                        }}>
+                          {sesionHoy.duracion_min}
+                          <span style={{ fontSize: 13, fontWeight: 400, color: 'var(--muted-foreground)', marginLeft: 4 }}>
+                            min
+                          </span>
+                        </div>
+                      </div>
+                      {sesionHoy.intensidad && (
+                        <div>
+                          <div style={{
+                            fontSize: 10,
+                            fontWeight: 600,
+                            letterSpacing: '0.1em',
+                            color: 'var(--muted-foreground)',
+                            textTransform: 'uppercase',
+                            marginBottom: 6,
+                          }}>
+                            Intensidad
+                          </div>
+                          <span style={{
+                            background: `${sportColor}20`,
+                            border: `1px solid ${sportColor}40`,
+                            borderRadius: 99,
+                            padding: '4px 12px',
+                            fontSize: 13,
+                            color: sportColor,
+                            fontWeight: 600,
+                          }}>
+                            {sesionHoy.intensidad}
+                          </span>
+                        </div>
                       )}
                     </div>
                   )}
+
+                  {/* Description */}
                   <p style={{
                     color: 'var(--muted-foreground)',
                     fontSize: 14,
-                    lineHeight: 1.75,
-                    marginBottom: esSesionTest ? 8 : 24,
-                    padding: '0 8px',
+                    lineHeight: 1.6,
+                    marginBottom: esSesionTest ? 8 : 20,
                     maxWidth: 320,
                   }}>
                     {sesionHoy.descripcion}
                   </p>
                   {esSesionTest && (
-                    <p style={{ color: sportColor, fontSize: 13, fontWeight: 600, marginBottom: 24, textAlign: 'center' }}>
+                    <p style={{ color: sportColor, fontSize: 13, fontWeight: 600, marginBottom: 20 }}>
                       Anota tu resultado para compartirlo con el coach
                     </p>
                   )}
                 </>
               )}
 
+              {/* Completed state */}
               {sesionHoy.completada && (
                 <div>
-                  <div style={{ fontSize: 20, color: 'var(--success)', fontWeight: 700, marginBottom: 8 }}>
-                    ✓ Completada{sesionHoy.rpe ? ` · RPE ${sesionHoy.rpe}` : ''}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    fontSize: 16,
+                    color: 'var(--success)',
+                    fontWeight: 700,
+                    marginBottom: 8,
+                  }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    Completada{sesionHoy.rpe ? ` · RPE ${sesionHoy.rpe}` : ''}
                   </div>
                   {siguiente && (
                     <p style={{ fontSize: 13, color: 'var(--muted-foreground)' }}>
-                      Próxima: {ICONOS[siguiente.tipo] || ''} {siguiente.tipo} ({siguiente.duracion_min} min)
+                      Próxima: {siguiente.tipo} ({siguiente.duracion_min} min)
                     </p>
                   )}
                 </div>
               )}
 
+              {/* Complete button / RPE picker */}
               {!sesionHoy.completada && !esDescanso && (
                 completando ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center', width: '100%', maxWidth: 320 }}>
@@ -804,7 +806,7 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
                           cursor: 'pointer',
                         }}
                       >
-                        ✓ Guardar
+                        Guardar
                       </button>
                       <button
                         onClick={() => setCompletando(false)}
@@ -852,7 +854,7 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
                     }}
                   >
                     <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <polyline points="20 6 9 17 4 12"/>
                       </svg>
                       Completar sesión
@@ -862,57 +864,92 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
               )}
             </div>
 
-            {/* 7-dot week tracker */}
+            {/* ── TRACKER SEMANAL ── */}
             {plan.sesiones && (() => {
               const sesionesActivas = DIAS_ORDEN.filter(d => {
                 const s = plan.sesiones.find(x => x.dia === d)
                 return s && s.tipo?.toLowerCase() !== 'descanso' && s.tipo?.toLowerCase() !== 'rest'
               })
-              const completadas = sesionesActivas.filter(d => {
+              const completadasCount = sesionesActivas.filter(d => {
                 const s = plan.sesiones.find(x => x.dia === d)
                 return s?.completada
               }).length
+              const pctSemana = sesionesActivas.length > 0
+                ? Math.round(completadasCount / sesionesActivas.length * 100)
+                : 0
+
               return (
                 <div style={{ marginBottom: 16, padding: '16px', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                    <span style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted-foreground)', fontWeight: 600 }}>
-                      Esta semana
+                    <span style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--muted-foreground)', fontWeight: 600 }}>
+                      Seguimiento semanal
                     </span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: completadas === sesionesActivas.length && sesionesActivas.length > 0 ? 'var(--success)' : 'var(--foreground)' }}>
-                      {completadas} / {sesionesActivas.length}
+                    <span style={{
+                      fontFamily: 'var(--font-serif)',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color: completadasCount === sesionesActivas.length && sesionesActivas.length > 0
+                        ? 'var(--success)'
+                        : sportColor,
+                    }}>
+                      {completadasCount}/{sesionesActivas.length} sesiones
                     </span>
                   </div>
-                  <div style={{ display: 'flex', gap: 6, justifyContent: 'space-between' }}>
+
+                  <div style={{ display: 'flex', gap: 4, justifyContent: 'space-between', marginBottom: 12 }}>
                     {DIAS_ORDEN.map((dia, i) => {
                       const sesion = plan.sesiones.find(s => s.dia === dia)
                       const isHoy = dia === today
                       const isDescanso = !sesion || sesion.tipo?.toLowerCase() === 'descanso' || sesion.tipo?.toLowerCase() === 'rest'
                       const color = SPORT_COLORS[sesion?.tipo] || '#374151'
+                      const DOT = 32
+
                       return (
                         <div key={dia} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
                           <div
                             className={isHoy && !sesion?.completada && !isDescanso ? 'dot-pulse' : ''}
                             style={{
-                              width: isDescanso ? 8 : 14,
-                              height: isDescanso ? 8 : 14,
+                              width: DOT,
+                              height: DOT,
                               borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
                               background: sesion?.completada
                                 ? color
-                                : isHoy && !isDescanso
+                                : isDescanso
                                   ? 'transparent'
+                                  : 'var(--secondary)',
+                              border: sesion?.completada
+                                ? 'none'
+                                : isHoy && !isDescanso
+                                  ? `2px solid ${color}`
                                   : isDescanso
-                                    ? 'var(--secondary)'
-                                    : 'var(--secondary)',
-                              border: isHoy && !isDescanso && !sesion?.completada
-                                ? `2px solid ${color}`
+                                    ? '1.5px dashed var(--border)'
+                                    : '1px solid var(--border)',
+                              boxShadow: isHoy && !isDescanso && !sesion?.completada
+                                ? `0 0 10px ${color}44`
                                 : sesion?.completada
-                                  ? 'none'
-                                  : '1px solid var(--border)',
+                                  ? `0 0 8px ${color}55`
+                                  : 'none',
                               transition: 'all 0.3s ease',
-                              marginTop: isDescanso ? 3 : 0,
-                              boxShadow: sesion?.completada ? `0 0 8px ${color}66` : 'none',
                             }}
-                          />
+                          >
+                            {sesion?.completada && (
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <polyline points="20 6 9 17 4 12"/>
+                              </svg>
+                            )}
+                            {isHoy && !sesion?.completada && !isDescanso && (
+                              <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+                            )}
+                            {isDescanso && (
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                              </svg>
+                            )}
+                          </div>
                           <span style={{
                             fontSize: 10,
                             color: isHoy ? 'var(--primary)' : 'var(--muted-foreground)',
@@ -925,9 +962,52 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
                       )
                     })}
                   </div>
+
+                  {/* Progress bar */}
+                  <div style={{ height: 3, background: 'var(--secondary)', borderRadius: 99, overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%',
+                      width: `${pctSemana}%`,
+                      background: sportColor,
+                      borderRadius: 99,
+                      transition: 'width 0.6s ease',
+                    }} />
+                  </div>
                 </div>
               )
             })()}
+
+            {/* ── VOLUMEN SEMANAL ── */}
+            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px', marginBottom: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                <span style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--muted-foreground)', fontWeight: 600 }}>
+                  Volumen semanal
+                </span>
+                <span style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 700, color: 'var(--primary)' }}>
+                  {plan?.volumen_planificado_min
+                    ? `${Math.round(plan.volumen_planificado_min / 60 * 10) / 10}h`
+                    : '—'}
+                </span>
+              </div>
+              {/* Mini bar chart: 4 placeholder weeks + current */}
+              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', height: 48 }}>
+                {[0.45, 0.65, 0.80, 0.55].map((factor, i) => (
+                  <div key={i} style={{
+                    flex: 1,
+                    height: `${Math.round(factor * 48)}px`,
+                    background: 'var(--primary)',
+                    opacity: 0.15 + i * 0.08,
+                    borderRadius: '3px 3px 0 0',
+                  }} />
+                ))}
+                <div style={{
+                  flex: 1,
+                  height: `${Math.max(4, Math.min(48, Math.round((plan?.volumen_planificado_min || 0) / 360 * 48)))}px`,
+                  background: '#FF6B2B99',
+                  borderRadius: '3px 3px 0 0',
+                }} />
+              </div>
+            </div>
 
             {/* TCX download button */}
             {!esDescanso && (
@@ -946,11 +1026,20 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
                   cursor: 'pointer',
                   marginBottom: 8,
                   transition: 'border-color 0.2s, color 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
                 }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = 'oklch(0.32 0.02 60)'; e.currentTarget.style.color = 'var(--foreground)' }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--muted-foreground)' }}
               >
-                ⬇ Descargar para el reloj (.TCX)
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Descargar para el reloj (.TCX)
               </button>
             )}
 
@@ -973,23 +1062,32 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
                   marginBottom: 8,
                   transition: 'border-color 0.2s, color 0.2s',
                   opacity: intervalsLoading ? 0.6 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
                 }}
                 onMouseEnter={e => { if (!intervalsLoading) { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--foreground)' } }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--foreground)' }}
               >
-                {intervalsLoading ? '⏳ Enviando...' : '⌚ Enviar a Intervals'}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                {intervalsLoading ? 'Enviando...' : 'Enviar a Intervals'}
               </button>
             )}
 
-            {/* Quick action cards */}
+            {/* ── ACCIONES RÁPIDAS ── */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+              {/* Coach */}
               <button
                 onClick={() => onNavigate('coach')}
                 style={{
-                  background: 'rgba(255,107,43,0.1)',
-                  border: '1px solid rgba(255,107,43,0.2)',
+                  background: 'var(--card)',
+                  border: '1px solid var(--border)',
                   borderRadius: 12,
-                  padding: '16px 8px',
+                  padding: '14px 8px',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -998,18 +1096,26 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
                   fontFamily: 'var(--font-sans)',
                 }}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6B2B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                </svg>
+                <div style={{
+                  width: 40, height: 40, borderRadius: 10,
+                  background: '#FF6B2B18',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6B2B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
+                </div>
                 <span style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>Coach</span>
               </button>
+
+              {/* Plan */}
               <button
                 onClick={() => onNavigate('plan')}
                 style={{
-                  background: 'rgba(14,165,233,0.1)',
-                  border: '1px solid rgba(14,165,233,0.2)',
+                  background: 'var(--card)',
+                  border: '1px solid var(--border)',
                   borderRadius: 12,
-                  padding: '16px 8px',
+                  padding: '14px 8px',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -1018,21 +1124,29 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
                   fontFamily: 'var(--font-sans)',
                 }}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0EA5E9" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2"/>
-                  <line x1="16" y1="2" x2="16" y2="6"/>
-                  <line x1="8" y1="2" x2="8" y2="6"/>
-                  <line x1="3" y1="10" x2="21" y2="10"/>
-                </svg>
+                <div style={{
+                  width: 40, height: 40, borderRadius: 10,
+                  background: '#0EA5E918',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0EA5E9" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                </div>
                 <span style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>Plan</span>
               </button>
+
+              {/* Ajustar */}
               <button
                 onClick={() => onNavigate('plan')}
                 style={{
-                  background: 'rgba(139,92,246,0.1)',
-                  border: '1px solid rgba(139,92,246,0.2)',
+                  background: 'var(--card)',
+                  border: '1px solid var(--border)',
                   borderRadius: 12,
-                  padding: '16px 8px',
+                  padding: '14px 8px',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -1041,10 +1155,23 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
                   fontFamily: 'var(--font-sans)',
                 }}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="3"/>
-                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
-                </svg>
+                <div style={{
+                  width: 40, height: 40, borderRadius: 10,
+                  background: '#8B5CF618',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <line x1="4" y1="21" x2="4" y2="14"/>
+                    <line x1="4" y1="10" x2="4" y2="3"/>
+                    <line x1="12" y1="21" x2="12" y2="12"/>
+                    <line x1="12" y1="8" x2="12" y2="3"/>
+                    <line x1="20" y1="21" x2="20" y2="16"/>
+                    <line x1="20" y1="12" x2="20" y2="3"/>
+                    <line x1="1" y1="14" x2="7" y2="14"/>
+                    <line x1="9" y1="8" x2="15" y2="8"/>
+                    <line x1="17" y1="16" x2="23" y2="16"/>
+                  </svg>
+                </div>
                 <span style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>Ajustar</span>
               </button>
             </div>
