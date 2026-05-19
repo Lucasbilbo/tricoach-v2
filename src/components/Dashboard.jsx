@@ -117,6 +117,48 @@ const FASE_COLORS = {
   taper: '#8B5CF6',
 }
 
+function SportIcon({ tipo, size = 18, color = 'currentColor' }) {
+  const paths = {
+    Correr: (
+      <>
+        <path d="M13 4a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/>
+        <path d="M7.5 16.5 10 19l2-4 3 3 1.5-4"/>
+        <path d="M5 10.5c1-1 2-1.5 3-1.5s2 .5 2.5 1.5L12 13l3-2.5c1-1 2.5-1 3.5 0"/>
+      </>
+    ),
+    Nadar: (
+      <>
+        <path d="M2 12c1.5-2 3-2 4.5 0s3 2 4.5 0 3-2 4.5 0 3 2 4.5 0"/>
+        <path d="M2 17c1.5-2 3-2 4.5 0s3 2 4.5 0 3-2 4.5 0 3 2 4.5 0"/>
+        <circle cx="15" cy="5" r="2"/>
+        <path d="M15 7v3l3 2"/>
+      </>
+    ),
+    Bici: (
+      <>
+        <circle cx="5" cy="17" r="3"/>
+        <circle cx="19" cy="17" r="3"/>
+        <path d="M9 17H5l2-7h5l3 4h2"/>
+        <path d="M14 10h3l2 4"/>
+      </>
+    ),
+    Fuerza: (
+      <>
+        <path d="M6.5 6.5h11"/>
+        <path d="M4 9.5h16"/>
+        <rect x="2" y="9.5" width="2" height="5" rx="1"/>
+        <rect x="20" y="9.5" width="2" height="5" rx="1"/>
+        <rect x="6" y="7" width="12" height="10" rx="1"/>
+      </>
+    ),
+  }
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      {paths[tipo] || <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/>}
+    </svg>
+  )
+}
+
 export default function Dashboard({ userId, plan, profile, activeCycle, loading, onPlanUpdate, onNavigate, cicloCompletado, onRenovarCiclo, renovandoCiclo }) {
   const [completando, setCompletando] = useState(false)
   const [rpe, setRpe] = useState(6)
@@ -562,12 +604,11 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
                 }} />
               )}
               <div style={{
-                fontSize: 96,
                 marginBottom: 20,
                 lineHeight: 1,
                 filter: `drop-shadow(0 8px 24px ${sportColor}55)`,
               }}>
-                {ICONOS[sesionHoy.tipo] || '🏋️'}
+                <SportIcon tipo={sesionHoy.tipo} size={96} color={sportColor} />
               </div>
 
               {esDescanso && (
@@ -660,8 +701,14 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
                         fontSize: 13,
                         color: 'var(--foreground)',
                         fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 5,
                       }}>
-                        ⏱ {sesionHoy.duracion_min} min
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7, flexShrink: 0 }}>
+                          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        {sesionHoy.duracion_min} min
                       </span>
                       {sesionHoy.intensidad && (
                         <span style={{
@@ -672,7 +719,13 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
                           fontSize: 13,
                           color: sportColor,
                           fontWeight: 600,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 5,
                         }}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7, flexShrink: 0 }}>
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                          </svg>
                           {sesionHoy.intensidad}
                         </span>
                       )}
@@ -798,7 +851,12 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
                       e.currentTarget.style.boxShadow = `0 0 24px ${sportColor}38`
                     }}
                   >
-                    ✓ Completar sesión
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                      Completar sesión
+                    </span>
                   </button>
                 )
               )}
@@ -923,27 +981,73 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
               </button>
             )}
 
-            {/* Coach button */}
-            <button
-              onClick={() => onNavigate('coach')}
-              style={{
-                width: '100%',
-                background: 'transparent',
-                border: '1px solid var(--border)',
-                borderRadius: 99,
-                color: 'var(--foreground)',
-                fontFamily: 'var(--font-sans)',
-                fontSize: 15,
-                fontWeight: 600,
-                padding: '13px',
-                cursor: 'pointer',
-                transition: 'border-color 0.2s, background 0.2s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'oklch(0.32 0.02 60)' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)' }}
-            >
-              💬 Hablar con el coach
-            </button>
+            {/* Quick action cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+              <button
+                onClick={() => onNavigate('coach')}
+                style={{
+                  background: 'rgba(255,107,43,0.1)',
+                  border: '1px solid rgba(255,107,43,0.2)',
+                  borderRadius: 12,
+                  padding: '16px 8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 6,
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-sans)',
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6B2B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                <span style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>Coach</span>
+              </button>
+              <button
+                onClick={() => onNavigate('plan')}
+                style={{
+                  background: 'rgba(14,165,233,0.1)',
+                  border: '1px solid rgba(14,165,233,0.2)',
+                  borderRadius: 12,
+                  padding: '16px 8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 6,
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-sans)',
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0EA5E9" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                <span style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>Plan</span>
+              </button>
+              <button
+                onClick={() => onNavigate('plan')}
+                style={{
+                  background: 'rgba(139,92,246,0.1)',
+                  border: '1px solid rgba(139,92,246,0.2)',
+                  borderRadius: 12,
+                  padding: '16px 8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 6,
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-sans)',
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+                </svg>
+                <span style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>Ajustar</span>
+              </button>
+            </div>
           </>
         )}
 
