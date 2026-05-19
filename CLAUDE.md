@@ -1,6 +1,6 @@
 # TriCoach AI — Contexto del proyecto
 
-> Última actualización: 14 mayo 2026
+> Última actualización: 19 mayo 2026
 
 ## Qué es esto
 Entrenador IA conversacional para triatletas, runners y atletas de Hyrox hispanohablantes.
@@ -11,7 +11,7 @@ Freemium: Free (25 msg/día, plan básico) / Pro (9,99€/mes, Strava + plan ada
 - Frontend: React + Vite (JavaScript, NO TypeScript)
 - Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co) — RLS activado
 - Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
-- Tests: Vitest — **131 tests pasando** (19 archivos) + Playwright E2E (3 specs)
+- Tests: Vitest — **155 tests pasando** (20 archivos) + Playwright E2E (3 specs)
 - Deploy: Netlify (producción: https://tricoach-v2.netlify.app)
 - Pagos: Stripe (checkout + webhooks)
 - Email: Resend (coach@getricoach.com)
@@ -81,12 +81,13 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 - Sistema de diseño: variables CSS en src/index.css (--background, --primary, --card, etc.)
 - Fuentes: **Barlow Condensed** (títulos h1/h2, weight 900) + **Barlow** (texto, --font-sans) — Google Fonts
 - Sin librerías de UI externas (no shadcn, no lucide-react, no Material UI)
-- Usar emojis o SVG inline para iconos
+- **Solo SVG inline para iconos — nunca emojis como iconos en la UI**. SVGs con `fill="none"`, `stroke`, `strokeLinecap="round"`, `strokeLinejoin="round"`, `aria-hidden="true"`
 - `buildSystemPrompt.js`: campos de texto libre truncados (contexto → 500 chars, objetivo → 200, nombre → 50, preferencias/intolerancias → 200)
+- `buildSystemPrompt.js`: incluye sección **REGLAS DE CONTEXTO — OBLIGATORIAS** al final — el coach nunca pregunta info que ya tiene (plan, deporte, nivel, carrera). No eliminar.
 
 ### Tests
 - Ejecutar `npm test` al terminar SIEMPRE
-- **131 tests deben pasar** — si alguno falla, arreglarlo antes de terminar
+- **155 tests deben pasar** — si alguno falla, arreglarlo antes de terminar
 - No borrar ni modificar tests existentes sin motivo explícito
 
 ## Estado del proyecto — Fases completadas
@@ -150,6 +151,19 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 - Pro: informe completo tabla sesión a sesión + mensaje del coach
 - Free: resumen con % adherencia + bloque upsell a Pro
 
+### Correcciones calidad IA y API (mayo 2026) ✅
+- `claude.js`: filtra mensajes antes de enviar a Anthropic — elimina content null/undefined/vacío, roles inválidos, y mensajes assistant al inicio del array. Devuelve 400 si no quedan mensajes válidos tras filtrar.
+- `Chat.jsx`: guards en `saveMessage()` — no guarda si content es falsy
+- `buildSystemPrompt.js`: sección **REGLAS DE CONTEXTO — OBLIGATORIAS** al final del prompt — el coach nunca pregunta info que ya tiene (plan de la semana, deporte, nivel, objetivo, fechas de carrera)
+
+### Rediseño visual Dashboard + BottomNav (mayo 2026) ✅
+- `Dashboard.jsx` — Hero card: barra izquierda 3px sportColor, badge deporte (SVG + nombre), título 22px serif, metadata "Duración" 28px + chip intensidad, ilustración fantasma SVG 120px opacity 0.06
+- `Dashboard.jsx` — Tracker semanal: dots 32px, check SVG en completados, inner dot + glow en día actual, borde dashed en descansos, barra progreso 3px
+- `Dashboard.jsx` — Card volumen semanal: mini gráfico barras SVG con 4 semanas placeholder + semana actual
+- `Dashboard.jsx` — Acciones rápidas: iconos en círculo 40×40 con fondo coloreado, sliders SVG para Ajustar
+- `Dashboard.jsx` — `SportIcon` interno: paths simplificados de una sola `<path>`, prop `opacity` para ilustración fantasma
+- `BottomNav.jsx` — Colores activo/inactivo: `var(--primary)` / `var(--muted-foreground)` (antes hex hardcoded)
+
 ## Estructura de archivos completa
 
 ```
@@ -209,15 +223,16 @@ tricoach-v2/
 │   │   ├── auth.test.jsx              (2 tests)
 │   │   ├── onboarding.test.jsx        (3 tests)
 │   │   ├── weeklyPlan.test.jsx        (5 tests)
-│   │   ├── systemPrompt.test.js       (30 tests)
+│   │   ├── systemPrompt.test.js       (32 tests)
 │   │   ├── strava-activities.test.js  (4 tests)
 │   │   ├── strava-match-activity.test.js (6 tests)
-│   │   ├── cycles.test.js             (24 tests)
+│   │   ├── cycles.test.js             (30 tests)
 │   │   ├── recalculate-cycle.test.js  (4 tests)
 │   │   ├── ciclo-completado.test.js   (3 tests)
 │   │   ├── race-priority.test.js      (7 tests) — sistema A/B/C de carreras
 │   │   ├── autoRegenPlan.test.js      (8 tests)
-│   │   ├── autoAdjust.test.js         (9 tests) — checkShouldAdjust
+│   │   ├── autoAdjust.test.js         (11 tests) — checkShouldAdjust
+│   │   ├── chat.test.js               (14 tests) — Chat.jsx + claude.js
 │   │   ├── phase8.test.jsx            (4 tests)
 │   │   ├── phase10.test.jsx           (4 tests)
 │   │   ├── phase105.test.jsx          (5 tests)
@@ -399,16 +414,17 @@ const fechaStr = base.toISOString().split('T')[0]
 ```
 Este patrón se usa en `WeeklyPlan.jsx`, `autoAdjust.js` y donde se necesite comparar sesiones con la fecha actual.
 
-## Tests — 123 pasando (19 archivos) + 3 specs E2E Playwright
+## Tests — 155 pasando (20 archivos) + 3 specs E2E Playwright
 
 Tests más pesados (referencia rápida):
-- `systemPrompt.test.js` — buildSystemPrompt (30 tests)
-- `cycles.test.js` — macrociclos (24 tests)
-- `autoAdjust.test.js` — checkShouldAdjust (9 tests)
+- `systemPrompt.test.js` — buildSystemPrompt (32 tests)
+- `cycles.test.js` — macrociclos (30 tests)
+- `chat.test.js` — Chat.jsx + claude.js integration (14 tests)
+- `autoAdjust.test.js` — checkShouldAdjust (11 tests)
 - `autoRegenPlan.test.js` — auto-regeneración plan (8 tests)
 - `race-priority.test.js` — sistema A/B/C carreras (7 tests)
 - `strava-match-activity.test.js` (6 tests)
-- `netlify-functions.test.js` (6 tests)
+- `netlify-functions.test.js` (5 tests)
 - `phase105.test.jsx` (5 tests)
 - `recalculate-cycle.test.js` (4 tests), `limits.test.js` (4 tests)
 
