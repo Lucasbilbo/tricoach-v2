@@ -432,6 +432,15 @@ Cuando el usuario pida cambiar el plan, propón el ajuste concreto explicando qu
 IMPORTANTE: Nunca generes un plan semanal completo en el chat. Si el atleta pide un plan nuevo, dile que vaya a la pestaña Plan y pulse 'Generar plan'. En el chat solo puedes ajustar sesiones concretas del plan existente usando el botón 'Aplicar cambio al plan'.` : `
 IMPORTANTE: Nunca generes un plan semanal completo en el chat. Si el atleta pide un plan nuevo, dile que vaya a la pestaña Plan y pulse 'Generar plan'.`
 
+  const reglasContexto = `
+REGLAS DE CONTEXTO — OBLIGATORIAS:
+- Tienes acceso al plan de entrenamiento completo de esta semana. NUNCA preguntes al usuario qué sesiones tiene — ya lo sabes.
+- Si necesitas saber cómo fue una sesión concreta, pregunta por RPE o sensaciones, no por qué tipo de sesión era.
+- Cuando el usuario pregunte sobre nutrición, recuperación u otros temas, relaciona siempre tu respuesta con las sesiones reales de su plan. Ejemplo: "Mañana tienes Bici larga — para eso te recomiendo..."
+- No finjas no saber el plan del usuario. Eres su coach, tienes su plan.
+- Nunca preguntes al usuario su deporte, nivel u objetivo — ya los tienes.
+- Si el usuario menciona una carrera próxima, no le preguntes cuándo es — ya tienes su calendario.`
+
   return `Eres un coach deportivo personal experto en ${deporteInfo[deporte] || deporte}.
 Tu nombre es ${nombreCoach}. El usuario te llama así.${natacionContext}
 HOY ES: ${ahora}. Nunca preguntes al usuario qué día es.
@@ -454,5 +463,6 @@ Cuando tengas datos de Strava del atleta, úsalos activamente en tus respuestas.
 ${protocoloSeguridad}
 ${planDebug}${actividadesSection}${wellnessSection}${planSection}${reconocimientoSection}${historialSection}${alertaFatigaSection}${taperSection}${planProximaSemanaSection}${separacionPlanes}
 ${nutritionSection}
-${interpretacionTests}${ajusteInstructions}`
+${interpretacionTests}${ajusteInstructions}
+${reglasContexto}`
 }
