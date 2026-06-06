@@ -53,6 +53,7 @@ export default function ModalCompletarSesion({ sesion, planId, profile, onClose,
     if (!profile?.strava_token || !sesion.fecha || !sesion.tipo) return
 
     const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000)
     setStravaLoading(true)
 
     const secret = import.meta.env.VITE_TRICOACH_SECRET || ''
@@ -72,9 +73,15 @@ export default function ModalCompletarSesion({ sesion, planId, profile, onClose,
         }
       })
       .catch(() => {})
-      .finally(() => setStravaLoading(false))
+      .finally(() => {
+        clearTimeout(timeoutId)
+        setStravaLoading(false)
+      })
 
-    return () => controller.abort()
+    return () => {
+      clearTimeout(timeoutId)
+      controller.abort()
+    }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const mostrarDistancia = !TIPOS_SIN_DISTANCIA.has(sesion.tipo)
