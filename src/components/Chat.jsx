@@ -434,14 +434,10 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
     recognition.lang = 'es-ES'
     recognition.continuous = true
     recognition.interimResults = true
-    recognition.onstart = () => {
-      console.log('[Voz] Iniciando...')
-    }
     recognition.onresult = (event) => {
       const transcript = Array.from(event.results)
         .map(r => r[0].transcript)
         .join('')
-      console.log('[Voz] Resultado:', transcript)
       transcriptRef.current = transcript
       setInput(transcript)
     }
@@ -454,7 +450,6 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
       transcriptRef.current = ''
     }
     recognition.onend = () => {
-      console.log('[Voz] Terminado')
       setEscuchando(false)
       if (transcriptRef.current.trim()) {
         setShouldAutoSend(true)

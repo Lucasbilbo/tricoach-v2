@@ -69,14 +69,12 @@ function App() {
       } else {
         // Crear ciclo nuevo
         const secret = import.meta.env.VITE_TRICOACH_SECRET || ''
-        console.log('[cycle] llamando con secret:', secret.slice(0, 6), '| len:', secret.length)
         const res = await fetch('/.netlify/functions/create-cycle', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-tricoach-secret': secret },
           body: JSON.stringify({ userId }),
         })
         const data = await res.json().catch(() => ({}))
-        console.log('[cycle] respuesta:', res.status, data)
         if (res.ok && data.cycle) setActiveCycle(data.cycle)
         else if (!res.ok) console.error('[App] create-cycle failed:', res.status, data.error)
       }
