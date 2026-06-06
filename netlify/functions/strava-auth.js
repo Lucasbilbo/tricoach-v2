@@ -51,7 +51,7 @@ exports.handler = async (event) => {
   } catch {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'JSON inválido' }) };
   }
-  const { code, userId } = parsedBody;
+  const { code, userId, redirectUri: clientRedirectUri } = parsedBody;
   if (!code) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'code requerido' }) };
 
   // Fetch profile: validate Pro plan and get per-user Strava credentials
@@ -89,7 +89,7 @@ exports.handler = async (event) => {
     };
   }
 
-  const redirectUri = process.env.URL || 'http://localhost:8888';
+  const redirectUri = clientRedirectUri || process.env.URL || 'http://localhost:8888';
 
   const postData = new URLSearchParams({
     client_id: CLIENT_ID,

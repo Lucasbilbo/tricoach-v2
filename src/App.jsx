@@ -183,7 +183,7 @@ function App() {
     fetch('/.netlify/functions/strava-auth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-tricoach-secret': secret },
-      body: JSON.stringify({ code: stravaCallbackCode, userId: session.user.id }),
+      body: JSON.stringify({ code: stravaCallbackCode, userId: session.user.id, redirectUri: window.location.origin }),
     })
       .then(r => r.json())
       .then(data => {
