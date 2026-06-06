@@ -40,6 +40,7 @@ function App() {
   const [cuentaEliminada, setCuentaEliminada] = useState(false)
   const stravaSyncedRef = useRef(false)
   const [stravaSyncToast, setStravaSyncToast] = useState(null)
+  const [stravaCallbackCode, setStravaCallbackCode] = useState(null)
 
   async function loadOrCreateProfile(user) {
     let profile = await getProfile(user.id)
@@ -165,7 +166,41 @@ function App() {
       window.history.replaceState({}, '', window.location.pathname)
       setTimeout(() => setUpgradeSuccess(false), 4000)
     }
+    // Detectar callback OAuth de Strava — limpiar URL inmediatamente
+    const code = params.get('code')
+    const state = params.get('state')
+    if (code && state === 'strava') {
+      setStravaCallbackCode(code)
+      window.history.replaceState({}, '', window.location.pathname)
+    }
   }, [])
+
+  // Procesar callback de Strava en cuanto la sesión esté disponible
+  useEffect(() => {
+    if (!stravaCallbackCode || !session?.user?.id) return
+    const secret = import.meta.env.VITE_TRICOACH_SECRET || ''
+    setStravaSyncToast('Conectando Strava...')
+    fetch('/.netlify/functions/strava-auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-tricoach-secret': secret },
+      body: JSON.stringify({ code: stravaCallbackCode, userId: session.user.id }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        setStravaCallbackCode(null)
+        if (data.ok) {
+          loadOrCreateProfile(session.user)
+          setStravaSyncToast('✓ Strava conectado')
+          setTimeout(() => setStravaSyncToast(null), 4000)
+        } else {
+          setStravaSyncToast(null)
+        }
+      })
+      .catch(() => {
+        setStravaCallbackCode(null)
+        setStravaSyncToast(null)
+      })
+  }, [stravaCallbackCode, session?.user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {

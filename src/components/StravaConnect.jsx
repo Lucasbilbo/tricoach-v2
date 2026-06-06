@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
 export default function StravaConnect({ userId, plan, onConnected, onShowUpgrade }) {
-  const [connecting, setConnecting] = useState(false)
   const [connected, setConnected] = useState(false)
   const [disconnecting, setDisconnecting] = useState(false)
   const [toast, setToast] = useState(null)
@@ -46,43 +45,7 @@ export default function StravaConnect({ userId, plan, onConnected, onShowUpgrade
           setClientId(data.strava_client_id)
         }
       })
-
-    const params = new URLSearchParams(window.location.search)
-    const code = params.get('code')
-    const state = params.get('state')
-
-    if (code && state === 'strava') {
-      window.history.replaceState({}, '', window.location.pathname)
-      handleCallback(code)
-    }
   }, [userId])
-
-  async function handleCallback(code) {
-    setConnecting(true)
-    try {
-      const response = await fetch('/.netlify/functions/strava-auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, userId })
-      })
-
-      if (response.status === 403) {
-        console.warn('Strava requiere plan Pro')
-        return
-      }
-
-      const data = await response.json()
-
-      if (data.ok) {
-        setConnected(true)
-        if (onConnected) onConnected()
-      }
-    } catch (error) {
-      console.error('Error conectando Strava:', error)
-    } finally {
-      setConnecting(false)
-    }
-  }
 
   async function handleSaveCreds() {
     if (!clientId.trim() || !clientSecret.trim()) return
@@ -259,19 +222,15 @@ export default function StravaConnect({ userId, plan, onConnected, onShowUpgrade
   // Pro user — has credentials but not connected: show connect button
   return (
     <div>
-      {connecting && (
-        <p style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 8 }}>Conectando...</p>
-      )}
       <button
         onClick={connectStrava}
-        disabled={connecting}
         style={{
           background: '#fc4c02',
           color: 'white',
           border: 'none',
           padding: '8px 16px',
           borderRadius: 6,
-          cursor: connecting ? 'not-allowed' : 'pointer',
+          cursor: 'pointer',
           fontWeight: 600,
           fontSize: 14,
         }}
