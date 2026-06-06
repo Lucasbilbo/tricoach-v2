@@ -66,7 +66,7 @@ export default function StravaConnect({ userId, plan, onConnected, onShowUpgrade
       if (onShowUpgrade) onShowUpgrade()
       return
     }
-    const redirectUri = window.location.origin
+    const redirectUri = import.meta.env.VITE_APP_URL || window.location.origin
     const url = `https://www.strava.com/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&approval_prompt=force&scope=read,activity:read&state=strava`
     window.location.href = url
   }
