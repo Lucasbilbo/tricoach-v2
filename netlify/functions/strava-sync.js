@@ -79,9 +79,12 @@ function stravaGet(path, accessToken) {
 }
 
 async function refreshStravaToken(profileData, supabaseUrl, supabaseKey, userId) {
+  if (!profileData.strava_client_id || !profileData.strava_client_secret) {
+    return null;
+  }
   const postData = new URLSearchParams({
-    client_id: process.env.STRAVA_CLIENT_ID,
-    client_secret: process.env.STRAVA_CLIENT_SECRET,
+    client_id: profileData.strava_client_id,
+    client_secret: profileData.strava_client_secret,
     refresh_token: profileData.strava_refresh_token,
     grant_type: 'refresh_token'
   }).toString();
@@ -150,7 +153,7 @@ exports.handler = async (event) => {
   const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 
   // Get profile with Strava tokens
-  const profiles = await supabaseRequest('GET', `profiles?id=eq.${userId}&select=strava_token,strava_refresh_token,strava_token_expires_at`, null, supabaseUrl, supabaseKey);
+  const profiles = await supabaseRequest('GET', `profiles?id=eq.${userId}&select=strava_token,strava_refresh_token,strava_token_expires_at,strava_client_id,strava_client_secret`, null, supabaseUrl, supabaseKey);
   const profile = Array.isArray(profiles) ? profiles[0] : null;
 
   if (!profile || !profile.strava_token) {

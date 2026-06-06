@@ -54,37 +54,49 @@ exports.handler = async (event) => {
   const { code, userId } = parsedBody;
   if (!code) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'code requerido' }) };
 
-  // Validar que el usuario es Pro
-  if (userId) {
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
-    if (supabaseUrl && supabaseKey) {
-      const hostname = new URL(supabaseUrl).hostname;
-      const profiles = await supabaseGet(
-        hostname,
-        `/rest/v1/profiles?id=eq.${userId}&select=plan`,
-        supabaseKey
-      );
-      const profile = Array.isArray(profiles) ? profiles[0] : null;
-      if (profile && profile.plan !== 'pro') {
-        return {
-          statusCode: 403,
-          headers: CORS,
-          body: JSON.stringify({ error: 'Strava está disponible solo para usuarios Pro' })
-        };
-      }
-    }
+  // Fetch profile: validate Pro plan and get per-user Strava credentials
+  if (!userId) {
+    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId requerido' }) };
   }
 
-  const CLIENT_ID = process.env.STRAVA_CLIENT_ID;
-  const CLIENT_SECRET = process.env.STRAVA_CLIENT_SECRET;
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+  const hostname = new URL(supabaseUrl).hostname;
+
+  const profiles = await supabaseGet(
+    hostname,
+    `/rest/v1/profiles?id=eq.${userId}&select=plan,strava_client_id,strava_client_secret`,
+    supabaseKey
+  );
+  const profile = Array.isArray(profiles) ? profiles[0] : null;
+
+  if (!profile || profile.plan !== 'pro') {
+    return {
+      statusCode: 403,
+      headers: CORS,
+      body: JSON.stringify({ error: 'Strava está disponible solo para usuarios Pro' })
+    };
+  }
+
+  const CLIENT_ID = profile.strava_client_id;
+  const CLIENT_SECRET = profile.strava_client_secret;
+
+  if (!CLIENT_ID || !CLIENT_SECRET) {
+    return {
+      statusCode: 400,
+      headers: CORS,
+      body: JSON.stringify({ error: 'El usuario no tiene credenciales de Strava configuradas' })
+    };
+  }
+
+  const redirectUri = process.env.URL || 'http://localhost:8888';
 
   const postData = new URLSearchParams({
     client_id: CLIENT_ID,
     client_secret: CLIENT_SECRET,
     code,
     grant_type: 'authorization_code',
-    redirect_uri: process.env.STRAVA_REDIRECT_URI
+    redirect_uri: redirectUri
   }).toString();
 
   // Exchange code for Strava token
@@ -118,8 +130,6 @@ exports.handler = async (event) => {
 
   // Save token to Supabase using service key (bypasses RLS)
   if (userId) {
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
     const hostname = new URL(supabaseUrl).hostname;
 
     const patchPayload = {
