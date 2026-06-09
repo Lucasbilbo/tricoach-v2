@@ -130,7 +130,7 @@ exports.handler = async (event) => {
 
   // Fetch user's Strava tokens from Supabase
   const profileData = await new Promise((resolve) => {
-    const path = `/rest/v1/profiles?id=eq.${userId}&select=strava_token,strava_refresh_token,strava_token_expires_at,fc_maxima,edad,strava_client_id,strava_client_secret`;
+    const path = `/rest/v1/profiles?id=eq.${userId}&select=strava_token,strava_refresh_token,strava_token_expires_at,fc_maxima,edad`;
     const options = {
       hostname: new URL(supabaseUrl).hostname,
       path,
@@ -165,16 +165,9 @@ exports.handler = async (event) => {
 
   // Refresh token if expired
   if (profileData.strava_token_expires_at && profileData.strava_token_expires_at < now) {
-    if (!profileData.strava_client_id || !profileData.strava_client_secret) {
-      return {
-        statusCode: 200,
-        headers: { ...CORS, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sinStrava: true })
-      };
-    }
     const postData = new URLSearchParams({
-      client_id: profileData.strava_client_id,
-      client_secret: profileData.strava_client_secret,
+      client_id: process.env.STRAVA_CLIENT_ID,
+      client_secret: process.env.STRAVA_CLIENT_SECRET,
       refresh_token: profileData.strava_refresh_token,
       grant_type: 'refresh_token'
     }).toString();

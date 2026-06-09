@@ -6,12 +6,6 @@ export default function StravaConnect({ userId, plan, onConnected, onShowUpgrade
   const [disconnecting, setDisconnecting] = useState(false)
   const [toast, setToast] = useState(null)
 
-  // Per-user Strava app credentials
-  const [clientId, setClientId] = useState('')
-  const [clientSecret, setClientSecret] = useState('')
-  const [hasCreds, setHasCreds] = useState(false)
-  const [savingCreds, setSavingCreds] = useState(false)
-
   const esFree = !plan || plan === 'free'
 
   function showToast(msg) {
@@ -35,38 +29,21 @@ export default function StravaConnect({ userId, plan, onConnected, onShowUpgrade
   useEffect(() => {
     supabase
       .from('profiles')
-      .select('strava_token, strava_client_id')
+      .select('strava_token')
       .eq('id', userId)
       .single()
       .then(({ data }) => {
         if (data?.strava_token) setConnected(true)
-        if (data?.strava_client_id) {
-          setHasCreds(true)
-          setClientId(data.strava_client_id)
-        }
       })
   }, [userId])
-
-  async function handleSaveCreds() {
-    if (!clientId.trim() || !clientSecret.trim()) return
-    setSavingCreds(true)
-    const { error } = await supabase
-      .from('profiles')
-      .update({ strava_client_id: clientId.trim(), strava_client_secret: clientSecret.trim() })
-      .eq('id', userId)
-    setSavingCreds(false)
-    if (!error) {
-      setHasCreds(true)
-      connectStrava()
-    }
-  }
 
   function connectStrava() {
     if (esFree) {
       if (onShowUpgrade) onShowUpgrade()
       return
     }
-    const redirectUri = import.meta.env.VITE_APP_URL || window.location.origin
+    const clientId = import.meta.env.VITE_STRAVA_CLIENT_ID
+    const redirectUri = import.meta.env.VITE_STRAVA_REDIRECT_URI || import.meta.env.VITE_APP_URL || window.location.origin
     const url = `https://www.strava.com/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&approval_prompt=force&scope=read,activity:read&state=strava`
     window.location.href = url
   }
@@ -143,85 +120,7 @@ export default function StravaConnect({ userId, plan, onConnected, onShowUpgrade
     )
   }
 
-  // Pro user — no credentials yet: show form
-  if (!hasCreds) {
-    return (
-      <div>
-        {toast && (
-          <div style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 8, fontWeight: 500 }}>
-            {toast}
-          </div>
-        )}
-        <p style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 10, lineHeight: 1.5 }}>
-          Crea tu app gratis en{' '}
-          <span style={{ color: 'var(--foreground)', fontWeight: 600 }}>strava.com/settings/api</span>
-          {' '}y pon como <span style={{ color: 'var(--foreground)', fontWeight: 600 }}>Authorization Callback Domain</span>:{' '}
-          <span style={{ color: 'var(--foreground)', fontWeight: 600 }}>app.getricoach.com</span>.
-          {' '}Luego pega aquí tus credenciales.
-        </p>
-        <input
-          style={{
-            display: 'block',
-            width: '100%',
-            background: '#141414',
-            border: '1px solid #2a2a2a',
-            borderRadius: 8,
-            color: '#e0e0e0',
-            fontFamily: 'var(--font-sans)',
-            fontSize: 13,
-            padding: '10px 12px',
-            marginBottom: 8,
-            outline: 'none',
-            boxSizing: 'border-box',
-          }}
-          placeholder="Client ID"
-          value={clientId}
-          onChange={e => setClientId(e.target.value)}
-          autoComplete="off"
-        />
-        <input
-          type="password"
-          style={{
-            display: 'block',
-            width: '100%',
-            background: '#141414',
-            border: '1px solid #2a2a2a',
-            borderRadius: 8,
-            color: '#e0e0e0',
-            fontFamily: 'var(--font-sans)',
-            fontSize: 13,
-            padding: '10px 12px',
-            marginBottom: 12,
-            outline: 'none',
-            boxSizing: 'border-box',
-          }}
-          placeholder="Client Secret"
-          value={clientSecret}
-          onChange={e => setClientSecret(e.target.value)}
-          autoComplete="off"
-        />
-        <button
-          onClick={handleSaveCreds}
-          disabled={savingCreds || !clientId.trim() || !clientSecret.trim()}
-          style={{
-            background: '#fc4c02',
-            color: 'white',
-            border: 'none',
-            padding: '8px 16px',
-            borderRadius: 6,
-            cursor: (savingCreds || !clientId.trim() || !clientSecret.trim()) ? 'not-allowed' : 'pointer',
-            fontWeight: 600,
-            fontSize: 14,
-            opacity: (!clientId.trim() || !clientSecret.trim()) ? 0.5 : 1,
-          }}
-        >
-          {savingCreds ? 'Guardando...' : 'Guardar y conectar'}
-        </button>
-      </div>
-    )
-  }
-
-  // Pro user — has credentials but not connected: show connect button
+  // Pro user — not connected: show connect button
   return (
     <div>
       <button

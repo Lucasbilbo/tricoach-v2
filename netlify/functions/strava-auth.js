@@ -65,7 +65,7 @@ exports.handler = async (event) => {
 
   const profiles = await supabaseGet(
     hostname,
-    `/rest/v1/profiles?id=eq.${userId}&select=plan,strava_client_id,strava_client_secret`,
+    `/rest/v1/profiles?id=eq.${userId}&select=plan`,
     supabaseKey
   );
   const profile = Array.isArray(profiles) ? profiles[0] : null;
@@ -78,18 +78,10 @@ exports.handler = async (event) => {
     };
   }
 
-  const CLIENT_ID = profile.strava_client_id;
-  const CLIENT_SECRET = profile.strava_client_secret;
+  const CLIENT_ID = process.env.STRAVA_CLIENT_ID;
+  const CLIENT_SECRET = process.env.STRAVA_CLIENT_SECRET;
 
-  if (!CLIENT_ID || !CLIENT_SECRET) {
-    return {
-      statusCode: 400,
-      headers: CORS,
-      body: JSON.stringify({ error: 'El usuario no tiene credenciales de Strava configuradas' })
-    };
-  }
-
-  const redirectUri = clientRedirectUri || process.env.URL || 'http://localhost:8888';
+  const redirectUri = clientRedirectUri || process.env.STRAVA_REDIRECT_URI || process.env.URL || 'http://localhost:8888';
 
   const postData = new URLSearchParams({
     client_id: CLIENT_ID,
