@@ -27,3 +27,6 @@ dist-ssr
 
 # Local Netlify folder
 .netlify
+
+# Deno (no usamos Deno; lo genera alguna herramienta externa)
+deno.lock
