@@ -176,6 +176,7 @@ function App() {
   // Procesar callback de Strava en cuanto la sesión esté disponible
   useEffect(() => {
     if (!stravaCallbackCode || !session?.user?.id) return
+    setCurrentScreen('profile')
     const secret = import.meta.env.VITE_TRICOACH_SECRET || ''
     setStravaSyncToast('Conectando Strava...')
     fetch('/.netlify/functions/strava-auth', {
@@ -521,6 +522,7 @@ function App() {
                 padding: 16,
               }}>
                 <StravaConnect
+                  key={profile?.strava_token ? 'strava-on' : 'strava-off'}
                   userId={session.user.id}
                   plan={profile?.plan}
                   onConnected={() => loadOrCreateProfile(session.user)}
