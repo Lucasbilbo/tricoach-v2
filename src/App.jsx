@@ -167,7 +167,6 @@ function App() {
     // Detectar callback OAuth de Strava — limpiar URL inmediatamente
     const code = params.get('code')
     const state = params.get('state')
-    console.log('[Strava CB] code detectado:', code, '| state:', state, '| session uid:', session?.user?.id)
     if (code && state === 'strava') {
       setStravaCallbackCode(code)
       window.history.replaceState({}, '', window.location.pathname)

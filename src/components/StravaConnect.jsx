@@ -27,7 +27,6 @@ export default function StravaConnect({ userId, plan, onConnected, onShowUpgrade
   }
 
   useEffect(() => {
-    console.log('[StravaConnect] useEffect | userId:', userId, '| search:', window.location.search)
     supabase
       .from('profiles')
       .select('strava_token')
