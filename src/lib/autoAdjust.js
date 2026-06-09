@@ -1,4 +1,4 @@
-const DIA_OFFSET = { Lunes: 0, Martes: 1, 'Miércoles': 2, Jueves: 3, Viernes: 4, Sábado: 5, Domingo: 6 }
+import { getFechaSesion, getHoyMadrid } from './fechas'
 
 /**
  * Analiza el plan y el perfil en busca de señales que requieran ajuste automático.
@@ -39,15 +39,11 @@ export function checkShouldAdjust(plan, profile) {
 
   // Señal 3: 2+ sesiones perdidas consecutivas (días ya pasados, no completadas, no descanso)
   if (plan.semana) {
-    const todayStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' })
-    const lunes = new Date(plan.semana + 'T12:00:00')
+    const todayStr = getHoyMadrid()
     let consec = 0
     for (const s of sesiones) {
       if (s.tipo?.toLowerCase() === 'descanso') { continue }
-      const offset = DIA_OFFSET[s.dia] ?? 0
-      const d = new Date(lunes)
-      d.setDate(lunes.getDate() + offset)
-      const fechaStr = d.toISOString().split('T')[0]
+      const fechaStr = getFechaSesion(plan.semana, s.dia)
       if (fechaStr < todayStr && !s.completada) {
         consec++
         if (consec >= 2) {

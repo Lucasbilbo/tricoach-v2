@@ -12,7 +12,7 @@ Freemium: Free (10 msg/día, plan básico) / Pro (9,99€/mes, Strava + plan ada
 - Frontend: React + Vite (JavaScript, NO TypeScript)
 - Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co) — RLS activado
 - Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
-- Tests: Vitest — **155 tests pasando** (20 archivos) + Playwright E2E (3 specs)
+- Tests: Vitest — **169 tests pasando** (21 archivos) + Playwright E2E (3 specs)
 - Deploy: Netlify (producción: https://tricoach-v2.netlify.app)
 - Pagos: Stripe (checkout + webhooks)
 - Email: Resend (coach@getricoach.com)
@@ -93,7 +93,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 
 ### Tests
 - Ejecutar `npm test` al terminar SIEMPRE
-- **155 tests deben pasar** (20 archivos — verificado en auditoría de junio 2026) — si alguno falla, arreglarlo antes de terminar
+- **169 tests deben pasar** (21 archivos — actualizado junio 2026) — si alguno falla, arreglarlo antes de terminar
 - No borrar ni modificar tests existentes sin motivo explícito
 
 ## Estado del proyecto — Fases completadas
@@ -211,8 +211,9 @@ tricoach-v2/
 │   │   ├── profiles.js        — getProfile, updateProfile, canSendMessage, incrementMessageCount
 │   │   ├── messages.js
 │   │   ├── context.js
-│   │   ├── plans.js           — getPlan, generatePlan, markSessionComplete, adjustPlan,
+│   │   ├── plans.js           — getPlan, generatePlan, completarSesion (función canónica), adjustPlan,
 │   │   │                        autoAdjustPlan, getHistorialPlanes, calcularConsistencia, analizarPlan
+│   │   ├── fechas.js          — getFechaSesion, getHoyMadrid, DIA_OFFSET_MAP (fuente única de fechas)
 │   │   ├── autoAdjust.js      — checkShouldAdjust(plan, profile) — función pura, sin efectos
 │   │   └── cycles.js          — calcularFases, getFaseActual, esSemanaDescarga, esCicloCompletado
 │   ├── pages/
@@ -239,6 +240,7 @@ tricoach-v2/
 │   │   ├── autoRegenPlan.test.js      (8 tests)
 │   │   ├── autoAdjust.test.js         (11 tests) — checkShouldAdjust
 │   │   ├── chat.test.js               (14 tests) — Chat.jsx + claude.js
+│   │   ├── completarSesion.test.js    (14 tests) — completarSesion + fechas Madrid
 │   │   ├── phase8.test.jsx            (4 tests)
 │   │   ├── phase10.test.jsx           (4 tests)
 │   │   ├── phase105.test.jsx          (5 tests)
@@ -378,19 +380,20 @@ Validación Free/Pro siempre en **backend** (claude.js) — nunca confiar solo e
 
 ## Flujos críticos
 
-### Completar sesión
-⚠️ **Trampa frecuente**: hay DOS funciones de completar sesión con nombres similares:
+### Completar sesión — función canónica única (unificado junio 2026)
+**`completarSesion(planId, dia, campos = {})`** en `src/lib/plans.js` es la ÚNICA vía desde el frontend para completar una sesión. No crear variantes locales.
+- Campos opcionales: `rpe`, `tiempo_real_min`, `distancia_real_km`, `fc_media_real`, `notas_usuario`, `via_strava`.
+- SIEMPRE recalcula `volumen_real_min` (suma `tiempo_real_min || duracion_min` de completadas no-descanso).
+- Lanza `Error('Plan no encontrado')` si el plan no existe.
 
-| Función | Archivo | Cuándo se usa |
-|---|---|---|
-| `patchSesionCompleta(planId, dia, campos)` | `ModalCompletarSesion.jsx` (local, Supabase directo) | Flujo principal — WeeklyPlan |
-| `markSessionComplete(planId, dia, rpe)` | `src/lib/plans.js` | Picker inline de Dashboard (flujo secundario) |
+Call sites:
+1. `ModalCompletarSesion.guardar()` → `onComplete(updatedPlan)` en WeeklyPlan, que llama a `checkShouldAdjust` + `autoAdjustPlan` (flujo principal).
+2. `Dashboard.handleCompletar()` — picker RPE inline de "Hoy"; también llama a `checkShouldAdjust` + `autoAdjustPlan`.
+3. `App.jsx` — `SessionDetail.onComplete(rpe)` (sin auto-adjust).
 
-El flujo real es: botón "Completar" → `ModalCompletarSesion` → `guardar()` → `patchSesionCompleta()` → `onComplete(updatedPlan)` en `WeeklyPlan`.
-El `handleCompletar()` de Dashboard solo se usa para el picker inline de RPE en la pantalla de hoy.
-Ambos flujos llaman a `checkShouldAdjust` tras guardar y disparan `autoAdjustPlan` si hay señal.
+Historia: antes coexistían `markSessionComplete` (plans.js, no recalculaba volumen) y `patchSesionCompleta` (local del modal) — **eliminadas** en la unificación. La vía server-side de `strava-sync.js` sigue marcando `completada/via_strava` por PATCH directo y **no recalcula `volumen_real_min`** (deuda conocida — CommonJS no puede importar el lib del frontend).
 
-Si añades lógica post-completar (auto-adjust, notificaciones, etc.) debes hacerlo en **ambos** sitios o solo en `onComplete` de WeeklyPlan y `handleCompletar` de Dashboard.
+El coach se entera de las sesiones completadas vía `buildSystemPrompt` (etiquetas "✓ completada (manual/Strava)" y sección "SESIONES COMPLETADAS ESTA SEMANA") — no hay notificación explícita, es por diseño.
 
 ### Flujo OAuth de Strava (callback)
 
@@ -428,23 +431,22 @@ El `GraficoSemana` usa el prop `plan` de la semana actual pasado directamente de
 
 El cutoff de `getHistorialPlanes` es **6 días** (no 7) para cubrir el caso de que hoy sea domingo — la semana empezó el lunes y llevan 6 días completos.
 
-### Fechas de sesiones — patrón `DIA_OFFSET_MAP`
+### Fechas de sesiones — `src/lib/fechas.js` (unificado junio 2026)
 `plan.semana` es siempre el **lunes de la semana en ISO date** (ej: `"2026-04-28"`).
-Para calcular la fecha real de cada sesión:
-```javascript
-const DIA_OFFSET_MAP = { Lunes: 0, Martes: 1, 'Miércoles': 2, Jueves: 3, Viernes: 4, Sábado: 5, Domingo: 6 }
-const base = new Date(plan.semana + 'T12:00:00') // T12 evita problemas de zona horaria
-base.setDate(base.getDate() + (DIA_OFFSET_MAP[sesion.dia] ?? 0))
-const fechaStr = base.toISOString().split('T')[0]
-```
-Este patrón se usa en `WeeklyPlan.jsx`, `autoAdjust.js` y donde se necesite comparar sesiones con la fecha actual.
+Helpers canónicos en `src/lib/fechas.js` — usar SIEMPRE estos, no reimplementar el patrón:
+- `getFechaSesion(semana, dia)` — fecha real de una sesión (patrón `DIA_OFFSET_MAP` + `T12:00:00`).
+- `getHoyMadrid()` — fecha de hoy en Europe/Madrid (`sv-SE`); NUNCA usar `toISOString()` para "hoy" (en la madrugada devuelve el día UTC anterior).
 
-## Tests — 155 pasando (20 archivos) + 3 specs E2E Playwright
+Usados en `WeeklyPlan.jsx` y `autoAdjust.js`. `buildSystemPrompt.js` mantiene su copia interna deliberadamente (cubierto por 32 tests, no tocar sin motivo).
+Al abrir `ModalCompletarSesion`, WeeklyPlan adjunta `fecha` a la sesión (`{ ...sesion, fecha: sesionFecha }`) — necesario para el auto-import de Strava del modal.
+
+## Tests — 169 pasando (21 archivos) + 3 specs E2E Playwright
 
 Tests más pesados (referencia rápida):
 - `systemPrompt.test.js` — buildSystemPrompt (32 tests)
 - `cycles.test.js` — macrociclos (30 tests)
 - `chat.test.js` — Chat.jsx + claude.js integration (14 tests)
+- `completarSesion.test.js` — completarSesion + fechas Europe/Madrid (14 tests)
 - `autoAdjust.test.js` — checkShouldAdjust (11 tests)
 - `autoRegenPlan.test.js` — auto-regeneración plan (8 tests)
 - `race-priority.test.js` — sistema A/B/C carreras (7 tests)

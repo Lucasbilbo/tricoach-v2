@@ -153,7 +153,7 @@ async function setupMockedApp(page, opts = {}) {
       await fulfill(MOCK_PROFILE)
     } else if (url.includes('/plans')) {
       if (method === 'PATCH') {
-        // markSessionComplete actualiza las sesiones
+        // completarSesion actualiza las sesiones
         const raw = route.request().postData()
         if (raw) {
           try {

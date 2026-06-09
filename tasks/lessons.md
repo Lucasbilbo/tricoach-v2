@@ -66,6 +66,18 @@ Solo añadir año si la edición es futura y concreta (Valencia diciembre 2026).
 
 ---
 
+## 2026-06-09 — Deuda resuelta: unificación de completar sesión
+
+**Resuelto:** Las dos funciones de completar sesión (`markSessionComplete` en plans.js y `patchSesionCompleta` local de ModalCompletarSesion) se unificaron en **`completarSesion(planId, dia, campos)`** en `src/lib/plans.js`. Ambas implementaciones antiguas eliminadas; todos los call sites migrados.
+**Bugs encontrados durante la unificación:**
+- `markSessionComplete` no recalculaba `volumen_real_min` — completar desde Dashboard o SessionDetail dejaba el volumen obsoleto.
+- `WeeklyPlan.handleCompletar` era código muerto que además referenciaba `markSessionComplete` sin importarlo (habría lanzado ReferenceError).
+- WeeklyPlan abría `ModalCompletarSesion` sin adjuntar `fecha` a la sesión → el auto-import de Strava del modal (que exige `sesion.fecha`) nunca se ejecutaba.
+- `getTodayStr()` de WeeklyPlan usaba `toISOString()` (UTC) — en la madrugada marcaba como "pasadas" sesiones del día actual. Reemplazado por `getHoyMadrid()`.
+**Lección:** Cuando coexisten dos implementaciones de lo mismo, no solo divergen — cada call site hereda los bugs de su variante. Unificar pronto y eliminar la obsoleta (no dejarla "por si acaso"). El patrón de fechas vive ahora en `src/lib/fechas.js` — no reimplementar.
+
+---
+
 ## Patrones de código estándar para Netlify Functions
 
 ```javascript

@@ -121,23 +121,40 @@ export async function generatePlan(userId, planAnterior = null, fechaInicio = nu
   return res.json()
 }
 
-export async function markSessionComplete(planId, dia, rpe) {
+/**
+ * Función canónica para completar una sesión — ÚNICA vía desde el frontend.
+ * Reemplaza a markSessionComplete (plans.js) y patchSesionCompleta (ModalCompletarSesion).
+ *
+ * @param {string} planId
+ * @param {string} dia — nombre del día ('Lunes'...'Domingo')
+ * @param {object} campos — opcionales: rpe, tiempo_real_min, distancia_real_km,
+ *                          fc_media_real, notas_usuario, via_strava
+ * @returns plan actualizado
+ * @throws Error('Plan no encontrado') si el plan no existe
+ */
+export async function completarSesion(planId, dia, campos = {}) {
   const { data: plan } = await supabase
     .from('plans')
-    .select('sesiones')
+    .select('sesiones, volumen_real_min')
     .eq('id', planId)
-    .single()
+    .maybeSingle()
+
+  if (!plan) throw new Error('Plan no encontrado')
 
   const sesiones = plan.sesiones.map(s =>
-    s.dia === dia ? { ...s, completada: true, rpe } : s
+    s.dia === dia ? { ...s, completada: true, ...campos } : s
   )
+
+  const volumenReal = sesiones
+    .filter(s => s.completada && s.tipo?.toLowerCase() !== 'descanso')
+    .reduce((acc, s) => acc + (s.tiempo_real_min || s.duracion_min || 0), 0)
 
   const { data } = await supabase
     .from('plans')
-    .update({ sesiones })
+    .update({ sesiones, volumen_real_min: volumenReal })
     .eq('id', planId)
     .select()
-    .single()
+    .maybeSingle()
 
   return data
 }

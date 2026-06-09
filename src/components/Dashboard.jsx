@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { markSessionComplete, autoAdjustPlan } from '../lib/plans'
+import { completarSesion, autoAdjustPlan } from '../lib/plans'
 import { checkShouldAdjust } from '../lib/autoAdjust'
 import CicloCompletadoBanner from './CicloCompletadoBanner'
 import AdjustmentBanner from './AdjustmentBanner'
@@ -239,7 +239,7 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
   async function handleCompletar() {
     if (!plan?.id || !sesionHoy) return
     try {
-      const updated = await markSessionComplete(plan.id, sesionHoy.dia, rpe)
+      const updated = await completarSesion(plan.id, sesionHoy.dia, { rpe })
       onPlanUpdate(updated)
       // Auto-adjust: evaluate on saved plan (includes the new RPE)
       const { shouldAdjust, reason, signal } = checkShouldAdjust(updated, profile)

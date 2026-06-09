@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { generatePlan, getPlanForWeek, getNextWeekStart, adjustPlan, autoAdjustPlan, analizarPlan } from '../lib/plans'
+import { getFechaSesion, getHoyMadrid } from '../lib/fechas'
 import { checkShouldAdjust } from '../lib/autoAdjust'
 import ModalCompletarSesion from './ModalCompletarSesion'
 import AdjustmentBanner from './AdjustmentBanner'
@@ -30,11 +31,6 @@ const SPORT_COLORS = {
 }
 
 const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
-const DIA_OFFSET_MAP = { Lunes: 0, Martes: 1, 'Miércoles': 2, Jueves: 3, Viernes: 4, Sábado: 5, Domingo: 6 }
-
-function getTodayStr() {
-  return new Date().toISOString().split('T')[0]
-}
 
 function formatDateLong(dateStr) {
   return new Date(dateStr + 'T12:00:00').toLocaleDateString('es-ES', {
@@ -52,8 +48,6 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
   const [generandoSiguiente, setGenerandoSiguiente] = useState(false)
   const [errorToast, setErrorToast] = useState(null)
   const [showCoachBadge, setShowCoachBadge] = useState(false)
-  const [completando, setCompletando] = useState(null)
-  const [rpe, setRpe] = useState(5)
   const [sesionParaCompletar, setSesionParaCompletar] = useState(null)
   const [ajustando, setAjustando] = useState(false)
   const [ajusteBanner, setAjusteBanner] = useState(null) // { reason, mensaje }
@@ -105,7 +99,7 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
   }, [plan, planSiguiente])
 
   const today = DIAS_SEMANA[new Date().getDay()]
-  const todayStr = getTodayStr()
+  const todayStr = getHoyMadrid()
   const planEndStr = plan ? (() => {
     const d = new Date(plan.semana + 'T12:00:00')
     d.setDate(d.getDate() + 6)
@@ -179,39 +173,6 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
     setPendingFechaInicio(fechaInicio)
     setContextoSemana('')
     setShowContextModal(true)
-  }
-
-  async function handleCompletar(dia) {
-    const currentPlan = viendoProxima ? planSiguiente : plan
-    const planId = currentPlan.id
-    const optimisticSesiones = currentPlan.sesiones.map(s =>
-      s.dia === dia ? { ...s, completada: true, rpe } : s
-    )
-    const optimisticPlan = { ...currentPlan, sesiones: optimisticSesiones }
-    if (viendoProxima) {
-      setPlanSiguiente(optimisticPlan)
-    } else {
-      onPlanUpdate(optimisticPlan)
-    }
-    try {
-      const updated = await markSessionComplete(planId, dia, rpe)
-      if (viendoProxima) {
-        setPlanSiguiente(updated)
-        onPlanProximaSemanaUpdate?.(updated)
-      } else {
-        onPlanUpdate(updated)
-      }
-    } catch (e) {
-      console.error('Error al completar sesión:', e)
-      if (viendoProxima) {
-        setPlanSiguiente(currentPlan)
-      } else {
-        onPlanUpdate(currentPlan)
-      }
-      setErrorToast('Error al guardar. Inténtalo de nuevo.')
-    } finally {
-      setCompletando(null)
-    }
   }
 
   async function handleAjustar(motivo, descripcion = '') {
@@ -895,11 +856,7 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
         {/* Sessions */}
         {(!viendoProxima || (viendoProxima && displayedPlan)) && !loadingProxima && displayedPlan?.sesiones?.map((sesion) => {
           const esHoy = sesion.dia === today && !esSemanaPasada && !esPlanFuturo && !viendoProxima
-          const sesionFecha = (() => {
-            const base = new Date(displayedPlan.semana + 'T12:00:00')
-            base.setDate(base.getDate() + (DIA_OFFSET_MAP[sesion.dia] ?? 0))
-            return base.toISOString().split('T')[0]
-          })()
+          const sesionFecha = getFechaSesion(displayedPlan.semana, sesion.dia)
           const esPasadoEnSemanaActual = !esSemanaPasada && !esPlanFuturo && !viendoProxima && sesionFecha < todayStr && !esHoy
           const sportColor = SPORT_COLORS[sesion.tipo] || '#374151'
           const leftBorderColor = sesion.completada ? 'oklch(0.7 0.14 180)' : sportColor
@@ -1085,7 +1042,7 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
                     </span>
                   ) : sesion.tipo !== 'Descanso' && !esSemanaPasada && !esPasadoEnSemanaActual && (
                     <button
-                      onClick={() => setSesionParaCompletar(sesion)}
+                      onClick={() => setSesionParaCompletar({ ...sesion, fecha: sesionFecha })}
                       style={{
                         background: 'var(--secondary)',
                         border: '1px solid var(--border)',

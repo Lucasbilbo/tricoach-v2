@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
+import { completarSesion } from '../lib/plans'
 
 const RPE_COLORS = {
   1: '#22c55e', 2: '#22c55e', 3: '#22c55e',
@@ -9,33 +9,6 @@ const RPE_COLORS = {
 }
 
 const TIPOS_SIN_DISTANCIA = new Set(['Fuerza', 'Descanso'])
-
-async function patchSesionCompleta(planId, dia, campos) {
-  const { data: plan } = await supabase
-    .from('plans')
-    .select('sesiones, volumen_real_min')
-    .eq('id', planId)
-    .maybeSingle()
-
-  if (!plan) throw new Error('Plan no encontrado')
-
-  const sesionesActualizadas = plan.sesiones.map(s =>
-    s.dia === dia ? { ...s, completada: true, ...campos } : s
-  )
-
-  const volumenReal = sesionesActualizadas
-    .filter(s => s.completada && s.tipo?.toLowerCase() !== 'descanso')
-    .reduce((acc, s) => acc + (s.tiempo_real_min || s.duracion_min || 0), 0)
-
-  const { data } = await supabase
-    .from('plans')
-    .update({ sesiones: sesionesActualizadas, volumen_real_min: volumenReal })
-    .eq('id', planId)
-    .select()
-    .maybeSingle()
-
-  return data
-}
 
 export default function ModalCompletarSesion({ sesion, planId, profile, onClose, onComplete }) {
   const [rpe, setRpe] = useState(sesion.estructura?.rpe_objetivo
@@ -97,7 +70,7 @@ export default function ModalCompletarSesion({ sesion, planId, profile, onClose,
         if (mostrarFc && fcMedia !== '') campos.fc_media_real = Number(fcMedia)
         if (notas.trim()) campos.notas_usuario = notas.trim()
       }
-      const updated = await patchSesionCompleta(planId, sesion.dia, campos)
+      const updated = await completarSesion(planId, sesion.dia, campos)
       onComplete(updated)
     } catch {
       // silently close — caller handles UI state

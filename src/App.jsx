@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from './lib/supabase'
 import { getProfile, createProfile, updateProfile } from './lib/profiles'
-import { getPlanActual, getPlanProximaSemana, getHistorialPlanes, generatePlan, markSessionComplete, getNextWeekStart, esFormatoAntiguo } from './lib/plans'
+import { getPlanActual, getPlanProximaSemana, getHistorialPlanes, generatePlan, completarSesion, getNextWeekStart, esFormatoAntiguo } from './lib/plans'
 import { esCicloCompletado } from './lib/cycles'
 import Login from './components/Login'
 import Onboarding from './components/Onboarding'
@@ -587,7 +587,7 @@ function App() {
           }}
           onComplete={async (rpe) => {
             if (plan?.id) {
-              const updated = await markSessionComplete(plan.id, selectedSession.dia, rpe).catch(() => null)
+              const updated = await completarSesion(plan.id, selectedSession.dia, { rpe }).catch(() => null)
               if (updated) setPlan(updated)
             }
             setSelectedSession(null)

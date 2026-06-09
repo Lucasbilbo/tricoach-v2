@@ -159,6 +159,9 @@ Entrenador IA conversacional para triatletas, runners, atletas de Hyrox y nadado
 **Perfil**
 - `EditProfile.jsx`: sección "Mis carreras" — ver, añadir y eliminar carreras desde el perfil
 
+**Deuda técnica**
+- Unificación de completar sesión (junio 2026): función canónica `completarSesion` en plans.js, eliminadas las dos implementaciones duplicadas, helpers de fechas Europe/Madrid en `lib/fechas.js`, fix del auto-import Strava del modal — 14 tests nuevos (169 totales)
+
 **Bugs resueltos**
 - BUG-01: getMondayOfCurrentWeek fallaba el domingo
 - BUG-02: handleAjustar sin feedback de error
