@@ -155,7 +155,9 @@ export default function StravaConnect({ userId, plan, onConnected, onShowUpgrade
         <p style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 10, lineHeight: 1.5 }}>
           Crea tu app gratis en{' '}
           <span style={{ color: 'var(--foreground)', fontWeight: 600 }}>strava.com/settings/api</span>
-          {' '}y pega aquí tus credenciales.
+          {' '}y pon como <span style={{ color: 'var(--foreground)', fontWeight: 600 }}>Authorization Callback Domain</span>:{' '}
+          <span style={{ color: 'var(--foreground)', fontWeight: 600 }}>app.getricoach.com</span>.
+          {' '}Luego pega aquí tus credenciales.
         </p>
         <input
           style={{
