@@ -5,7 +5,7 @@
 ## Qué es esto
 Entrenador IA conversacional para triatletas, runners y atletas de Hyrox hispanohablantes.
 App web React + Vite, backend Netlify Functions, base de datos Supabase.
-Freemium: Free (25 msg/día, plan básico) / Pro (9,99€/mes, Strava + plan adaptativo + macrociclos).
+Freemium: Free (10 msg/día, plan básico) / Pro (9,99€/mes, Strava + plan adaptativo + macrociclos).
 
 ## Stack
 - Frontend: React + Vite (JavaScript, NO TypeScript)
@@ -360,7 +360,7 @@ Backend (solo en Netlify Functions):
 
 | Feature | Free | Pro |
 |---------|------|-----|
-| Mensajes/día | 25 | 150 |
+| Mensajes/día | 10 | 30 |
 | Plan semanal | Básico | Con datos Strava |
 | Macrociclo | Sí (genérico) | Sí (con carrera) |
 | Ajuste automático | Sí | Sí |
