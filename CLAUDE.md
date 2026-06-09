@@ -197,7 +197,7 @@ tricoach-v2/
 │   │   ├── AdjustmentBanner.jsx      — banner naranja tras ajuste automático (Fase 8)
 │   │   ├── CicloCompletadoBanner.jsx — banner cuando macrociclo termina
 │   │   ├── SessionDetail.jsx
-│   │   ├── StravaConnect.jsx         — 2 estados: conectado / no conectado; OAuth usa VITE_STRAVA_CLIENT_ID global
+│   │   ├── StravaConnect.jsx         — 2 estados: conectado / no conectado; OAuth usa VITE_STRAVA_CLIENT_ID global; key={strava_token} fuerza remonte al conectar
 │   │   ├── ErrorBoundary.jsx
 │   │   └── WelcomeGuide.jsx
 │   ├── lib/
@@ -384,6 +384,19 @@ El `handleCompletar()` de Dashboard solo se usa para el picker inline de RPE en 
 Ambos flujos llaman a `checkShouldAdjust` tras guardar y disparan `autoAdjustPlan` si hay señal.
 
 Si añades lógica post-completar (auto-adjust, notificaciones, etc.) debes hacerlo en **ambos** sitios o solo en `onComplete` de WeeklyPlan y `handleCompletar` de Dashboard.
+
+### Flujo OAuth de Strava (callback)
+
+El callback llega a `app.getricoach.com/?code=XXX&state=strava`. El flujo completo vive en **App.jsx**, no en StravaConnect:
+
+1. `useEffect([], [])` de arranque — lee `?code=&state=strava`, guarda en `stravaCallbackCode`, limpia la URL
+2. `useEffect([stravaCallbackCode, session?.user?.id])` — cuando ambos están disponibles:
+   - Navega a `setCurrentScreen('profile')` para que el usuario vea la pantalla correcta
+   - Llama a `strava-auth` con el código y el `userId`
+   - En éxito: `loadOrCreateProfile` recarga el perfil con el nuevo `strava_token`
+3. `<StravaConnect key={profile?.strava_token ? 'strava-on' : 'strava-off'} …>` — el `key` fuerza el remonte cuando el token cambia de null a valor, lo que provoca que el `useEffect` interno re-consulte Supabase y muestre "✓ Strava conectado"
+
+**No mover la lógica de intercambio OAuth a StravaConnect** — vive en App.jsx intencionalmente.
 
 ### Auto-ajuste del plan
 Señales detectadas por `checkShouldAdjust(plan, profile)`:
