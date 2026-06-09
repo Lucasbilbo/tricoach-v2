@@ -1026,16 +1026,15 @@ export default function Onboarding({ userId, onComplete }) {
               <span style={{ fontSize: 11, color: 'var(--muted-foreground)', whiteSpace: 'nowrap' }}>Próximamente</span>
             </IntegracionCard>
 
-            {/* Intervals.icu — próximamente Pro */}
+            {/* Intervals.icu — disponible Pro, se conecta desde el perfil */}
             <IntegracionCard
-              disabled
               logo={<div style={{ width: 36, height: 36, fontSize: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>📊</div>}
               nombre="Intervals.icu"
-              desc="Análisis avanzado y envío al reloj"
-              badge="Próximamente · Pro"
+              desc="Wellness, sync de tu plan al calendario y envío al reloj"
+              badge="Pro"
               badgeColor="var(--primary)"
             >
-              <span style={{ fontSize: 11, color: 'var(--muted-foreground)', whiteSpace: 'nowrap' }}>Pro</span>
+              <span style={{ fontSize: 11, color: 'var(--muted-foreground)', whiteSpace: 'nowrap' }}>Desde tu perfil</span>
             </IntegracionCard>
 
             <button onClick={handleSubmit} style={{ ...PRIMARY_BTN, marginTop: 16 }}>

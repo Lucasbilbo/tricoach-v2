@@ -1,5 +1,5 @@
 # TriCoach AI — Plan de Producto
-_Versión 11.2 — Mayo 2026_
+_Versión 11.2 — actualizado junio 2026 (auditoría)_
 
 ---
 
@@ -119,6 +119,14 @@ Entrenador IA conversacional para triatletas, runners, atletas de Hyrox y nadado
 - `weekly-report.js` — informe dominical Pro + Free (upsell), URL corregida a app.getricoach.com
 - `thursday-reminder.js` — recordatorio jueves 17h UTC a usuarios sin plan (scheduled)
 
+**Macrociclos y sesiones estructuradas (training_cycles)**
+- Tabla `training_cycles` en Supabase con fases BASE → BUILD → PEAK → TAPER
+- Sesiones con estructura real: calentamiento / principal / vuelta a la calma, zona y RPE objetivo
+- Sistema de prioridades A/B/C en las carreras del perfil — la carrera A define el ciclo
+- Carrera B/C a <14 días → mini-taper / sesión de calidad en el plan semanal
+- Recálculo automático de fases del ciclo al cambiar la carrera A (`recalculate-cycle.js`)
+- Dashboard con "Semana X de Y · FASE" y timeline de fases en Progreso
+
 **Intervals.icu (completo)**
 - Wellness diario (HRV, ATL, TSB, sueño) inyectado en system prompt del coach
 - Wellness usado en generate-plan para reducir carga si hay fatiga acumulada
@@ -166,6 +174,11 @@ Entrenador IA conversacional para triatletas, runners, atletas de Hyrox y nadado
 **A — Strava Developer Program** 🔴 BLOQUEANTE
 - Solicitud enviada, pendiente aprobación
 - Sin aprobación: solo 1 atleta puede conectar Strava
+
+**B — Credenciales Strava per-user** 🟡 PARCIAL (auditoría junio 2026)
+- ✅ Migración 002 aplicada en Supabase: columnas `strava_client_id` y `strava_client_secret` en `profiles`
+- ⏳ Pendiente: `strava-auth.js` / `strava-activities.js` / `strava-sync.js` aún leen las credenciales globales de entorno
+- ⏳ Pendiente: `StravaConnect.jsx` de tres estados (sin credenciales / credenciales guardadas sin conectar / conectado)
 
 ---
 

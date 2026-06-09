@@ -1,6 +1,7 @@
 # TriCoach AI — Contexto del proyecto
 
-> Última actualización: 19 mayo 2026
+> Última actualización: 9 junio 2026
+> Última auditoría: junio 2026
 
 ## Qué es esto
 Entrenador IA conversacional para triatletas, runners y atletas de Hyrox hispanohablantes.
@@ -23,7 +24,12 @@ Freemium: Free (10 msg/día, plan básico) / Pro (9,99€/mes, Strava + plan ada
 - NO usar @supabase/supabase-js — usar REST API con https nativo
 - Validar siempre el header `x-tricoach-secret` contra `process.env.TRICOACH_SECRET` — **TODAS las funciones sin excepción**
 - Validar UUID antes de usar en queries: `const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i` — añadido en todas las funciones que reciben userId/planId
-- El modelo de Claude está fijo: `CLAUDE_MODEL = 'claude-sonnet-4-20250514'` en claude.js — nunca viene del frontend
+- El modelo de Claude está fijo: `CLAUDE_MODEL = 'claude-sonnet-4-20250514'` — nunca viene del frontend. Sigue siendo el estándar del proyecto. Inventario de archivos donde está hardcodeado (auditoría junio 2026, útil para una migración futura):
+  - `netlify/functions/claude.js:6`
+  - `netlify/functions/generate-plan.js:10`
+  - `netlify/functions/adjust-plan.js:10`
+  - `netlify/functions/coach-intro.js:11`
+  - `netlify/functions/strava-feedback.js:11`
 - No usar console.log en producción — solo console.error para errores reales
 
 Template mínimo para nueva función:
@@ -87,7 +93,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 
 ### Tests
 - Ejecutar `npm test` al terminar SIEMPRE
-- **155 tests deben pasar** — si alguno falla, arreglarlo antes de terminar
+- **155 tests deben pasar** (20 archivos — verificado en auditoría de junio 2026) — si alguno falla, arreglarlo antes de terminar
 - No borrar ni modificar tests existentes sin motivo explícito
 
 ## Estado del proyecto — Fases completadas
@@ -280,6 +286,7 @@ created_at, messages_today, last_message_date,
 personalidad ('cercano'|'estricto'|'gracioso'|'motivador'|'cientifico'),
 contexto, nombre_coach,
 strava_token, strava_refresh_token, strava_token_expires_at,
+strava_client_id, strava_client_secret (migración 002 — aplicada, ver nota Strava per-user),
 stripe_customer_id, stripe_subscription_id,
 intervals_athlete_id, intervals_api_key,
 active_cycle_id (uuid fk → training_cycles),
@@ -397,6 +404,10 @@ El callback llega a `app.getricoach.com/?code=XXX&state=strava`. El flujo comple
 3. `<StravaConnect key={profile?.strava_token ? 'strava-on' : 'strava-off'} …>` — el `key` fuerza el remonte cuando el token cambia de null a valor, lo que provoca que el `useEffect` interno re-consulte Supabase y muestre "✓ Strava conectado"
 
 **No mover la lógica de intercambio OAuth a StravaConnect** — vive en App.jsx intencionalmente.
+
+### Strava per-user — estado (auditoría junio 2026)
+- **Migración 002 APLICADA** en Supabase: columnas `strava_client_id` y `strava_client_secret` existen en `profiles` (verificado contra la REST API).
+- **Código PENDIENTE**: `strava-auth.js`, `strava-activities.js` y `strava-sync.js` siguen usando las credenciales globales `process.env.STRAVA_CLIENT_ID/SECRET`, y `StravaConnect.jsx` sigue con 2 estados usando `VITE_STRAVA_CLIENT_ID`. La lectura de credenciales por usuario y el StravaConnect de tres estados aún no están implementados.
 
 ### Auto-ajuste del plan
 Señales detectadas por `checkShouldAdjust(plan, profile)`:
