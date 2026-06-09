@@ -14,6 +14,21 @@ const CORS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS'
 };
 
+const ACTUALIZAR_PERFIL_TOOL = {
+  name: 'actualizar_perfil',
+  description: 'Guarda información relevante del atleta en su perfil. Úsala cuando el usuario mencione marcas personales (5K, 10K, maratón, etc.), lesiones actuales o pasadas, disponibilidad de entrenamiento, equipamiento, o cualquier dato que deba recordarse en futuras sesiones.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      dato: {
+        type: 'string',
+        description: 'El dato a guardar, redactado de forma concisa. Ej: "Marca 5K: 25 min", "Lesión rodilla derecha (tendinitis)", "Entrena lunes, miércoles y viernes"'
+      }
+    },
+    required: ['dato']
+  }
+};
+
 function withTimeout(promise, ms, errorMsg) {
   const timer = new Promise((_, reject) =>
     setTimeout(() => reject(new Error(errorMsg)), ms)
@@ -101,6 +116,66 @@ function supabaseRpc(hostname, path, key, body) {
   });
 }
 
+// Append new athlete data to profile.contexto under [Datos del atleta] section.
+// Reads current contexto, appends each dato with today's date, patches back to Supabase.
+async function actualizarContextoPerfil(userId, datos, hostname, supabaseKey) {
+  const perfil = await new Promise((resolve) => {
+    const req = https.request({
+      hostname,
+      path: `/rest/v1/profiles?id=eq.${userId}&select=contexto`,
+      method: 'GET',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json'
+      }
+    }, (r) => {
+      let d = '';
+      r.on('data', chunk => d += chunk);
+      r.on('end', () => { try { resolve(JSON.parse(d)[0]); } catch { resolve(null); } });
+    });
+    req.on('error', () => resolve(null));
+    req.end();
+  });
+
+  if (!perfil) return;
+
+  const hoy = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
+  let contexto = (perfil.contexto || '').trimEnd();
+
+  for (const dato of datos) {
+    const linea = `${dato} (actualizado ${hoy})`;
+    if (contexto.includes('[Datos del atleta]')) {
+      contexto = contexto + '\n' + linea;
+    } else {
+      const sep = contexto ? '\n\n' : '';
+      contexto = contexto + sep + '[Datos del atleta]\n' + linea;
+    }
+  }
+
+  const patchBody = JSON.stringify({ contexto });
+  await new Promise((resolve) => {
+    const req = https.request({
+      hostname,
+      path: `/rest/v1/profiles?id=eq.${userId}`,
+      method: 'PATCH',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(patchBody),
+        'Prefer': 'return=minimal'
+      }
+    }, (r) => {
+      r.on('data', () => {});
+      r.on('end', resolve);
+    });
+    req.on('error', resolve);
+    req.write(patchBody);
+    req.end();
+  });
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS, body: 'Method Not Allowed' };
@@ -134,7 +209,11 @@ exports.handler = async (event) => {
   }
 
   // ── Rate limiting via atomic Supabase RPC ──
+  // Hoist supabase connection vars so tool_use handler can reuse them below
   const { userId } = parsed;
+  let supabaseHostname = null;
+  let supabaseServiceKey = null;
+
   if (userId) {
     const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!UUID_REGEX.test(userId)) {
@@ -142,14 +221,14 @@ exports.handler = async (event) => {
     }
 
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
-    const hostname = new URL(supabaseUrl).hostname;
+    supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+    supabaseHostname = new URL(supabaseUrl).hostname;
 
     // Read plan to determine the right limit, then atomically increment
     // Both Supabase calls are wrapped with a 5s timeout — if Supabase is slow the handler
     // must not hang until Netlify's 26s function timeout kills the request.
     const profile = await withTimeout(
-      supabaseGet(hostname, `/rest/v1/profiles?id=eq.${userId}&select=plan`, supabaseKey),
+      supabaseGet(supabaseHostname, `/rest/v1/profiles?id=eq.${userId}&select=plan`, supabaseServiceKey),
       5000,
       'Supabase profile timeout'
     ).catch(() => null);
@@ -161,7 +240,7 @@ exports.handler = async (event) => {
 
       // Single atomic operation: increment if under limit, reset if new day, return -1 if blocked
       const newCount = await withTimeout(
-        supabaseRpc(hostname, '/rest/v1/rpc/increment_messages_today', supabaseKey, { p_user_id: userId, p_limit: limit, p_today: today }),
+        supabaseRpc(supabaseHostname, '/rest/v1/rpc/increment_messages_today', supabaseServiceKey, { p_user_id: userId, p_limit: limit, p_today: today }),
         5000,
         'Supabase RPC timeout'
       ).catch(() => null);
@@ -199,10 +278,44 @@ exports.handler = async (event) => {
     messages: finalMessages,
     model: CLAUDE_MODEL,
     max_tokens: CLAUDE_MAX_TOKENS,
+    tools: [ACTUALIZAR_PERFIL_TOOL],
   });
 
   try {
-    return await withTimeout(callClaude(ANTHROPIC_KEY, body), 25000, 'Claude timeout');
+    const claudeResult = await withTimeout(callClaude(ANTHROPIC_KEY, body), 25000, 'Claude timeout');
+
+    // ── Handle tool_use: actualizar_perfil ──────────────────────────────────
+    if (claudeResult.statusCode === 200 && userId && supabaseHostname) {
+      let claudeParsed;
+      try { claudeParsed = JSON.parse(claudeResult.body); } catch { claudeParsed = null; }
+
+      if (claudeParsed) {
+        const toolUseBlocks = (claudeParsed.content || []).filter(
+          b => b.type === 'tool_use' && b.name === 'actualizar_perfil'
+        );
+
+        if (toolUseBlocks.length > 0) {
+          const datos = toolUseBlocks.map(b => b.input?.dato).filter(Boolean);
+
+          // Await with tight timeout — Netlify function must complete before returning
+          await Promise.race([
+            actualizarContextoPerfil(userId, datos, supabaseHostname, supabaseServiceKey),
+            new Promise(resolve => setTimeout(resolve, 2000))
+          ]).catch(() => {});
+
+          // Return only text blocks — strip tool_use from the response
+          const textContent = (claudeParsed.content || []).filter(b => b.type === 'text');
+          if (textContent.length > 0) {
+            return {
+              ...claudeResult,
+              body: JSON.stringify({ ...claudeParsed, content: textContent, stop_reason: 'end_turn' })
+            };
+          }
+        }
+      }
+    }
+
+    return claudeResult;
   } catch (e) {
     if (e.message === 'Claude timeout') {
       return { statusCode: 408, headers: CORS, body: JSON.stringify({ error: 'El coach tardó demasiado en responder. Inténtalo de nuevo.' }) };
