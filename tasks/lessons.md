@@ -59,6 +59,13 @@ Solo añadir año si la edición es futura y concreta (Valencia diciembre 2026).
 
 ---
 
+## 2026-06-09 — Migración aplicada ≠ código implementado
+
+**Lección:** Una migración aplicada en Supabase no implica que el código que la usa exista — verificar siempre el código real, no el contexto de conversaciones.
+**Caso:** migración 002 Strava (columnas `strava_client_id`/`strava_client_secret`) aplicada en Supabase sin que ninguna función ni componente la usara (junio 2026). La documentación daba el modelo per-user por implementado. Finalmente el modelo per-user se descartó (límite Strava ampliado a 10 atletas) y las columnas quedaron obsoletas.
+
+---
+
 ## Patrones de código estándar para Netlify Functions
 
 ```javascript

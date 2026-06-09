@@ -286,7 +286,7 @@ created_at, messages_today, last_message_date,
 personalidad ('cercano'|'estricto'|'gracioso'|'motivador'|'cientifico'),
 contexto, nombre_coach,
 strava_token, strava_refresh_token, strava_token_expires_at,
-strava_client_id, strava_client_secret (migración 002 — aplicada, ver nota Strava per-user),
+strava_client_id, strava_client_secret (migración 002 — OBSOLETAS, sin uso; per-user descartado),
 stripe_customer_id, stripe_subscription_id,
 intervals_athlete_id, intervals_api_key,
 active_cycle_id (uuid fk → training_cycles),
@@ -405,9 +405,10 @@ El callback llega a `app.getricoach.com/?code=XXX&state=strava`. El flujo comple
 
 **No mover la lógica de intercambio OAuth a StravaConnect** — vive en App.jsx intencionalmente.
 
-### Strava per-user — estado (auditoría junio 2026)
-- **Migración 002 APLICADA** en Supabase: columnas `strava_client_id` y `strava_client_secret` existen en `profiles` (verificado contra la REST API).
-- **Código PENDIENTE**: `strava-auth.js`, `strava-activities.js` y `strava-sync.js` siguen usando las credenciales globales `process.env.STRAVA_CLIENT_ID/SECRET`, y `StravaConnect.jsx` sigue con 2 estados usando `VITE_STRAVA_CLIENT_ID`. La lectura de credenciales por usuario y el StravaConnect de tres estados aún no están implementados.
+### Strava — modelo de credenciales (cerrado junio 2026)
+- Strava amplió el límite de la app a **10 atletas conectados** → el modelo per-user queda **DESCARTADO definitivamente**.
+- El modelo definitivo es el actual: credenciales globales en env — `STRAVA_CLIENT_ID/SECRET` en backend y `VITE_STRAVA_CLIENT_ID` en frontend.
+- ⚠️ Las columnas `strava_client_id`/`strava_client_secret` de `profiles` (migración 002) están **OBSOLETAS y sin uso** — no implementar lógica per-user sobre ellas.
 
 ### Auto-ajuste del plan
 Señales detectadas por `checkShouldAdjust(plan, profile)`:

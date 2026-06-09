@@ -92,6 +92,7 @@ Entrenador IA conversacional para triatletas, runners, atletas de Hyrox y nadado
 - Actividades visibles en Progreso + en system prompt del coach
 - Sección Strava omitida del system prompt si no hay datos
 - Solo disponible para usuarios Pro
+- Strava: acceso con límite de 10 atletas conectados. Modelo de credenciales globales (env) es el definitivo. Per-user credentials descartado (junio 2026)
 
 **Diseño**
 - Dark theme premium, BottomNav fija SVG, headers sticky
@@ -171,14 +172,9 @@ Entrenador IA conversacional para triatletas, runners, atletas de Hyrox y nadado
 
 ## 🔴 PENDIENTES INMEDIATOS
 
-**A — Strava Developer Program** 🔴 BLOQUEANTE
-- Solicitud enviada, pendiente aprobación
-- Sin aprobación: solo 1 atleta puede conectar Strava
-
-**B — Credenciales Strava per-user** 🟡 PARCIAL (auditoría junio 2026)
-- ✅ Migración 002 aplicada en Supabase: columnas `strava_client_id` y `strava_client_secret` en `profiles`
-- ⏳ Pendiente: `strava-auth.js` / `strava-activities.js` / `strava-sync.js` aún leen las credenciales globales de entorno
-- ⏳ Pendiente: `StravaConnect.jsx` de tres estados (sin credenciales / credenciales guardadas sin conectar / conectado)
+**A — Strava Developer Program** 🟡
+- Límite actual ampliado a 10 atletas conectados (suficiente para el lanzamiento cerrado)
+- Para escalar más allá de 10: pendiente aprobación del Developer Program
 
 ---
 
