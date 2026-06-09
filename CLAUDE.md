@@ -197,7 +197,7 @@ tricoach-v2/
 │   │   ├── AdjustmentBanner.jsx      — banner naranja tras ajuste automático (Fase 8)
 │   │   ├── CicloCompletadoBanner.jsx — banner cuando macrociclo termina
 │   │   ├── SessionDetail.jsx
-│   │   ├── StravaConnect.jsx
+│   │   ├── StravaConnect.jsx         — 2 estados: conectado / no conectado; OAuth usa VITE_STRAVA_CLIENT_ID global
 │   │   ├── ErrorBoundary.jsx
 │   │   └── WelcomeGuide.jsx
 │   ├── lib/
@@ -251,9 +251,9 @@ tricoach-v2/
 │       ├── create-cycle.js          — crea macrociclo de entrenamiento (idempotente)
 │       ├── recalculate-cycle.js     — recalcula fases del ciclo tras cambio de carrera
 │       ├── coach-intro.js           — mensaje de bienvenida del coach
-│       ├── strava-auth.js           — OAuth Strava
-│       ├── strava-activities.js     — actividades Strava + refresh token
-│       ├── strava-sync.js           — sincronización automática sesiones Strava → plan
+│       ├── strava-auth.js           — OAuth Strava (usa STRAVA_CLIENT_ID/SECRET globales, no per-user)
+│       ├── strava-activities.js     — actividades Strava + refresh token (credenciales globales)
+│       ├── strava-sync.js           — sincronización automática sesiones Strava → plan (credenciales globales)
 │       ├── strava-match-activity.js — match actividad Strava con sesión del plan
 │       ├── strava-feedback.js       — feedback automático post-entreno (Pro, fire-and-forget)
 │       ├── intervals.js             — integración Intervals.icu (GET/POST/DELETE)
@@ -344,14 +344,14 @@ created_at
 Frontend (VITE_*):
 - VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
 - VITE_TRICOACH_SECRET
-- VITE_STRAVA_CLIENT_ID, VITE_STRAVA_REDIRECT_URI
+- VITE_STRAVA_CLIENT_ID, VITE_STRAVA_REDIRECT_URI  ← credenciales globales TriCoach (no per-user)
 - VITE_STRIPE_PUBLISHABLE_KEY
 
 Backend (solo en Netlify Functions):
 - SUPABASE_URL, SUPABASE_SERVICE_KEY
 - ANTHROPIC_API_KEY
 - TRICOACH_SECRET
-- STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET, STRAVA_REDIRECT_URI
+- STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET, STRAVA_REDIRECT_URI  ← credenciales globales TriCoach (no per-user)
 - STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
 - STRIPE_PRICE_MONTHLY, STRIPE_PRICE_ANNUAL
 - RESEND_API_KEY
