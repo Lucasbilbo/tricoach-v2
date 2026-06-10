@@ -12,7 +12,7 @@ Freemium: Free (10 msg/día, plan básico) / Pro (9,99€/mes, Strava + plan ada
 - Frontend: React + Vite (JavaScript, NO TypeScript)
 - Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co) — RLS activado
 - Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
-- Tests: Vitest — **185 tests pasando** (24 archivos) + Playwright E2E (3 specs)
+- Tests: Vitest — **201 tests pasando** (27 archivos) + Playwright E2E (3 specs)
 - Deploy: Netlify (producción: https://tricoach-v2.netlify.app)
 - Pagos: Stripe (checkout + webhooks)
 - Email: Resend (coach@getricoach.com)
@@ -90,8 +90,25 @@ Reglas: si tocas un lado, toca el otro (el test de paridad te lo recordará). `n
 - Antes de generar, comprueba si ya existe plan para `(user_id, semana)`:
   - existe y sin `forzar` → devuelve el existente con `{ ya_existe: true }` **sin llamar a Claude**.
   - existe y con `forzar: true` → genera y hace PATCH sobre la fila existente (conserva el id).
-- `forzar: true` se usa en: regeneración explícita del usuario (WeeklyPlan `handleGenerarPlan`) y migración de formato antiguo (App.jsx). El auto-regen del jueves va sin forzar.
-- **Migración 003 PENDIENTE de ejecutar a mano** (`supabase/migrations/003_unique_plan_semana.sql`): limpia duplicados reales (8 pares detectados en auditoría) y añade `UNIQUE (user_id, semana)`. ⚠️ Ejecutar en el SQL Editor ANTES de lanzar la Fase 1 (cron).
+- `forzar: true` se usa en: regeneración explícita del usuario (WeeklyPlan `handleGenerarPlan`) y migración de formato antiguo (App.jsx). El auto-regen del jueves y el cron auto-plans van sin forzar.
+- **Migración 003 EJECUTADA** ✅ (verificado vía REST 10-jun-2026: 0 duplicados sobre 30 planes) — `UNIQUE (user_id, semana)` activo en producción.
+
+### Generación automática semanal — auto-plans.js (Fase 1, junio 2026)
+- **Cron**: lunes 03:00 UTC (`0 3 * * 1` en netlify.toml) = 04:00/05:00 Madrid — fuera de la ventana de peligro DST (domingo 22-24h UTC).
+- **Flujo por usuario elegible** (Pro + `training_cycle` activo + no borrado): `syncUsuario()` de strava-sync (adherencia fresca, bloqueante) → POST interno a generate-plan con `fechaInicio` explícito (lunes Madrid de `lib/fechas.js`) y SIN `forzar` (si el plan ya existe → `ya_existe`, coste cero).
+- **Camino interno de generate-plan**: header `x-internal-secret` === env `INTERNAL_API_SECRET`. Solo en ese camino y tras guardar con éxito: email Resend "Tu plan de esta semana está listo 🏃" (`lib/email.js`) y limpieza de `profiles.contexto_proxima_semana` si se consumió. Sin el header válido, generate-plan se comporta exactamente como siempre.
+- **Degradación**: el orquestador envía también `x-tricoach-secret` como fallback — si `INTERNAL_API_SECRET` no existe aún en Netlify, los planes se generan igual (sin email ni limpieza de nota). Si la migración 004 no está ejecutada, el cron funciona sin notas (catch del 42703).
+- **Notas del usuario**: card "Notas para la próxima semana" en WeeklyPlan (vista próxima semana) → `profiles.contexto_proxima_semana` → el cron la pasa como `contexto_semana` y se limpia tras usarla (lo temporal no sangra a semanas futuras).
+- **Resumen en logs**: `[auto-plans] semana=… elegibles=N generados=X ya_existian=Y pendientes=W fallos=Z` — "pendientes" = generaciones disparadas cuya respuesta no llegó dentro del presupuesto de ~20s del orquestador (la petición ya está entregada; generate-plan termina por su cuenta).
+
+#### ⚠️ Acciones manuales pendientes (Fase 1)
+1. **Crear `INTERNAL_API_SECRET`** en las env de Netlify (valor aleatorio largo, p. ej. `openssl rand -hex 32`). Sin ella: planes sí, emails y limpieza de notas no.
+2. **Ejecutar migración 004** (`supabase/migrations/004_contexto_proxima_semana.sql`) en el SQL Editor. Sin ella: el cron funciona pero ignora las notas y la card de WeeklyPlan dará error al guardar.
+
+#### Cómo probar el orquestador
+- **Local**: `netlify dev` en una terminal y `netlify functions:invoke auto-plans` en otra (usa el `.env` local; las invocaciones a generate-plan irán a localhost:8888).
+- **Smoke inocuo en producción** (coste cero, no escribe): pedir la generación de la semana ACTUAL sin forzar para un usuario que ya tiene plan → debe responder `{ ya_existe: true }` sin llamar a Claude:
+  `curl -s -X POST https://app.getricoach.com/.netlify/functions/generate-plan -H "Content-Type: application/json" -H "x-internal-secret: $INTERNAL_API_SECRET" -d '{"userId":"<tu-uuid>","fechaInicio":"<lunes-actual>"}'`
 
 ### Soft delete (delete-account.js)
 `delete-account.js` NO borra el registro de `profiles` — hace `PATCH {deleted_at: now()}`.
@@ -111,7 +128,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 
 ### Tests
 - Ejecutar `npm test` al terminar SIEMPRE
-- **185 tests deben pasar** (24 archivos — actualizado junio 2026) — si alguno falla, arreglarlo antes de terminar
+- **201 tests deben pasar** (27 archivos — actualizado junio 2026) — si alguno falla, arreglarlo antes de terminar
 - No borrar ni modificar tests existentes sin motivo explícito
 
 ## Estado del proyecto — Fases completadas
@@ -264,6 +281,9 @@ tricoach-v2/
 │   │   ├── wellness.test.js           (7 tests) — umbrales + paridad ESM↔CJS
 │   │   ├── volumen.test.js            (6 tests) — criterio volumen + paridad ESM↔CJS
 │   │   ├── planes-idempotencia.test.js (3 tests) — decidirAccionPlan
+│   │   ├── fechas-madrid.test.js      (6 tests) — lunes Madrid verano/invierno + bordes DST
+│   │   ├── auto-plans.test.js         (7 tests) — elegibles + body interno sin forzar
+│   │   ├── email-plan-listo.test.js   (3 tests) — HTML del email del cron
 │   │   ├── phase8.test.jsx            (4 tests)
 │   │   ├── phase10.test.jsx           (4 tests)
 │   │   ├── phase105.test.jsx          (5 tests)
@@ -276,7 +296,8 @@ tricoach-v2/
 │   └── main.jsx
 ├── netlify/
 │   └── functions/
-│       ├── lib/                     — código compartido CJS (NO son functions): wellness.js, volumen.js, planes.js
+│       ├── lib/                     — código compartido CJS (NO son functions): wellness.js, volumen.js, planes.js, fechas.js, email.js
+│       ├── auto-plans.js            — orquestador generación automática [SCHEDULED: lunes 03:00 UTC]
 │       ├── claude.js                — chat Claude, rate limiting atómico (RPC)
 │       ├── adjust-plan.js           — ajusta plan (lesión/viaje/sobrecarga/sesiones_perdidas + signal)
 │       ├── generate-plan.js         — genera plan semanal (estructura real, macrociclo, idempotente + forzar)
@@ -320,6 +341,7 @@ fc_maxima, pace_5k, ftp_bici, peso, edad,
 deportes (jsonb — array multi-deporte),
 carreras (jsonb — array de carreras objetivo),
 objetivo_nutricional, preferencias_alimentarias, intolerancias,
+contexto_proxima_semana (text — nota semanal para el cron; migración 004 ⚠️ PENDIENTE),
 deleted_at (timestamptz — soft delete, requiere migración si no existe)
 ```
 
@@ -388,6 +410,7 @@ Backend (solo en Netlify Functions):
 - STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
 - STRIPE_PRICE_MONTHLY, STRIPE_PRICE_ANNUAL
 - RESEND_API_KEY
+- INTERNAL_API_SECRET  ← camino server-to-server de generate-plan (⚠️ PENDIENTE de crear en Netlify)
 
 ## Diferenciación Free vs Pro
 
@@ -464,7 +487,7 @@ Helpers canónicos en `src/lib/fechas.js` — usar SIEMPRE estos, no reimplement
 Usados en `WeeklyPlan.jsx` y `autoAdjust.js`. `buildSystemPrompt.js` mantiene su copia interna deliberadamente (cubierto por 32 tests, no tocar sin motivo).
 Al abrir `ModalCompletarSesion`, WeeklyPlan adjunta `fecha` a la sesión (`{ ...sesion, fecha: sesionFecha }`) — necesario para el auto-import de Strava del modal.
 
-## Tests — 185 pasando (24 archivos) + 3 specs E2E Playwright
+## Tests — 201 pasando (27 archivos) + 3 specs E2E Playwright
 
 Tests más pesados (referencia rápida):
 - `systemPrompt.test.js` — buildSystemPrompt (32 tests)

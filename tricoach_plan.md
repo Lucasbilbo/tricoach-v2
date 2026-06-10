@@ -170,6 +170,15 @@ Entrenador IA conversacional para triatletas, runners, atletas de Hyrox y nadado
 - Bugs del informe de flujo de datos corregidos: `activeCycle.fecha_carrera` inexistente → fecha real desde profile.carreras; wellness del generador con fecha Madrid en vez de UTC
 - 16 tests nuevos (185 totales)
 
+**Fase 1 — Generación automática semanal (junio 2026)** ✅
+- `auto-plans.js` scheduled: lunes 03:00 UTC (04:00/05:00 Madrid, fuera de la ventana de peligro DST)
+- Elegibles: Pro + training_cycle activo + no borrado; por usuario: syncUsuario (adherencia fresca) → generate-plan interno sin forzar (idempotente — si ya existe plan, coste cero)
+- Camino interno de generate-plan (`x-internal-secret` / env `INTERNAL_API_SECRET`): email Resend "Tu plan de esta semana está listo 🏃" + limpieza de la nota semanal tras consumirla
+- Card "Notas para la próxima semana" en WeeklyPlan → `profiles.contexto_proxima_semana` (migración 004)
+- Migración 003 (UNIQUE user_id+semana) ejecutada y verificada en producción
+- `lib/fechas.js` CJS (lunes Madrid testeado en verano/invierno y bordes DST) + `lib/email.js` reutilizable
+- 16 tests nuevos (201 totales)
+
 **Bugs resueltos**
 - BUG-01: getMondayOfCurrentWeek fallaba el domingo
 - BUG-02: handleAjustar sin feedback de error
@@ -187,14 +196,10 @@ Entrenador IA conversacional para triatletas, runners, atletas de Hyrox y nadado
 - Límite actual ampliado a 10 atletas conectados (suficiente para el lanzamiento cerrado)
 - Para escalar más allá de 10: pendiente aprobación del Developer Program
 
-**B — Fase 1: generación automática semanal de planes**
-- ⚠️ Requisito previo: ejecutar `003_unique_plan_semana.sql` en el SQL Editor (idempotencia)
-- Scheduled function orquestadora: cron lunes 03:00 UTC (`0 3 * * 1` — ya es lunes en Madrid todo el año)
-- Elegibles: solo Pro con ciclo activo y perfil no borrado
-- Por usuario: `syncUsuario()` de strava-sync (adherencia fresca) → generate-plan sin `forzar` (idempotente) — fetches con await en lotes, nunca fire-and-forget
-- Email Resend "Tu plan de la semana ya está listo" tras generar
-- `contexto_semana` opcional aportable antes del lunes, que se limpia tras usarse
-- Base lista de Fase 0: idempotencia, wellness compartido, datos de rendimiento, syncUsuario exportado
+**B — Fase 1: puesta en marcha (acciones manuales pendientes)**
+- ⚠️ Crear `INTERNAL_API_SECRET` en las env de Netlify (sin ella: los planes se generan igual, pero sin email ni limpieza de notas)
+- ⚠️ Ejecutar `004_contexto_proxima_semana.sql` en el SQL Editor (sin ella: el cron funciona pero ignora las notas)
+- Prueba controlada antes del primer lunes: ver "Cómo probar el orquestador" en CLAUDE.md
 
 ---
 

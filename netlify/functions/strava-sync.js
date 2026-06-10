@@ -1,5 +1,6 @@
 const https = require('https');
 const { calcularVolumenReal } = require('./lib/volumen');
+const { getMondayOfCurrentWeek } = require('./lib/fechas');
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -22,16 +23,6 @@ const STRAVA_TIPO_MAP = {
   Workout: 'Fuerza',
   Crossfit: 'Fuerza',
 };
-
-// sv-SE locale gives YYYY-MM-DD in Madrid timezone; T12:00:00Z anchors to noon UTC (safe across DST)
-function getMondayOfCurrentWeek() {
-  const madridDateStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
-  const d = new Date(madridDateStr + 'T12:00:00Z');
-  const day = d.getUTCDay(); // 0=Dom, 1=Lun, ...
-  const diff = day === 0 ? -6 : 1 - day;
-  d.setUTCDate(d.getUTCDate() + diff);
-  return d.toISOString().split('T')[0];
-}
 
 function supabaseRequest(method, path, body, supabaseUrl, supabaseKey) {
   return new Promise((resolve, reject) => {

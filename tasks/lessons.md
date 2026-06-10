@@ -91,6 +91,14 @@ tricoach_plan.md decía que strava-feedback se disparaba desde strava-sync; en e
 
 ---
 
+## 2026-06-10 — Fase 1: degradación con gracia en flujos automáticos
+
+**Patrón:** un cron que depende de configuración manual (env vars, migraciones) no debe fallar en bloque si esa configuración falta — debe degradar. auto-plans envía `x-internal-secret` Y `x-tricoach-secret` (sin INTERNAL_API_SECRET los planes se generan igual, solo se pierden email y limpieza de nota), y si la columna `contexto_proxima_semana` no existe (42703), reintenta el SELECT sin ella.
+**Patrón:** "disparo con espera acotada" — en serverless, fire-and-forget puro puede morir con la lambda; esperar la respuesta completa puede pasarse del límite de 26s. El término medio: resolver al flush de la petición (entrega garantizada) y esperar la respuesta solo hasta un deadline; el resumen de logs degrada de "generado/ya_existía" a "pendiente" en vez de perderse.
+**Lección:** los flujos sin usuario delante necesitan que CADA dependencia tenga modo degradado y quede visible en logs — no hay nadie mirando un toast de error un lunes a las 5 de la mañana.
+
+---
+
 ## Patrones de código estándar para Netlify Functions
 
 ```javascript

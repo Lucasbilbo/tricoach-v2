@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
 import { generatePlan, getPlanForWeek, getNextWeekStart, adjustPlan, autoAdjustPlan, analizarPlan } from '../lib/plans'
 import { getFechaSesion, getHoyMadrid } from '../lib/fechas'
 import { checkShouldAdjust } from '../lib/autoAdjust'
@@ -49,6 +50,9 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
   const [errorToast, setErrorToast] = useState(null)
   const [showCoachBadge, setShowCoachBadge] = useState(false)
   const [sesionParaCompletar, setSesionParaCompletar] = useState(null)
+  const [notaProximaSemana, setNotaProximaSemana] = useState(profile?.contexto_proxima_semana || '')
+  const [guardandoNota, setGuardandoNota] = useState(false)
+  const [notaGuardada, setNotaGuardada] = useState(false)
   const [ajustando, setAjustando] = useState(false)
   const [ajusteBanner, setAjusteBanner] = useState(null) // { reason, mensaje }
   const [diaInicio, setDiaInicio] = useState(String(_todayDate.getDate()))
@@ -174,6 +178,26 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
     setPendingFechaInicio(fechaInicio)
     setContextoSemana('')
     setShowContextModal(true)
+  }
+
+  async function guardarNotaProximaSemana() {
+    setGuardandoNota(true)
+    setNotaGuardada(false)
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ contexto_proxima_semana: notaProximaSemana.trim() || null })
+        .eq('id', userId)
+      if (error) {
+        console.error('[WeeklyPlan] error guardando nota próxima semana:', error.message)
+        setErrorToast('No se pudo guardar la nota. Inténtalo de nuevo.')
+      } else {
+        setNotaGuardada(true)
+        setTimeout(() => setNotaGuardada(false), 3000)
+      }
+    } finally {
+      setGuardandoNota(false)
+    }
   }
 
   async function handleAjustar(motivo, descripcion = '') {
@@ -815,6 +839,64 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
             >
               {generandoSiguiente ? 'Generando...' : 'Generar plan próxima semana'}
             </button>
+          </div>
+        )}
+
+        {/* Notas para la próxima semana — el coach las usa al generar el plan del lunes */}
+        {viendoProxima && !loadingProxima && (
+          <div style={{
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+            borderRadius: 10,
+            padding: '12px 14px',
+            marginBottom: 12,
+          }}>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted-foreground)', marginBottom: 6 }}>
+              Notas para la próxima semana
+            </p>
+            <textarea
+              value={notaProximaSemana}
+              onChange={e => setNotaProximaSemana(e.target.value)}
+              placeholder="Ej: estoy de viaje de miércoles a viernes, solo tendré gimnasio del hotel"
+              rows={2}
+              maxLength={500}
+              style={{
+                width: '100%',
+                background: 'var(--input)',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                color: 'var(--foreground)',
+                fontFamily: 'var(--font-sans)',
+                fontSize: 13,
+                padding: '8px 10px',
+                resize: 'none',
+                boxSizing: 'border-box',
+                marginBottom: 8,
+              }}
+            />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+              <span style={{ fontSize: 11, color: 'var(--muted-foreground)', lineHeight: 1.4 }}>
+                Tu coach las tendrá en cuenta al generar el plan del lunes
+              </span>
+              <button
+                onClick={guardarNotaProximaSemana}
+                disabled={guardandoNota}
+                style={{
+                  background: notaGuardada ? 'oklch(0.45 0.2 140)' : 'var(--secondary)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                  color: notaGuardada ? '#fff' : 'var(--foreground)',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  padding: '6px 14px',
+                  cursor: guardandoNota ? 'not-allowed' : 'pointer',
+                  fontFamily: 'var(--font-sans)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {guardandoNota ? 'Guardando...' : notaGuardada ? '✓ Guardada' : 'Guardar'}
+              </button>
+            </div>
           </div>
         )}
 

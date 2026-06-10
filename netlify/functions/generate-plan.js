@@ -1,6 +1,8 @@
 const https = require('https');
 const { evaluarWellness } = require('./lib/wellness');
 const { decidirAccionPlan } = require('./lib/planes');
+const { getMondayOfCurrentWeek, getHoyMadrid } = require('./lib/fechas');
+const { sendEmail, buildPlanListoHtml } = require('./lib/email');
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -11,21 +13,7 @@ const CORS = {
 const FUNCTION_SECRET = process.env.TRICOACH_SECRET;
 const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
 
-function getTodayDate() {
-  // sv-SE locale gives YYYY-MM-DD in Madrid timezone (avoids UTC date mismatch late at night)
-  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
-}
-
-function getMondayOfCurrentWeek() {
-  // sv-SE locale gives the correct local date in Madrid (handles UTC+1 winter / UTC+2 summer)
-  // T12:00:00Z anchors to noon UTC so getUTCDay() is always the same day as the Madrid date
-  const madridDateStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
-  const d = new Date(madridDateStr + 'T12:00:00Z');
-  const day = d.getUTCDay(); // 0=Dom, 1=Lun, ..., 6=Sáb
-  const diff = day === 0 ? -6 : 1 - day;
-  d.setUTCDate(d.getUTCDate() + diff);
-  return d.toISOString().split('T')[0];
-}
+const getTodayDate = getHoyMadrid; // alias histórico — fechas Madrid desde lib/fechas
 
 function getDiasDesdeDate(startStr, mondayStr) {
   const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -574,11 +562,17 @@ exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS, body: 'Method Not Allowed' };
 
+  // Auth: camino normal (x-tricoach-secret, frontend) o camino interno server-to-server
+  // (x-internal-secret === INTERNAL_API_SECRET, usado por el orquestador auto-plans).
+  // Sin header interno válido, el comportamiento es exactamente el de siempre.
+  const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET;
+  const esInterno = !!INTERNAL_SECRET && event.headers['x-internal-secret'] === INTERNAL_SECRET;
+
   const secret = event.headers['x-tricoach-secret'];
   if (!FUNCTION_SECRET) {
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Server misconfigured' }) };
   }
-  if (secret !== FUNCTION_SECRET) {
+  if (!esInterno && secret !== FUNCTION_SECRET) {
     return { statusCode: 401, headers: CORS, body: JSON.stringify({ error: 'Unauthorized' }) };
   }
 
@@ -606,7 +600,7 @@ exports.handler = async (event) => {
   // Obtener perfil del usuario (incluyendo Strava, multi-deporte y datos de rendimiento)
   const profiles = await supabaseGet(
     hostname,
-    `/rest/v1/profiles?id=eq.${userId}&select=deporte,nivel,objetivo,fecha_carrera,contexto,strava_token,strava_refresh_token,strava_token_expires_at,plan,created_at,deportes,carreras,intervals_athlete_id,intervals_api_key,fc_maxima,pace_5k,ftp_bici,peso`,
+    `/rest/v1/profiles?id=eq.${userId}&select=email,nombre,deporte,nivel,objetivo,fecha_carrera,contexto,strava_token,strava_refresh_token,strava_token_expires_at,plan,created_at,deportes,carreras,intervals_athlete_id,intervals_api_key,fc_maxima,pace_5k,ftp_bici,peso`,
     supabaseKey
   );
 
@@ -1025,6 +1019,24 @@ IMPORTANTE: El campo contexto puede contener información de semanas anteriores 
     : await supabasePost(hostname, '/rest/v1/plans', supabaseKey, planRecord);
 
   const plan = Array.isArray(saved) ? saved[0] : saved;
+
+  // Camino interno (cron auto-plans): email "plan listo" + limpieza de la nota semanal.
+  // Solo tras guardado con éxito; el fallo del email NO revierte el plan.
+  if (esInterno && plan?.id) {
+    if (parsed.limpiar_contexto === true) {
+      await supabasePatch(hostname, `/rest/v1/profiles?id=eq.${userId}`, supabaseKey, { contexto_proxima_semana: null });
+    }
+    if (parsed.notificar === true && profile.email) {
+      const emailResult = await sendEmail(
+        profile.email,
+        'Tu plan de esta semana está listo 🏃',
+        buildPlanListoHtml(profile.nombre, planData.sesiones, volumenPlanificado)
+      );
+      if (emailResult.status >= 300) {
+        console.error(`[generate-plan] email plan-listo falló (status ${emailResult.status}) para user ${userId}`);
+      }
+    }
+  }
 
   // Disparar sync Intervals sin await — fire-and-forget para no bloquear el return
   if (profile.intervals_athlete_id && profile.intervals_api_key) {
