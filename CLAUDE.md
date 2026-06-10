@@ -104,7 +104,7 @@ Reglas: si tocas un lado, toca el otro (el test de paridad te lo recordará). `n
 #### Fase 1 — puesta en marcha completada ✅ (10 junio 2026)
 - `INTERNAL_API_SECRET` creada en Netlify y verificada en producción (smoke: `ya_existe` en ~2s solo con `x-internal-secret`).
 - Migración 004 aplicada y verificada vía REST (columna `contexto_proxima_semana` existe).
-- Prueba end-to-end del orquestador ejecutada en local contra producción: `elegibles=2 ya_existian=1 pendientes=1` → plan real generado con contexto de macrociclo + email Resend entregado. Primer cron real: lunes 15 junio 03:00 UTC.
+- Prueba end-to-end del orquestador ejecutada en local contra producción: `elegibles=2 ya_existian=1 pendientes=1` → plan real generado con contexto de macrociclo + email Resend entregado y **HTML verificado en bandeja real** (render correcto). Primer cron real: lunes 15 junio 03:00 UTC.
 
 #### Cómo probar el orquestador
 - **Local**: `netlify dev` en una terminal y `netlify functions:invoke auto-plans` en otra (usa el `.env` local; las invocaciones a generate-plan irán a localhost:8888).

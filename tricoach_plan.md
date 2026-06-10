@@ -176,7 +176,7 @@ Entrenador IA conversacional para triatletas, runners, atletas de Hyrox y nadado
 - Camino interno de generate-plan (`x-internal-secret` / env `INTERNAL_API_SECRET`): email Resend "Tu plan de esta semana está listo 🏃" + limpieza de la nota semanal tras consumirla
 - Card "Notas para la próxima semana" en WeeklyPlan → `profiles.contexto_proxima_semana` (migración 004 aplicada ✅)
 - Migraciones 003 y 004 ejecutadas y verificadas en producción; `INTERNAL_API_SECRET` creada en Netlify
-- Prueba end-to-end verificada (10 jun): smoke `ya_existe` en prod + orquestador local → plan real generado + email entregado
+- Prueba end-to-end verificada (10 jun): smoke `ya_existe` en prod + orquestador local → plan real generado + email entregado con HTML renderizando correcto en bandeja real
 - `lib/fechas.js` CJS (lunes Madrid testeado en verano/invierno y bordes DST) + `lib/email.js` reutilizable
 - 16 tests nuevos (201 totales)
 
