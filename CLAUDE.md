@@ -101,9 +101,10 @@ Reglas: si tocas un lado, toca el otro (el test de paridad te lo recordará). `n
 - **Notas del usuario**: card "Notas para la próxima semana" en WeeklyPlan (vista próxima semana) → `profiles.contexto_proxima_semana` → el cron la pasa como `contexto_semana` y se limpia tras usarla (lo temporal no sangra a semanas futuras).
 - **Resumen en logs**: `[auto-plans] semana=… elegibles=N generados=X ya_existian=Y pendientes=W fallos=Z` — "pendientes" = generaciones disparadas cuya respuesta no llegó dentro del presupuesto de ~20s del orquestador (la petición ya está entregada; generate-plan termina por su cuenta).
 
-#### ⚠️ Acciones manuales pendientes (Fase 1)
-1. **Crear `INTERNAL_API_SECRET`** en las env de Netlify (valor aleatorio largo, p. ej. `openssl rand -hex 32`). Sin ella: planes sí, emails y limpieza de notas no.
-2. **Ejecutar migración 004** (`supabase/migrations/004_contexto_proxima_semana.sql`) en el SQL Editor. Sin ella: el cron funciona pero ignora las notas y la card de WeeklyPlan dará error al guardar.
+#### Fase 1 — puesta en marcha completada ✅ (10 junio 2026)
+- `INTERNAL_API_SECRET` creada en Netlify y verificada en producción (smoke: `ya_existe` en ~2s solo con `x-internal-secret`).
+- Migración 004 aplicada y verificada vía REST (columna `contexto_proxima_semana` existe).
+- Prueba end-to-end del orquestador ejecutada en local contra producción: `elegibles=2 ya_existian=1 pendientes=1` → plan real generado con contexto de macrociclo + email Resend entregado. Primer cron real: lunes 15 junio 03:00 UTC.
 
 #### Cómo probar el orquestador
 - **Local**: `netlify dev` en una terminal y `netlify functions:invoke auto-plans` en otra (usa el `.env` local; las invocaciones a generate-plan irán a localhost:8888).
@@ -341,7 +342,7 @@ fc_maxima, pace_5k, ftp_bici, peso, edad,
 deportes (jsonb — array multi-deporte),
 carreras (jsonb — array de carreras objetivo),
 objetivo_nutricional, preferencias_alimentarias, intolerancias,
-contexto_proxima_semana (text — nota semanal para el cron; migración 004 ⚠️ PENDIENTE),
+contexto_proxima_semana (text — nota semanal para el cron; migración 004 aplicada ✅),
 deleted_at (timestamptz — soft delete, requiere migración si no existe)
 ```
 
@@ -410,7 +411,7 @@ Backend (solo en Netlify Functions):
 - STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
 - STRIPE_PRICE_MONTHLY, STRIPE_PRICE_ANNUAL
 - RESEND_API_KEY
-- INTERNAL_API_SECRET  ← camino server-to-server de generate-plan (⚠️ PENDIENTE de crear en Netlify)
+- INTERNAL_API_SECRET  ← camino server-to-server de generate-plan (creada y verificada en producción)
 
 ## Diferenciación Free vs Pro
 

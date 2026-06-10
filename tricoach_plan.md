@@ -174,8 +174,9 @@ Entrenador IA conversacional para triatletas, runners, atletas de Hyrox y nadado
 - `auto-plans.js` scheduled: lunes 03:00 UTC (04:00/05:00 Madrid, fuera de la ventana de peligro DST)
 - Elegibles: Pro + training_cycle activo + no borrado; por usuario: syncUsuario (adherencia fresca) → generate-plan interno sin forzar (idempotente — si ya existe plan, coste cero)
 - Camino interno de generate-plan (`x-internal-secret` / env `INTERNAL_API_SECRET`): email Resend "Tu plan de esta semana está listo 🏃" + limpieza de la nota semanal tras consumirla
-- Card "Notas para la próxima semana" en WeeklyPlan → `profiles.contexto_proxima_semana` (migración 004)
-- Migración 003 (UNIQUE user_id+semana) ejecutada y verificada en producción
+- Card "Notas para la próxima semana" en WeeklyPlan → `profiles.contexto_proxima_semana` (migración 004 aplicada ✅)
+- Migraciones 003 y 004 ejecutadas y verificadas en producción; `INTERNAL_API_SECRET` creada en Netlify
+- Prueba end-to-end verificada (10 jun): smoke `ya_existe` en prod + orquestador local → plan real generado + email entregado
 - `lib/fechas.js` CJS (lunes Madrid testeado en verano/invierno y bordes DST) + `lib/email.js` reutilizable
 - 16 tests nuevos (201 totales)
 
@@ -196,10 +197,6 @@ Entrenador IA conversacional para triatletas, runners, atletas de Hyrox y nadado
 - Límite actual ampliado a 10 atletas conectados (suficiente para el lanzamiento cerrado)
 - Para escalar más allá de 10: pendiente aprobación del Developer Program
 
-**B — Fase 1: puesta en marcha (acciones manuales pendientes)**
-- ⚠️ Crear `INTERNAL_API_SECRET` en las env de Netlify (sin ella: los planes se generan igual, pero sin email ni limpieza de notas)
-- ⚠️ Ejecutar `004_contexto_proxima_semana.sql` en el SQL Editor (sin ella: el cron funciona pero ignora las notas)
-- Prueba controlada antes del primer lunes: ver "Cómo probar el orquestador" en CLAUDE.md
 
 ---
 
