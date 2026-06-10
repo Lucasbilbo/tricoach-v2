@@ -1,3 +1,5 @@
+import { evaluarWellness, UMBRALES_WELLNESS } from '../lib/wellness'
+
 function calcularAdherencia(historialPlanes) {
   const ultimas4 = historialPlanes.slice(0, 4)
   if (!ultimas4.length) return null
@@ -133,15 +135,16 @@ PROTOCOLO DE SEGURIDAD: Si el atleta menciona dolor, molestias, pinchazos o cual
       : ''
 
   const wellnessSection = wellness ? (() => {
-    const hrv = wellness.hrv != null ? `${wellness.hrv} ms` : 'no disponible'
-    const atl = wellness.atl != null ? `${Math.round(wellness.atl)}` : 'no disponible'
-    const tsb = wellness.tsb != null ? `${Math.round(wellness.tsb)}` : 'no disponible'
+    const evalW = evaluarWellness(wellness)
+    const hrv = evalW.valores.hrv != null ? `${evalW.valores.hrv} ms` : 'no disponible'
+    const atl = evalW.valores.atl != null ? `${evalW.valores.atl}` : 'no disponible'
+    const tsb = evalW.valores.tsb != null ? `${evalW.valores.tsb}` : 'no disponible'
     const sleep = wellness.sleepSecs ? `${Math.round(wellness.sleepSecs / 3600 * 10) / 10}h` : 'no disponible'
     const feel = wellness.feel != null ? String(wellness.feel) : 'no registrada'
     const alertas = []
-    if (wellness.atl != null && wellness.atl > 50) alertas.push('fatiga alta (ATL > 50) — reduce intensidad esta sesión')
-    if (wellness.tsb != null && wellness.tsb < -20) alertas.push('forma negativa (TSB < -20) — el atleta está en deuda de recuperación')
-    if (wellness.hrv != null && wellness.hrv < 40) alertas.push('HRV muy bajo — prioriza recuperación')
+    if (evalW.fatigaAlta) alertas.push(`fatiga alta (ATL > ${UMBRALES_WELLNESS.ATL_FATIGA}) — reduce intensidad esta sesión`)
+    if (evalW.formaNegativa) alertas.push(`forma negativa (TSB < ${UMBRALES_WELLNESS.TSB_FORMA_NEGATIVA}) — el atleta está en deuda de recuperación`)
+    if (evalW.hrvBajo) alertas.push('HRV muy bajo — prioriza recuperación')
     return `\nDATOS DE INTERVALS.ICU (hoy):
 - HRV: ${hrv}
 - Fatiga (ATL): ${atl}

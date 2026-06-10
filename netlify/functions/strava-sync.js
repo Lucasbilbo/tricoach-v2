@@ -1,4 +1,5 @@
 const https = require('https');
+const { calcularVolumenReal } = require('./lib/volumen');
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -117,35 +118,12 @@ async function refreshStravaToken(profileData, supabaseUrl, supabaseKey, userId)
   return null;
 }
 
-exports.handler = async (event) => {
-  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' };
-  if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS, body: 'Method Not Allowed' };
-
-  const secret = event.headers['x-tricoach-secret'];
-  if (!FUNCTION_SECRET) {
-    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Server misconfigured' }) };
-  }
-  if (secret !== FUNCTION_SECRET) {
-    return { statusCode: 401, headers: CORS, body: JSON.stringify({ error: 'Unauthorized' }) };
-  }
-
-  let parsed;
-  try {
-    parsed = JSON.parse(event.body || '{}');
-  } catch {
-    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'JSON inválido' }) };
-  }
-
-  const { userId } = parsed;
-  if (!userId) {
-    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId requerido' }) };
-  }
-
-  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  if (!UUID_REGEX.test(userId)) {
-    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId inválido' }) };
-  }
-
+/**
+ * Sincronización Strava → plan de un usuario. Reutilizable desde otras
+ * Netlify Functions (Fase 1: orquestador de generación automática).
+ * Devuelve objetos planos — el handler HTTP los envuelve.
+ */
+async function syncUsuario(userId) {
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 
@@ -154,7 +132,7 @@ exports.handler = async (event) => {
   const profile = Array.isArray(profiles) ? profiles[0] : null;
 
   if (!profile || !profile.strava_token) {
-    return { statusCode: 200, headers: { ...CORS, 'Content-Type': 'application/json' }, body: JSON.stringify({ sincronizadas: 0, sinStrava: true }) };
+    return { sincronizadas: 0, sinStrava: true };
   }
 
   // Refresh token if needed
@@ -163,7 +141,7 @@ exports.handler = async (event) => {
   if (profile.strava_token_expires_at && profile.strava_token_expires_at < now) {
     const refreshed = await refreshStravaToken(profile, supabaseUrl, supabaseKey, userId);
     if (!refreshed) {
-      return { statusCode: 200, headers: { ...CORS, 'Content-Type': 'application/json' }, body: JSON.stringify({ sincronizadas: 0, error: 'token_expired' }) };
+      return { sincronizadas: 0, error: 'token_expired' };
     }
     accessToken = refreshed;
   }
@@ -174,7 +152,7 @@ exports.handler = async (event) => {
   const plan = Array.isArray(plans) ? plans[0] : null;
 
   if (!plan || !plan.sesiones) {
-    return { statusCode: 200, headers: { ...CORS, 'Content-Type': 'application/json' }, body: JSON.stringify({ sincronizadas: 0, sinPlan: true }) };
+    return { sincronizadas: 0, sinPlan: true };
   }
 
   // Get Strava activities from last 7 days
@@ -182,7 +160,7 @@ exports.handler = async (event) => {
   const activities = await stravaGet(`athlete/activities?per_page=20&after=${sevenDaysAgoTs}`, accessToken);
 
   if (!Array.isArray(activities) || activities.length === 0) {
-    return { statusCode: 200, headers: { ...CORS, 'Content-Type': 'application/json' }, body: JSON.stringify({ sincronizadas: 0 }) };
+    return { sincronizadas: 0 };
   }
 
   // Map activities by date+tipo
@@ -226,15 +204,53 @@ exports.handler = async (event) => {
   });
 
   if (sincronizadas === 0) {
-    return { statusCode: 200, headers: { ...CORS, 'Content-Type': 'application/json' }, body: JSON.stringify({ sincronizadas: 0 }) };
+    return { sincronizadas: 0 };
   }
 
-  // Update plan in Supabase
-  await supabaseRequest('PATCH', `plans?id=eq.${plan.id}`, { sesiones: updatedSesiones }, supabaseUrl, supabaseKey);
+  // Update plan in Supabase — recalcula volumen_real_min con el mismo criterio
+  // que completarSesion (src/lib/plans.js); test de paridad en volumen.test.js
+  const volumenReal = calcularVolumenReal(updatedSesiones);
+  await supabaseRequest('PATCH', `plans?id=eq.${plan.id}`, { sesiones: updatedSesiones, volumen_real_min: volumenReal }, supabaseUrl, supabaseKey);
 
-  return {
-    statusCode: 200,
-    headers: { ...CORS, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sincronizadas, plan_actualizado: true, sesiones: updatedSesiones })
-  };
+  return { sincronizadas, plan_actualizado: true, sesiones: updatedSesiones };
+}
+
+exports.handler = async (event) => {
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' };
+  if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS, body: 'Method Not Allowed' };
+
+  const secret = event.headers['x-tricoach-secret'];
+  if (!FUNCTION_SECRET) {
+    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Server misconfigured' }) };
+  }
+  if (secret !== FUNCTION_SECRET) {
+    return { statusCode: 401, headers: CORS, body: JSON.stringify({ error: 'Unauthorized' }) };
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(event.body || '{}');
+  } catch {
+    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'JSON inválido' }) };
+  }
+
+  const { userId } = parsed;
+  if (!userId) {
+    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId requerido' }) };
+  }
+
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!UUID_REGEX.test(userId)) {
+    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId inválido' }) };
+  }
+
+  try {
+    const resultado = await syncUsuario(userId);
+    return { statusCode: 200, headers: { ...CORS, 'Content-Type': 'application/json' }, body: JSON.stringify(resultado) };
+  } catch (e) {
+    console.error('[strava-sync] error:', e.message);
+    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Error al sincronizar' }) };
+  }
 };
+
+exports.syncUsuario = syncUsuario;

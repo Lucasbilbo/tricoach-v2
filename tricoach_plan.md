@@ -162,6 +162,14 @@ Entrenador IA conversacional para triatletas, runners, atletas de Hyrox y nadado
 **Deuda técnica**
 - Unificación de completar sesión (junio 2026): función canónica `completarSesion` en plans.js, eliminadas las dos implementaciones duplicadas, helpers de fechas Europe/Madrid en `lib/fechas.js`, fix del auto-import Strava del modal — 14 tests nuevos (169 totales)
 
+**Fase 0 — Hardening generación de planes (junio 2026)** ✅
+- Wellness compartido: umbrales ATL/TSB/HRV en `src/lib/wellness.js` + espejo CJS para functions, con test de paridad (coach y generador ya no pueden divergir en silencio)
+- Generador con datos de rendimiento: fc_maxima, pace_5k, ftp_bici y peso inyectados en el prompt de generate-plan; `contexto` truncado a 500 chars como en el coach
+- Idempotencia: generate-plan devuelve `{ ya_existe: true }` sin llamar a Claude si ya hay plan para la semana; `forzar: true` regenera con PATCH sobre la misma fila; migración 003 (UNIQUE user_id+semana, limpia 8 pares duplicados reales) escrita — ⚠️ PENDIENTE de ejecutar a mano en el SQL Editor
+- strava-sync invocable server-side (`syncUsuario()` exportado) y recalculando `volumen_real_min` (deuda resuelta)
+- Bugs del informe de flujo de datos corregidos: `activeCycle.fecha_carrera` inexistente → fecha real desde profile.carreras; wellness del generador con fecha Madrid en vez de UTC
+- 16 tests nuevos (185 totales)
+
 **Bugs resueltos**
 - BUG-01: getMondayOfCurrentWeek fallaba el domingo
 - BUG-02: handleAjustar sin feedback de error
@@ -178,6 +186,15 @@ Entrenador IA conversacional para triatletas, runners, atletas de Hyrox y nadado
 **A — Strava Developer Program** 🟡
 - Límite actual ampliado a 10 atletas conectados (suficiente para el lanzamiento cerrado)
 - Para escalar más allá de 10: pendiente aprobación del Developer Program
+
+**B — Fase 1: generación automática semanal de planes**
+- ⚠️ Requisito previo: ejecutar `003_unique_plan_semana.sql` en el SQL Editor (idempotencia)
+- Scheduled function orquestadora: cron lunes 03:00 UTC (`0 3 * * 1` — ya es lunes en Madrid todo el año)
+- Elegibles: solo Pro con ciclo activo y perfil no borrado
+- Por usuario: `syncUsuario()` de strava-sync (adherencia fresca) → generate-plan sin `forzar` (idempotente) — fetches con await en lotes, nunca fire-and-forget
+- Email Resend "Tu plan de la semana ya está listo" tras generar
+- `contexto_semana` opcional aportable antes del lunes, que se limpia tras usarse
+- Base lista de Fase 0: idempotencia, wellness compartido, datos de rendimiento, syncUsuario exportado
 
 ---
 

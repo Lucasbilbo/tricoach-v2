@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { calcularVolumenReal } from './volumen'
 
 export function esFormatoAntiguo(sesiones) {
   if (!sesiones || !sesiones.length) return false
@@ -107,7 +108,12 @@ export async function getPlanForWeek(userId, semana) {
   return data
 }
 
-export async function generatePlan(userId, planAnterior = null, fechaInicio = null, contextoSemana = null) {
+/**
+ * @param {boolean} forzar — true en regeneraciones explícitas: salta el check de
+ * idempotencia del backend y actualiza el plan existente de la semana en vez de
+ * devolverlo con { ya_existe: true }.
+ */
+export async function generatePlan(userId, planAnterior = null, fechaInicio = null, contextoSemana = null, forzar = false) {
   const secret = import.meta.env.VITE_TRICOACH_SECRET || ''
   const res = await fetch('/.netlify/functions/generate-plan', {
     method: 'POST',
@@ -116,7 +122,7 @@ export async function generatePlan(userId, planAnterior = null, fechaInicio = nu
       'Accept': 'application/json',
       'x-tricoach-secret': secret
     },
-    body: JSON.stringify({ userId, planAnterior, fechaInicio, contexto_semana: contextoSemana || undefined })
+    body: JSON.stringify({ userId, planAnterior, fechaInicio, contexto_semana: contextoSemana || undefined, forzar: forzar || undefined })
   })
   return res.json()
 }
@@ -145,9 +151,7 @@ export async function completarSesion(planId, dia, campos = {}) {
     s.dia === dia ? { ...s, completada: true, ...campos } : s
   )
 
-  const volumenReal = sesiones
-    .filter(s => s.completada && s.tipo?.toLowerCase() !== 'descanso')
-    .reduce((acc, s) => acc + (s.tiempo_real_min || s.duracion_min || 0), 0)
+  const volumenReal = calcularVolumenReal(sesiones)
 
   const { data } = await supabase
     .from('plans')

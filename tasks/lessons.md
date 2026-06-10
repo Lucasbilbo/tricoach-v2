@@ -78,6 +78,19 @@ Solo añadir año si la edición es futura y concreta (Valencia diciembre 2026).
 
 ---
 
+## 2026-06-10 — Fase 0: espejo + paridad, y duplicados reales
+
+### Patrón espejo + test de paridad para código compartido frontend↔functions
+`src/lib` (ESM/Vite) y `netlify/functions` (CJS/zisi) no pueden importar el mismo archivo. Cuando una lógica debe vivir en ambos lados (umbrales wellness, criterio de volumen), se duplica deliberadamente con un **test de paridad** que importa ambos módulos y compara salidas sobre la misma matriz de inputs — la divergencia rompe el build en vez de pasar en silencio. Ver sección "Código compartido frontend ↔ functions" en CLAUDE.md.
+
+### La idempotencia solo en el cliente no basta
+La auditoría encontró **8 pares (user_id, semana) con planes duplicados** en producción (uno con 9 filas) pese a que el frontend comprobaba existencia antes de generar. Cualquier invariante de datos importante necesita aplicarse en el servidor (check en la función) y en la base (constraint UNIQUE — migración 003). El cliente solo es la primera línea.
+
+### Las "verdades" de la documentación caducan
+tricoach_plan.md decía que strava-feedback se disparaba desde strava-sync; en el código se dispara desde strava-activities. Pequeño, pero al diseñar la Fase 1 sobre esa suposición se habría colado un bug. Verificar el call site real antes de construir encima.
+
+---
+
 ## Patrones de código estándar para Netlify Functions
 
 ```javascript

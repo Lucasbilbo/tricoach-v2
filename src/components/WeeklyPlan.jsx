@@ -152,7 +152,8 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
     setGenerando(true)
     setShowContextModal(false)
     try {
-      const nuevoPlan = await generatePlan(userId, planAnteriorParaAnalisis, fechaInicio, contexto)
+      // forzar: acción explícita del usuario — regenera aunque ya exista plan para la semana
+      const nuevoPlan = await generatePlan(userId, planAnteriorParaAnalisis, fechaInicio, contexto, true)
       if (nuevoPlan?.error) {
         setErrorToast(nuevoPlan.error)
         return

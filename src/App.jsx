@@ -209,7 +209,8 @@ function App() {
         getPlanActual(session.user.id).then(async (p) => {
           if (p && esFormatoAntiguo(p.sesiones)) {
             setPlanActualizando(true)
-            const regenerado = await generatePlan(session.user.id).catch(() => null)
+            // forzar: migración de formato antiguo — debe reemplazar el plan existente
+            const regenerado = await generatePlan(session.user.id, null, null, null, true).catch(() => null)
             setPlan(regenerado?.sesiones ? regenerado : p)
             setPlanActualizando(false)
           } else {

@@ -12,7 +12,7 @@ Freemium: Free (10 msg/día, plan básico) / Pro (9,99€/mes, Strava + plan ada
 - Frontend: React + Vite (JavaScript, NO TypeScript)
 - Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co) — RLS activado
 - Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
-- Tests: Vitest — **169 tests pasando** (21 archivos) + Playwright E2E (3 specs)
+- Tests: Vitest — **185 tests pasando** (24 archivos) + Playwright E2E (3 specs)
 - Deploy: Netlify (producción: https://tricoach-v2.netlify.app)
 - Pagos: Stripe (checkout + webhooks)
 - Email: Resend (coach@getricoach.com)
@@ -75,6 +75,24 @@ END; $$;
 GRANT EXECUTE ON FUNCTION increment_messages_today TO service_role;
 ```
 
+### Código compartido frontend ↔ functions — patrón espejo + paridad
+`src/lib` es ESM (Vite) y `netlify/functions` es CommonJS (zisi) — **no pueden importar el mismo archivo**. La lógica compartida vive duplicada deliberadamente con un test de paridad que rompe si divergen:
+
+| Lógica | Canónico (ESM) | Espejo (CJS) | Test de paridad |
+|---|---|---|---|
+| Umbrales wellness ATL/TSB/HRV | `src/lib/wellness.js` | `netlify/functions/lib/wellness.js` | `wellness.test.js` |
+| Volumen real (`calcularVolumenReal`) | `src/lib/volumen.js` | `netlify/functions/lib/volumen.js` | `volumen.test.js` |
+| Idempotencia generate-plan | — | `netlify/functions/lib/planes.js` | `planes-idempotencia.test.js` |
+
+Reglas: si tocas un lado, toca el otro (el test de paridad te lo recordará). `netlify/functions/lib/` NO se despliega como functions (no crear `lib.js` ni `index.js` ahí). Las functions lo requieren con ruta relativa `require('./lib/...')`.
+
+### Idempotencia de generate-plan (junio 2026)
+- Antes de generar, comprueba si ya existe plan para `(user_id, semana)`:
+  - existe y sin `forzar` → devuelve el existente con `{ ya_existe: true }` **sin llamar a Claude**.
+  - existe y con `forzar: true` → genera y hace PATCH sobre la fila existente (conserva el id).
+- `forzar: true` se usa en: regeneración explícita del usuario (WeeklyPlan `handleGenerarPlan`) y migración de formato antiguo (App.jsx). El auto-regen del jueves va sin forzar.
+- **Migración 003 PENDIENTE de ejecutar a mano** (`supabase/migrations/003_unique_plan_semana.sql`): limpia duplicados reales (8 pares detectados en auditoría) y añade `UNIQUE (user_id, semana)`. ⚠️ Ejecutar en el SQL Editor ANTES de lanzar la Fase 1 (cron).
+
 ### Soft delete (delete-account.js)
 `delete-account.js` NO borra el registro de `profiles` — hace `PATCH {deleted_at: now()}`.
 En `App.jsx`, `loadOrCreateProfile()` detecta `profile?.deleted_at` y hace `signOut()` mostrando pantalla de cuenta eliminada.
@@ -93,7 +111,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 
 ### Tests
 - Ejecutar `npm test` al terminar SIEMPRE
-- **169 tests deben pasar** (21 archivos — actualizado junio 2026) — si alguno falla, arreglarlo antes de terminar
+- **185 tests deben pasar** (24 archivos — actualizado junio 2026) — si alguno falla, arreglarlo antes de terminar
 - No borrar ni modificar tests existentes sin motivo explícito
 
 ## Estado del proyecto — Fases completadas
@@ -149,7 +167,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 
 ### Fase 11.1 — Feedback automático post-entreno (mayo 2026) ✅
 - `strava-feedback.js` — cuando se sincroniza actividad Strava, el coach genera feedback automático
-- Análisis sesión vs plan, tono conversacional, solo Pro, fire-and-forget desde strava-sync.js
+- Análisis sesión vs plan, tono conversacional, solo Pro, fire-and-forget desde strava-activities.js (no strava-sync — verificado junio 2026)
 
 ### Fase 11.2 — Informe semanal automático por email (mayo 2026) ✅
 - `weekly-report.js` — domingos 19h UTC: informe con adherencia y resumen semanal
@@ -214,6 +232,8 @@ tricoach-v2/
 │   │   ├── plans.js           — getPlan, generatePlan, completarSesion (función canónica), adjustPlan,
 │   │   │                        autoAdjustPlan, getHistorialPlanes, calcularConsistencia, analizarPlan
 │   │   ├── fechas.js          — getFechaSesion, getHoyMadrid, DIA_OFFSET_MAP (fuente única de fechas)
+│   │   ├── wellness.js        — UMBRALES_WELLNESS, evaluarWellness (espejo CJS en functions/lib)
+│   │   ├── volumen.js         — calcularVolumenReal (espejo CJS en functions/lib)
 │   │   ├── autoAdjust.js      — checkShouldAdjust(plan, profile) — función pura, sin efectos
 │   │   └── cycles.js          — calcularFases, getFaseActual, esSemanaDescarga, esCicloCompletado
 │   ├── pages/
@@ -241,6 +261,9 @@ tricoach-v2/
 │   │   ├── autoAdjust.test.js         (11 tests) — checkShouldAdjust
 │   │   ├── chat.test.js               (14 tests) — Chat.jsx + claude.js
 │   │   ├── completarSesion.test.js    (14 tests) — completarSesion + fechas Madrid
+│   │   ├── wellness.test.js           (7 tests) — umbrales + paridad ESM↔CJS
+│   │   ├── volumen.test.js            (6 tests) — criterio volumen + paridad ESM↔CJS
+│   │   ├── planes-idempotencia.test.js (3 tests) — decidirAccionPlan
 │   │   ├── phase8.test.jsx            (4 tests)
 │   │   ├── phase10.test.jsx           (4 tests)
 │   │   ├── phase105.test.jsx          (5 tests)
@@ -253,15 +276,16 @@ tricoach-v2/
 │   └── main.jsx
 ├── netlify/
 │   └── functions/
+│       ├── lib/                     — código compartido CJS (NO son functions): wellness.js, volumen.js, planes.js
 │       ├── claude.js                — chat Claude, rate limiting atómico (RPC)
 │       ├── adjust-plan.js           — ajusta plan (lesión/viaje/sobrecarga/sesiones_perdidas + signal)
-│       ├── generate-plan.js         — genera plan semanal con estructura real y contexto macrociclo
+│       ├── generate-plan.js         — genera plan semanal (estructura real, macrociclo, idempotente + forzar)
 │       ├── create-cycle.js          — crea macrociclo de entrenamiento (idempotente)
 │       ├── recalculate-cycle.js     — recalcula fases del ciclo tras cambio de carrera
 │       ├── coach-intro.js           — mensaje de bienvenida del coach
 │       ├── strava-auth.js           — OAuth Strava (usa STRAVA_CLIENT_ID/SECRET globales, no per-user)
 │       ├── strava-activities.js     — actividades Strava + refresh token (credenciales globales)
-│       ├── strava-sync.js           — sincronización automática sesiones Strava → plan (credenciales globales)
+│       ├── strava-sync.js           — sync Strava → plan; exporta syncUsuario() reutilizable; recalcula volumen_real_min
 │       ├── strava-match-activity.js — match actividad Strava con sesión del plan
 │       ├── strava-feedback.js       — feedback automático post-entreno (Pro, fire-and-forget)
 │       ├── intervals.js             — integración Intervals.icu (GET/POST/DELETE)
@@ -391,7 +415,7 @@ Call sites:
 2. `Dashboard.handleCompletar()` — picker RPE inline de "Hoy"; también llama a `checkShouldAdjust` + `autoAdjustPlan`.
 3. `App.jsx` — `SessionDetail.onComplete(rpe)` (sin auto-adjust).
 
-Historia: antes coexistían `markSessionComplete` (plans.js, no recalculaba volumen) y `patchSesionCompleta` (local del modal) — **eliminadas** en la unificación. La vía server-side de `strava-sync.js` sigue marcando `completada/via_strava` por PATCH directo y **no recalcula `volumen_real_min`** (deuda conocida — CommonJS no puede importar el lib del frontend).
+Historia: antes coexistían `markSessionComplete` (plans.js, no recalculaba volumen) y `patchSesionCompleta` (local del modal) — **eliminadas** en la unificación. La vía server-side de `strava-sync.js` también recalcula `volumen_real_min` desde junio 2026 (vía `netlify/functions/lib/volumen.js`, espejo CJS de `src/lib/volumen.js` con test de paridad) — deuda resuelta. Además exporta `syncUsuario(userId)` para invocarla desde otras functions (Fase 1).
 
 El coach se entera de las sesiones completadas vía `buildSystemPrompt` (etiquetas "✓ completada (manual/Strava)" y sección "SESIONES COMPLETADAS ESTA SEMANA") — no hay notificación explícita, es por diseño.
 
@@ -440,7 +464,7 @@ Helpers canónicos en `src/lib/fechas.js` — usar SIEMPRE estos, no reimplement
 Usados en `WeeklyPlan.jsx` y `autoAdjust.js`. `buildSystemPrompt.js` mantiene su copia interna deliberadamente (cubierto por 32 tests, no tocar sin motivo).
 Al abrir `ModalCompletarSesion`, WeeklyPlan adjunta `fecha` a la sesión (`{ ...sesion, fecha: sesionFecha }`) — necesario para el auto-import de Strava del modal.
 
-## Tests — 169 pasando (21 archivos) + 3 specs E2E Playwright
+## Tests — 185 pasando (24 archivos) + 3 specs E2E Playwright
 
 Tests más pesados (referencia rápida):
 - `systemPrompt.test.js` — buildSystemPrompt (32 tests)

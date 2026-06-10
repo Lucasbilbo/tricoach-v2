@@ -1,4 +1,6 @@
 const https = require('https');
+const { evaluarWellness } = require('./lib/wellness');
+const { decidirAccionPlan } = require('./lib/planes');
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -60,6 +62,38 @@ function supabaseGet(hostname, path, key) {
       });
     });
     req.on('error', () => resolve(null));
+    req.end();
+  });
+}
+
+function truncar(str, max) {
+  return str && str.length > max ? str.slice(0, max) + '…' : str;
+}
+
+function supabasePatch(hostname, path, key, body) {
+  const bodyStr = JSON.stringify(body);
+  return new Promise((resolve) => {
+    const options = {
+      hostname,
+      path,
+      method: 'PATCH',
+      headers: {
+        'apikey': key,
+        'Authorization': `Bearer ${key}`,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(bodyStr),
+        'Prefer': 'return=representation'
+      }
+    };
+    const req = https.request(options, (r) => {
+      let d = '';
+      r.on('data', chunk => d += chunk);
+      r.on('end', () => {
+        try { resolve(JSON.parse(d)); } catch { resolve(null); }
+      });
+    });
+    req.on('error', () => resolve(null));
+    req.write(bodyStr);
     req.end();
   });
 }
@@ -555,7 +589,7 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'JSON inválido' }) };
   }
 
-  const { userId, planAnterior, fechaInicio, contexto_semana } = parsed;
+  const { userId, planAnterior, fechaInicio, contexto_semana, forzar } = parsed;
   if (!userId) {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId requerido' }) };
   }
@@ -569,16 +603,38 @@ exports.handler = async (event) => {
   const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
   const hostname = new URL(supabaseUrl).hostname;
 
-  // Obtener perfil del usuario (incluyendo campos de Strava y multi-deporte)
+  // Obtener perfil del usuario (incluyendo Strava, multi-deporte y datos de rendimiento)
   const profiles = await supabaseGet(
     hostname,
-    `/rest/v1/profiles?id=eq.${userId}&select=deporte,nivel,objetivo,fecha_carrera,contexto,strava_token,strava_refresh_token,strava_token_expires_at,plan,created_at,deportes,carreras,intervals_athlete_id,intervals_api_key`,
+    `/rest/v1/profiles?id=eq.${userId}&select=deporte,nivel,objetivo,fecha_carrera,contexto,strava_token,strava_refresh_token,strava_token_expires_at,plan,created_at,deportes,carreras,intervals_athlete_id,intervals_api_key,fc_maxima,pace_5k,ftp_bici,peso`,
     supabaseKey
   );
 
   const profile = Array.isArray(profiles) ? profiles[0] : null;
   if (!profile) {
     return { statusCode: 404, headers: CORS, body: JSON.stringify({ error: 'Perfil no encontrado' }) };
+  }
+
+  // Semana a generar — calculada pronto para el check de idempotencia
+  const weekStart = fechaInicio || getMondayOfCurrentWeek();
+  const startDate = fechaInicio || getTodayDate();
+  const dias = getDiasDesdeDate(startDate, weekStart);
+
+  // Idempotencia: si ya existe plan para (user, semana) y no se fuerza,
+  // devolverlo sin llamar a Claude ni a las APIs externas
+  const existentes = await supabaseGet(
+    hostname,
+    `/rest/v1/plans?user_id=eq.${userId}&semana=eq.${weekStart}&select=*&order=created_at.desc&limit=1`,
+    supabaseKey
+  );
+  const planExistente = Array.isArray(existentes) && existentes[0] ? existentes[0] : null;
+  const accionPlan = decidirAccionPlan(planExistente, forzar === true);
+  if (accionPlan === 'devolver_existente') {
+    return {
+      statusCode: 200,
+      headers: { ...CORS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...planExistente, ya_existe: true })
+    };
   }
 
   // Obtener ciclo de entrenamiento activo
@@ -611,7 +667,7 @@ exports.handler = async (event) => {
   if (isPro && profile.intervals_athlete_id && profile.intervals_api_key) {
     try {
       const auth = Buffer.from(`API_KEY:${profile.intervals_api_key}`).toString('base64');
-      const today = new Date().toISOString().slice(0, 10);
+      const today = getTodayDate(); // Europe/Madrid — toISOString() daría el día UTC anterior de madrugada
       const wResult = await withTimeout(new Promise((resolve) => {
         const opts = {
           hostname: 'intervals.icu',
@@ -676,10 +732,6 @@ Prioridad: llegar fresco al día de la carrera. Reduce volumen 30-50%, mantén a
   const fechaCarreraEfectiva = carreraProxima?.fecha || profile.fecha_carrera;
 
   const metodo = calcularMetodo(fechaCarreraEfectiva, profile.nivel);
-
-  const weekStart = fechaInicio || getMondayOfCurrentWeek();
-  const startDate = fechaInicio || getTodayDate();
-  const dias = getDiasDesdeDate(startDate, weekStart);
 
   // Obtener planes recientes para detectar primer plan y plan anterior
   const planesRecientes = await supabaseGet(
@@ -760,11 +812,12 @@ Nunca más de 2 días seguidos del mismo deporte.` : '';
 
     const wellnessWarning = (() => {
       if (!wellnessData) return '';
+      const evalW = evaluarWellness(wellnessData);
+      if (!evalW.hayAlerta) return '';
       const alertas = [];
-      if (wellnessData.atl != null && wellnessData.atl > 50) alertas.push(`fatiga alta (ATL ${Math.round(wellnessData.atl)})`);
-      if (wellnessData.tsb != null && wellnessData.tsb < -20) alertas.push(`forma negativa (TSB ${Math.round(wellnessData.tsb)})`);
-      if (wellnessData.hrv != null && wellnessData.hrv < 40) alertas.push(`HRV muy bajo (${wellnessData.hrv} ms)`);
-      if (alertas.length === 0) return '';
+      if (evalW.fatigaAlta) alertas.push(`fatiga alta (ATL ${evalW.valores.atl})`);
+      if (evalW.formaNegativa) alertas.push(`forma negativa (TSB ${evalW.valores.tsb})`);
+      if (evalW.hrvBajo) alertas.push(`HRV muy bajo (${evalW.valores.hrv} ms)`);
       return `\n\n⚠️ ALERTA RECUPERACIÓN (Intervals.icu hoy): ${alertas.join(', ')}. Reduce el volumen total un 15-20% y evita sesiones de alta intensidad esta semana.`;
     })();
 
@@ -785,13 +838,20 @@ Nunca más de 2 días seguidos del mismo deporte.` : '';
       }
     }
 
+    // Fecha de la carrera del ciclo: training_cycles solo guarda carrera_nombre —
+    // la fecha vive en profile.carreras (fallback: la carrera más próxima)
+    const carreraDelCiclo = activeCycle?.carrera_nombre
+      ? carrerasArr.find(c => c.nombre === activeCycle.carrera_nombre) || null
+      : null;
+    const fechaCarreraCiclo = carreraDelCiclo?.fecha || fechaCarreraEfectiva || null;
+
     const macrocicloSection = activeCycle && faseActual ? `
 
 CONTEXTO DEL MACROCICLO:
 - Semana ${numeroDeSemana} de ${activeCycle.semanas_totales}
 - Fase: ${faseActual.nombre.toUpperCase()} — ${faseActual.objetivo}
 ${esDescarga ? '⚠️ SEMANA DE DESCARGA: reducir volumen 20-30% respecto a semanas previas, mantener algo de intensidad corta, priorizar recuperación.' : ''}${adherenciaPct !== null ? `\n- Adherencia reciente: ${adherenciaPct}% de sesiones completadas${adherenciaPct < 70 ? ' — carga conservadora esta semana, no aumentar volumen' : ''}` : ''}
-- Carrera objetivo: ${activeCycle.carrera_nombre || 'Sin carrera definida'}${activeCycle.fecha_carrera ? ` — ${activeCycle.fecha_carrera}` : ''}
+- Carrera objetivo: ${activeCycle.carrera_nombre || 'Sin carrera definida'}${fechaCarreraCiclo ? ` — ${fechaCarreraCiclo}` : ''}
 
 DURACIONES MÍNIMAS OBLIGATORIAS — FASE ${faseActual.nombre.toUpperCase()} (NO usar valores menores):
 ${faseActual.nombre === 'base' ? `- Correr: mínimo 55min (rodaje Z2: 55-70min, rodaje largo: 80-110min, intervalos: 60-75min incluyendo calentamiento y vuelta a la calma)
@@ -813,14 +873,25 @@ PROHIBIDO generar sesiones de menos de 70min en esta fase.` : ''}${faseActual.no
 
     const semanaLabel = numeroDeSemana ? `Semana ${numeroDeSemana} del plan del atleta.` : '';
 
+    // Datos de rendimiento — los mismos que ve el coach (null-safe, sección omitida si no hay ninguno)
+    const rendimientoItems = [
+      profile.fc_maxima ? `- FC máxima: ${profile.fc_maxima} ppm (usa zonas de FC reales: Z2 = ${Math.round(profile.fc_maxima * 0.6)}-${Math.round(profile.fc_maxima * 0.7)} ppm)` : null,
+      profile.pace_5k ? `- Ritmo 5K: ${profile.pace_5k} — úsalo como referencia para calcular ritmos de series y rodajes` : null,
+      profile.ftp_bici ? `- FTP bici: ${profile.ftp_bici}W — prescribe intervalos de bici en vatios` : null,
+      profile.peso ? `- Peso: ${profile.peso} kg` : null,
+    ].filter(Boolean);
+    const rendimientoSection = rendimientoItems.length > 0
+      ? `\nDATOS DE RENDIMIENTO DEL ATLETA:\n${rendimientoItems.join('\n')}`
+      : '';
+
     userMessage = `Genera un plan de entrenamiento semanal para este atleta:
 
 Deportes: ${deportesTexto}
 Nivel: ${nivelPrimario}
 Objetivo: ${profile.objetivo || 'mejorar forma física'}
 ${carrerasTexto ? `Carreras/eventos próximos: ${carrerasTexto}` : ''}
-${semanaLabel}
-${profile.contexto ? `Contexto del atleta: ${profile.contexto}` : ''}${analisisSection}${macrocicloSection}
+${semanaLabel}${rendimientoSection}
+${profile.contexto ? `Contexto del atleta: ${truncar(profile.contexto, 500)}` : ''}${analisisSection}${macrocicloSection}
 ${distribucionDeportes}${contextoSemanaSection}${wellnessWarning}
 
 El plan empieza el ${weekStart}. Los días en orden son: ${dias.join(', ')}.
@@ -947,10 +1018,13 @@ IMPORTANTE: El campo contexto puede contener información de semanas anteriores 
     } : {}),
   };
 
-  // Guardar en Supabase
-  const inserted = await supabasePost(hostname, '/rest/v1/plans', supabaseKey, planRecord);
+  // Guardar en Supabase — PATCH sobre la fila existente si es regeneración forzada
+  // (conserva el id del plan; evita duplicar filas para la misma semana)
+  const saved = accionPlan === 'actualizar'
+    ? await supabasePatch(hostname, `/rest/v1/plans?id=eq.${planExistente.id}`, supabaseKey, planRecord)
+    : await supabasePost(hostname, '/rest/v1/plans', supabaseKey, planRecord);
 
-  const plan = Array.isArray(inserted) ? inserted[0] : inserted;
+  const plan = Array.isArray(saved) ? saved[0] : saved;
 
   // Disparar sync Intervals sin await — fire-and-forget para no bloquear el return
   if (profile.intervals_athlete_id && profile.intervals_api_key) {
