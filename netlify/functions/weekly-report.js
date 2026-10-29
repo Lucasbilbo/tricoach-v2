@@ -3,6 +3,7 @@
  * Scheduled: domingos a las 19:00 UTC
  */
 const https = require('https')
+const { emailsEnabled } = require('./lib/email')
 
 const SUPABASE_URL = 'luqpjgzpydquqturgjmt.supabase.co'
 
@@ -202,6 +203,8 @@ function buildEmailHtml(nombre, sesiones) {
 }
 
 exports.handler = async () => {
+  if (!emailsEnabled()) return { statusCode: 200, body: 'emails pausados' }
+
   if (!process.env.RESEND_API_KEY || !process.env.SUPABASE_SERVICE_KEY) {
     console.error('[weekly-report] Missing env vars')
     return { statusCode: 500, body: 'Missing env vars' }

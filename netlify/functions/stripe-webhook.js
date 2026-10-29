@@ -1,4 +1,5 @@
 const https = require('https');
+const { emailsEnabled } = require('./lib/email');
 const crypto = require('crypto');
 
 const CORS = {
@@ -157,7 +158,7 @@ exports.handler = async (event) => {
       }
 
       const RESEND_KEY = process.env.RESEND_API_KEY;
-      if (RESEND_KEY && customerEmail) {
+      if (RESEND_KEY && customerEmail && emailsEnabled()) {
         try {
           const profiles = await supabaseGet(
             hostname,
@@ -177,7 +178,7 @@ exports.handler = async (event) => {
           // El error de email NO bloquea la activación Pro
         }
       } else {
-        console.warn('[stripe-webhook] Email omitido — RESEND_KEY:', !!RESEND_KEY, '| customerEmail:', customerEmail);
+        console.warn('[stripe-webhook] Email omitido — RESEND_KEY:', !!RESEND_KEY, '| customerEmail:', customerEmail, '| emailsActivos:', emailsEnabled());
       }
     }
   }

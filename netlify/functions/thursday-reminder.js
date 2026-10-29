@@ -8,6 +8,7 @@
  * 3. Si no tiene plan, envía email recordándoles generarlo
  */
 const https = require('https')
+const { emailsEnabled } = require('./lib/email')
 
 const SUPABASE_HOSTNAME = new URL(process.env.SUPABASE_URL || 'https://placeholder.supabase.co').hostname
 
@@ -116,6 +117,8 @@ function buildEmailHtml(nombre) {
 }
 
 exports.handler = async () => {
+  if (!emailsEnabled()) return { statusCode: 200, body: 'emails pausados' }
+
   if (!process.env.RESEND_API_KEY || !process.env.SUPABASE_SERVICE_KEY || !process.env.SUPABASE_URL) {
     console.error('[thursday-reminder] Missing env vars')
     return { statusCode: 500, body: 'Missing env vars' }

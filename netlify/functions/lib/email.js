@@ -3,7 +3,14 @@
 
 const https = require('https');
 
+// PAUSA (29-oct-2026): los emails están desactivados por defecto.
+// Para reactivarlos, crear en Netlify la variable EMAILS_ENABLED=true.
+function emailsEnabled() {
+  return process.env.EMAILS_ENABLED === 'true';
+}
+
 function sendEmail(to, subject, html) {
+  if (!emailsEnabled()) return Promise.resolve({ status: 200, body: 'emails pausados' });
   const bodyStr = JSON.stringify({
     from: 'TriCoach <coach@getricoach.com>',
     to: [to],
@@ -77,4 +84,4 @@ function buildPlanListoHtml(nombre, sesiones, volumenMin) {
     </html>`;
 }
 
-module.exports = { sendEmail, buildPlanListoHtml };
+module.exports = { sendEmail, buildPlanListoHtml, emailsEnabled };

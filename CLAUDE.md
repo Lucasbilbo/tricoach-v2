@@ -1,7 +1,15 @@
 # TriCoach AI — Contexto del proyecto
 
-> Última actualización: 9 junio 2026
+> Última actualización: 29 octubre 2026 (proyecto en pausa)
 > Última auditoría: junio 2026
+
+## ⏸ PROYECTO EN PAUSA (29 octubre 2026)
+Lucas ha puesto el proyecto en pausa. Estado de las automatizaciones:
+- **Crons desactivados**: se han quitado de `netlify.toml` los schedules de `weekly-report` (dom 19:00 UTC), `thursday-reminder` (jue 17:00 UTC) y `auto-plans` (lun 03:00 UTC). Las funciones siguen existiendo, solo no se disparan solas.
+- **Emails desactivados por defecto** (Resend): interruptor `EMAILS_ENABLED` en `netlify/functions/lib/email.js`. Sin la variable `EMAILS_ENABLED=true` en Netlify no sale ningún email: informe semanal, recordatorio del jueves, "plan listo" y bienvenida de Stripe (el pago y la activación Pro siguen funcionando igual).
+- **Cómo reactivar**: (1) restaurar los 3 bloques `[functions."..."] schedule` (valores en el comentario de `netlify.toml`); (2) crear `EMAILS_ENABLED=true` en las variables de entorno de Netlify; (3) `git push origin main`.
+- El Coach Dashboard no tiene tareas programadas; Supabase no tiene pg_cron ni edge functions.
+- Tests: 7 archivos fallan en entornos sin `.env` (variables VITE_*) y un test de `systemPrompt` depende de la fecha actual; ya fallaban antes de la pausa.
 
 ## Qué es esto
 Entrenador IA conversacional para triatletas, runners y atletas de Hyrox hispanohablantes.
@@ -298,7 +306,7 @@ tricoach-v2/
 ├── netlify/
 │   └── functions/
 │       ├── lib/                     — código compartido CJS (NO son functions): wellness.js, volumen.js, planes.js, fechas.js, email.js
-│       ├── auto-plans.js            — orquestador generación automática [SCHEDULED: lunes 03:00 UTC]
+│       ├── auto-plans.js            — orquestador generación automática [SCHEDULED: lunes 03:00 UTC — PAUSADO]
 │       ├── claude.js                — chat Claude, rate limiting atómico (RPC)
 │       ├── adjust-plan.js           — ajusta plan (lesión/viaje/sobrecarga/sesiones_perdidas + signal)
 │       ├── generate-plan.js         — genera plan semanal (estructura real, macrociclo, idempotente + forzar)
@@ -311,8 +319,8 @@ tricoach-v2/
 │       ├── strava-match-activity.js — match actividad Strava con sesión del plan
 │       ├── strava-feedback.js       — feedback automático post-entreno (Pro, fire-and-forget)
 │       ├── intervals.js             — integración Intervals.icu (GET/POST/DELETE)
-│       ├── weekly-report.js         — informe semanal [SCHEDULED: domingos 19h UTC]
-│       ├── thursday-reminder.js     — recordatorio semanal [SCHEDULED: jueves 17h UTC]
+│       ├── weekly-report.js         — informe semanal [SCHEDULED: domingos 19h UTC — PAUSADO]
+│       ├── thursday-reminder.js     — recordatorio semanal [SCHEDULED: jueves 17h UTC — PAUSADO]
 │       ├── create-checkout.js       — Stripe Checkout Session
 │       ├── stripe-webhook.js        — webhook Stripe (activar/revocar Pro)
 │       └── delete-account.js        — soft delete: PATCH profiles SET deleted_at, borra messages/plans
