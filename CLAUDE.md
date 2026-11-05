@@ -1,7 +1,20 @@
 # TriCoach AI — Contexto del proyecto
 
-> Última actualización: 29 octubre 2026 (proyecto en pausa)
-> Última auditoría: junio 2026
+> Última actualización: 5 noviembre 2026 (reactivación del coach)
+> Última auditoría: noviembre 2026 (doc "Auditoría TriCoach v2 — noviembre 2026" en el Project)
+
+## 🔧 REACTIVACIÓN (5 noviembre 2026) — leer primero
+El coach no respondía desde el 15-jun-2026: `claude-sonnet-4-20250514` fue retirado por Anthropic y todas las llamadas fallaban ("Error al responder"). Cambios:
+- **Modelos**: `netlify/functions/lib/claude.js` es el ÚNICO sitio con modelos. Free → `claude-haiku-5-5`, Pro → `claude-sonnet-5-5` (env `CLAUDE_MODEL_FREE` / `CLAUDE_MODEL_PRO`). Usar siempre `callClaude()` y `extractText()` (los modelos 5.5 pueden empezar con bloques `thinking`; no aceptan temperature ni prefill). Un test falla si alguien escribe un modelo a mano en una function.
+- **Auth**: `netlify/functions/lib/auth.js`. El navegador manda `Authorization: Bearer <token Supabase>` (lo añade `src/lib/api.js` envolviendo fetch) y el userId SALE DEL TOKEN. Server-to-server: `x-internal-secret` = `INTERNAL_API_SECRET` (solo funciones con `allowInternal`). **`x-tricoach-secret` / `VITE_TRICOACH_SECRET` ya no se usan** (se pueden borrar de Netlify). CORS por función (`corsHeaders`), sin `*`.
+- **Crons pausados protegidos** con `guardScheduled` (requieren `x-internal-secret`, o `CRONS_ENABLED=true` + invocación del scheduler). Al reactivar los crons, crear `CRONS_ENABLED=true`.
+- **health-check** (programada, diaria 07:13 UTC): prueba los modelos y manda email a `ALERT_EMAIL` si fallan (independiente de `EMAILS_ENABLED`). Prueba manual: `POST /.netlify/functions/claude-status` (`?modo=completo&plan=free|pro` hace chat + plan reales) con `x-internal-secret`.
+- **Chat**: nunca guarda errores como respuesta del coach; si Claude solo usa `actualizar_perfil` sin texto, `claude.js` hace una segunda llamada con el `tool_result`. `purpose: 'contexto'` = resumen con modelo barato, system fijado en servidor, no cuenta para el límite.
+- **Carreras**: `profiles.carreras[].fecha` SIEMPRE ISO `YYYY-MM-DD` (`fechaCarreraISO` en `src/lib/fechas.js`). Las 36 antiguas en texto se convirtieron el 5-nov (copia en `_backup_profiles_carreras_20261105`).
+- **Macrociclo**: se crea cuando el perfil tiene `deporte` (tras onboarding). Ciclos activos sin `fecha_carrera` con carrera futura se recalculan solos al cargar (`repararCicloSinCarrera` en App.jsx).
+- **Bienvenida**: la primera respuesta tras el onboarding siempre genera el plan, con lo que cuente el usuario como `contexto_semana`.
+- **Límites**: `LIMITE_DIARIO` en `src/lib/profiles.js` (Free 10, Pro 30) = `DAILY_LIMIT` de claude.js. Nunca "ilimitados".
+- **Borrado de cuenta**: ahora es real (mensajes, planes, ciclos, perfil, usuario de auth; cancela Stripe y revoca Strava). Rechaza (409) entrenadores y atletas del Coach Dashboard. Las 8 cuentas "borradas" antiguas: `scripts/purgar-cuentas-borradas.sql` (a mano, irreversible).
 
 ## ⏸ PROYECTO EN PAUSA (29 octubre 2026)
 Lucas ha puesto el proyecto en pausa. Estado de las automatizaciones:
@@ -20,7 +33,7 @@ Freemium: Free (10 msg/día, plan básico) / Pro (9,99€/mes, Strava + plan ada
 - Frontend: React + Vite (JavaScript, NO TypeScript)
 - Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co) — RLS activado
 - Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
-- Tests: Vitest — **201 tests pasando** (27 archivos) + Playwright E2E (3 specs)
+- Tests: Vitest — **214 tests pasando** (28 archivos, cargan sin .env) + Playwright E2E (3 specs)
 - Deploy: Netlify (producción: https://tricoach-v2.netlify.app)
 - Pagos: Stripe (checkout + webhooks)
 - Email: Resend (coach@getricoach.com)
@@ -30,32 +43,24 @@ Freemium: Free (10 msg/día, plan básico) / Pro (9,99€/mes, Strava + plan ada
 ### Netlify Functions
 - CommonJS SIEMPRE: `const x = require('x')` y `exports.handler = async (event) => {}`
 - NO usar @supabase/supabase-js — usar REST API con https nativo
-- Validar siempre el header `x-tricoach-secret` contra `process.env.TRICOACH_SECRET` — **TODAS las funciones sin excepción**
+- Autenticar SIEMPRE con `authenticate(event, { cors, bodyUserId })` de `./lib/auth` y usar `auth.userId` — **TODAS las funciones sin excepción** (nunca fiarse del userId del body)
 - Validar UUID antes de usar en queries: `const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i` — añadido en todas las funciones que reciben userId/planId
-- El modelo de Claude está fijo: `CLAUDE_MODEL = 'claude-sonnet-4-20250514'` — nunca viene del frontend. Sigue siendo el estándar del proyecto. Inventario de archivos donde está hardcodeado (auditoría junio 2026, útil para una migración futura):
-  - `netlify/functions/claude.js:6`
-  - `netlify/functions/generate-plan.js:10`
-  - `netlify/functions/adjust-plan.js:10`
-  - `netlify/functions/coach-intro.js:11`
-  - `netlify/functions/strava-feedback.js:11`
+- El modelo de Claude nunca viene del frontend: se elige en `lib/claude.js` con `modelFor(profile.plan)` (o `cheapModel()` para tareas internas). Ver sección REACTIVACIÓN.
 - No usar console.log en producción — solo console.error para errores reales
 
 Template mínimo para nueva función:
 ```javascript
-const FUNCTION_SECRET = process.env.TRICOACH_SECRET;
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, x-tricoach-secret', 'Access-Control-Allow-Methods': 'POST, OPTIONS' };
+const { authenticate, corsHeaders } = require('./lib/auth');
 
 exports.handler = async (event) => {
+  const CORS = corsHeaders(event);
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS, body: 'Method Not Allowed' };
-  const secret = event.headers['x-tricoach-secret'];
-  if (!FUNCTION_SECRET || secret !== FUNCTION_SECRET) return { statusCode: 401, headers: CORS, body: JSON.stringify({ error: 'Unauthorized' }) };
   let parsed;
   try { parsed = JSON.parse(event.body || '{}'); } catch { return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'JSON inválido' }) }; }
-  const { userId } = parsed;
-  if (!userId) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId requerido' }) };
-  if (!UUID_REGEX.test(userId)) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId inválido' }) };
+  const auth = await authenticate(event, { cors: CORS, bodyUserId: parsed.userId });
+  if (!auth.ok) return auth.response;
+  const userId = auth.userId; // del token de Supabase, nunca del body
   // ...
 };
 ```
@@ -119,9 +124,9 @@ Reglas: si tocas un lado, toca el otro (el test de paridad te lo recordará). `n
 - **Smoke inocuo en producción** (coste cero, no escribe): pedir la generación de la semana ACTUAL sin forzar para un usuario que ya tiene plan → debe responder `{ ya_existe: true }` sin llamar a Claude:
   `curl -s -X POST https://app.getricoach.com/.netlify/functions/generate-plan -H "Content-Type: application/json" -H "x-internal-secret: $INTERNAL_API_SECRET" -d '{"userId":"<tu-uuid>","fechaInicio":"<lunes-actual>"}'`
 
-### Soft delete (delete-account.js)
-`delete-account.js` NO borra el registro de `profiles` — hace `PATCH {deleted_at: now()}`.
-En `App.jsx`, `loadOrCreateProfile()` detecta `profile?.deleted_at` y hace `signOut()` mostrando pantalla de cuenta eliminada.
+### Borrado de cuenta (delete-account.js) — real desde nov-2026
+Borra mensajes, planes, ciclos, perfil y usuario de auth; cancela suscripciones y borra el cliente de Stripe; revoca Strava. Devuelve 409 a entrenadores y atletas del Coach Dashboard (no tocar sus datos).
+`deleted_at` queda solo por las cuentas antiguas soft-deleted: `App.jsx` las sigue detectando y cerrando sesión.
 **Migración requerida** (ejecutar una vez):
 ```sql
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
@@ -137,7 +142,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 
 ### Tests
 - Ejecutar `npm test` al terminar SIEMPRE
-- **201 tests deben pasar** (27 archivos — actualizado junio 2026) — si alguno falla, arreglarlo antes de terminar
+- **214 tests deben pasar** (28 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
 - No borrar ni modificar tests existentes sin motivo explícito
 
 ## Estado del proyecto — Fases completadas
@@ -407,14 +412,17 @@ created_at
 
 Frontend (VITE_*):
 - VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
-- VITE_TRICOACH_SECRET
+- (VITE_TRICOACH_SECRET — OBSOLETA desde nov-2026, ya no se usa)
 - VITE_STRAVA_CLIENT_ID, VITE_STRAVA_REDIRECT_URI  ← credenciales globales TriCoach (no per-user)
 - VITE_STRIPE_PUBLISHABLE_KEY
 
 Backend (solo en Netlify Functions):
 - SUPABASE_URL, SUPABASE_SERVICE_KEY
 - ANTHROPIC_API_KEY
-- TRICOACH_SECRET
+- (TRICOACH_SECRET — OBSOLETA desde nov-2026)
+- CLAUDE_MODEL_FREE, CLAUDE_MODEL_PRO (opcionales; por defecto haiku-5-5 / sonnet-5-5)
+- ALERT_EMAIL ← destinatario del health-check
+- CRONS_ENABLED ← poner a true al reactivar los crons
 - STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET, STRAVA_REDIRECT_URI  ← credenciales globales TriCoach (no per-user)
 - STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
 - STRIPE_PRICE_MONTHLY, STRIPE_PRICE_ANNUAL
