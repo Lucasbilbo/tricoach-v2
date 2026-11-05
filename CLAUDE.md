@@ -19,6 +19,7 @@ El coach no respondía desde el 15-jun-2026: `claude-sonnet-4-20250514` fue reti
 - **Prueba Pro (5-nov-2026)**: `profiles.trial_ends_at` (migración 005; default now()+7d solo para filas nuevas, las existentes NULL). `planEfectivo()` (`src/lib/planEfectivo.js` + espejo `functions/lib/plan-efectivo.js`) decide modelo y límite de mensajes. **Strava/Intervals/feedback siguen exigiendo `profile.plan === 'pro'` de pago** (Strava limita a 10 atletas). Precios: 14,99 €/mes · 119 €/año; `create-checkout` solo acepta `STRIPE_PRICE_MONTHLY/ANNUAL`.
 - **Borrado de cuenta**: ahora es real (mensajes, planes, ciclos, perfil, usuario de auth; cancela Stripe y revoca Strava). Rechaza (409) entrenadores y atletas del Coach Dashboard. Las 8 cuentas "borradas" antiguas: `scripts/purgar-cuentas-borradas.sql` (a mano, irreversible).
 - **Fiabilidad (5-nov-2026)**: (1) `callClaude` se autocura: si el modelo devuelve 404 `not_found_error` (retirado), busca el más reciente de la misma familia en `GET /v1/models`, reintenta y deja `console.error`; el health-check llama con `sinFallback` y SIGUE avisando. Retiradas anunciadas: haiku-5-5 no antes del 7-oct-2027, sonnet-5-5 no antes del 28-sep-2027 (Anthropic avisa por email con ≥60 días a la cuenta de la API: que sea un buzón que se lee). (2) health-check también avisa si ≥3 mensajes y ≥30 % de los de las últimas 24 h no recibieron respuesta (`calcularSinRespuesta` en `lib/salud.js`, deducido de `messages`; excluye usuarios con ≥10 mensajes por el límite diario). (3) `stripe-webhook` usa `lib/stripe-eventos.js`: firma con tolerancia 5 min, `invoice.payment_failed` → alerta a ALERT_EMAIL (no baja a Free), `subscription.deleted/updated` terminal → solo baja a Free si en Stripe no queda ninguna suscripción viva (si Stripe no responde, NO baja y avisa), `subscription.updated` active/trialing → reactiva Pro. **El endpoint del webhook en Stripe debe estar suscrito a `invoice.payment_failed` y `customer.subscription.updated`.** (4) `validarDuracion` vive en `lib/duraciones.js`: a un principiante ya no se le suben las sesiones a los mínimos de fase (antes 80 min de bici) y se limita a 60 min, coherente con el prompt. Las alertas a Lucas usan `sendAlertEmail` (independiente de `EMAILS_ENABLED`); los emails a usuarios siguen apagados.
+- **Semana de diagnóstico (5-nov-2026)**: el primer plan de todo usuario sin ≥3 actividades de Strava es de diagnóstico (`buildDiagnosticoUserMessage`). Hasta hoy esa plantilla IGNORABA `disponibilidad`, `lesiones`, `contexto_semana` (lo que el usuario cuenta en la bienvenida) y `nivel`. Ahora `buildBloqueDiagnostico` los añade, pide rodajes suaves (Z1-Z2) en los días sin test (máx. 2 descansos reales) y a los principiantes les quita los tests a máximo esfuerzo. `Dashboard.esSesionTest` excluye las sesiones `suave`. La conversación de bienvenida ahora se guarda en `messages`. `profiles.contexto` tenía por defecto el texto `'null'` (migración 006 pendiente de aplicar); el código ya lo ignora.
 
 ## ⏸ PROYECTO EN PAUSA (29 octubre 2026)
 Lucas ha puesto el proyecto en pausa. Estado de las automatizaciones:
@@ -37,7 +38,7 @@ Freemium: Free (10 msg/día, plan básico) / Pro (14,99€/mes o 119€/año, St
 - Frontend: React + Vite (JavaScript, NO TypeScript)
 - Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co) — RLS activado
 - Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
-- Tests: Vitest — **251 tests pasando** (31 archivos, cargan sin .env) + Playwright E2E (3 specs)
+- Tests: Vitest — **256 tests pasando** (32 archivos, cargan sin .env) + Playwright E2E (3 specs)
 - Deploy: Netlify (producción: https://tricoach-v2.netlify.app)
 - Pagos: Stripe (checkout + webhooks)
 - Email: Resend (coach@getricoach.com)
@@ -146,7 +147,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 
 ### Tests
 - Ejecutar `npm test` al terminar SIEMPRE
-- **251 tests deben pasar** (31 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
+- **256 tests deben pasar** (32 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
 - No borrar ni modificar tests existentes sin motivo explícito
 
 ## Estado del proyecto — Fases completadas

@@ -217,7 +217,24 @@ function fetchStravaActivities(accessToken) {
   });
 }
 
-function buildDiagnosticoUserMessage(deportesEfectivos, weekStart, deporteInfo, dias, objetivo) {
+// Bloque común de la semana de diagnóstico: restricciones del atleta, lo que cuenta en la
+// bienvenida y rodajes suaves en los días sin test. Hasta nov-2026 la plantilla de diagnóstico
+// ignoraba disponibilidad, lesiones, contexto_semana y nivel: justo el primer plan de TODOS los
+// usuarios nuevos sin Strava, donde más cuenta lo que acaban de contarle al coach.
+function buildBloqueDiagnostico(extras = {}, esMulti = false) {
+  const partes = [];
+  const nivel = String(extras.nivel || '').toLowerCase();
+  if (extras.disponibilidad) partes.push(`Disponibilidad habitual para entrenar: ${extras.disponibilidad}. Coloca las sesiones en esos huecos.`);
+  if (extras.lesiones) partes.push(`Lesiones o limitaciones (RESPETAR SIEMPRE): ${extras.lesiones}. Sustituye o adapta cualquier test o sesión que las agrave y dilo en la descripción.`);
+  if (extras.contextoSemana) partes.push(`LO QUE EL ATLETA ACABA DE CONTAR (tiene prioridad sobre la plantilla): ${extras.contextoSemana}`);
+  if (nivel === 'principiante') {
+    partes.push('NIVEL PRINCIPIANTE: ningún test a "máximo esfuerzo". Sustituye cada test por un esfuerzo controlado y sostenido (RPE 7-8), sesiones de máximo 45 min y Z1-Z2 en el resto.');
+  }
+  partes.push(`RODAJES SUAVES: no dejes la semana en solo tests. En los días marcados como "Descanso" o "Descanso activo" de la plantilla añade una sesión suave aeróbica (Z1-Z2, RPE 4-5, 30-45 min${esMulti ? ', alternando disciplinas' : ''}), con "intensidad": "suave". Máximo 2 días de descanso real en la semana (1 si el plan tiene 5 días o menos) y nunca dos tests intensos seguidos.`);
+  return `\n\nAJUSTES OBLIGATORIOS:\n- ${partes.join('\n- ')}`;
+}
+
+function buildDiagnosticoUserMessage(deportesEfectivos, weekStart, deporteInfo, dias, objetivo, extras = {}) {
   const deporte = deportesEfectivos[0]?.deporte || 'running';
 
   const testsInfo = {
@@ -293,7 +310,7 @@ En la descripción de la última sesión añade: "Cuando termines cada test, cu�
 
 tipos posibles: "Correr", "Bici", "Nadar", "Fuerza", "Brick", "Descanso"
 intensidades posibles: "suave", "moderada", "fuerte", "descanso"
-Devuelve exactamente ${dias.length} sesiones en el orden: ${dias.join(', ')}.`;
+Devuelve exactamente ${dias.length} sesiones en el orden: ${dias.join(', ')}.${buildBloqueDiagnostico({ nivel: deportesEfectivos[0]?.nivel, ...extras })}`;
   }
 
   // Multi-sport: key tests per sport (max 2 intense tests each)
@@ -377,7 +394,7 @@ En la descripción de la última sesión activa añade: "Cuando termines cada te
 
 tipos posibles: "Correr", "Bici", "Nadar", "Fuerza", "Brick", "Descanso"
 intensidades posibles: "suave", "moderada", "fuerte", "descanso"
-Devuelve exactamente ${dias.length} sesiones en el orden: ${dias.join(', ')}.`;
+Devuelve exactamente ${dias.length} sesiones en el orden: ${dias.join(', ')}.${buildBloqueDiagnostico({ nivel: deportesEfectivos.every(d => String(d.nivel || '').toLowerCase() === 'principiante') ? 'principiante' : '', ...extras }, true)}`;
 }
 
 function buildAnalisisSemanaAnterior(planAnterior, stravaText, numeroDeSemana) {
@@ -758,7 +775,12 @@ Instrucción: devuelve SOLO un JSON válido, sin texto adicional, sin markdown, 
 
   let userMessage;
   if (necesitaDiagnostico) {
-    userMessage = buildDiagnosticoUserMessage(deportesEfectivos, weekStart, deporteInfo, dias, profile.objetivo);
+    const lesionesDiag = String(profile.lesiones || '').trim();
+    userMessage = buildDiagnosticoUserMessage(deportesEfectivos, weekStart, deporteInfo, dias, profile.objetivo, {
+      disponibilidad: profile.disponibilidad && String(profile.disponibilidad).trim() ? truncar(profile.disponibilidad, 300) : '',
+      lesiones: lesionesDiag && !/^sin lesiones/i.test(lesionesDiag) ? truncar(lesionesDiag, 300) : '',
+      contextoSemana: contexto_semana ? truncar(contexto_semana, 1000) : '',
+    });
   } else {
     const stravaParaAnalisis = isPro ? stravaText : null;
     const analisisSection = planAnteriorEfectivo
@@ -867,7 +889,7 @@ Nivel: ${nivelPrimario}
 Objetivo: ${profile.objetivo || 'mejorar forma física'}
 ${carrerasTexto ? `Carreras/eventos próximos: ${carrerasTexto}` : ''}
 ${semanaLabel}${rendimientoSection}
-${profile.contexto ? `Contexto del atleta: ${truncar(profile.contexto, 500)}` : ''}${restriccionesSection}${analisisSection}${macrocicloSection}
+${profile.contexto && profile.contexto !== 'null' ? `Contexto del atleta: ${truncar(profile.contexto, 500)}` : ''}${restriccionesSection}${analisisSection}${macrocicloSection}
 ${distribucionDeportes}${contextoSemanaSection}${wellnessWarning}
 
 El plan empieza el ${weekStart}. Los días en orden son: ${dias.join(', ')}.
@@ -1036,3 +1058,6 @@ IMPORTANTE: El campo contexto puede contener información de semanas anteriores 
     body: JSON.stringify(plan)
   };
 };
+
+// Exportada solo para tests (Netlify solo usa handler)
+exports.buildDiagnosticoUserMessage = buildDiagnosticoUserMessage;

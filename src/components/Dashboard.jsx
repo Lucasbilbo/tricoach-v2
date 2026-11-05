@@ -152,7 +152,7 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
   const today = DIAS_SEMANA[new Date().getDay()]
   const sesionHoy = plan?.sesiones?.find(s => s.dia === today) || null
   const esDescanso = sesionHoy?.tipo?.toLowerCase() === 'descanso' || sesionHoy?.tipo?.toLowerCase() === 'rest'
-  const esSesionTest = sesionHoy?.tipo_semana === 'diagnostico' && !esDescanso
+  const esSesionTest = sesionHoy?.tipo_semana === 'diagnostico' && !esDescanso && sesionHoy?.intensidad !== 'suave'
 
   const todayIdx = DIAS_ORDEN.indexOf(today)
   const siguiente = plan?.sesiones?.find(s => {
