@@ -18,6 +18,7 @@ import SessionDetail from './components/SessionDetail'
 import ErrorBoundary from './components/ErrorBoundary'
 import WelcomeGuide from './components/WelcomeGuide'
 import { enPrueba, diasPruebaRestantes } from './lib/planEfectivo'
+import { track } from './lib/analytics'
 
 function App() {
   const [session, setSession] = useState(null)
@@ -52,6 +53,7 @@ function App() {
     }
     if (!profile) {
       profile = await createProfile(user)
+      if (profile) track('sign_up', { method: 'google' })
     }
     setProfile(profile)
     // El macrociclo se crea cuando el onboarding está hecho (deporte + carreras).
@@ -185,6 +187,7 @@ function App() {
     const params = new URLSearchParams(window.location.search)
     if (params.get('upgrade') === 'success') {
       setUpgradeSuccess(true)
+      track('upgrade_success')
       window.history.replaceState({}, '', window.location.pathname)
       setTimeout(() => setUpgradeSuccess(false), 4000)
     }
@@ -211,6 +214,7 @@ function App() {
       .then(data => {
         setStravaCallbackCode(null)
         if (data.ok) {
+          track('strava_connected')
           loadOrCreateProfile(session.user)
           setStravaSyncToast('✓ Strava conectado')
           setTimeout(() => setStravaSyncToast(null), 4000)
