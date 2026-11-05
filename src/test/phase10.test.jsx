@@ -47,7 +47,7 @@ describe('Fase 10: Monetización Stripe', () => {
   })
 
   // ─── Test 4: Chat muestra botón upgrade cuando el usuario Free llega al límite
-  it('Chat muestra botón upgrade cuando messages_today >= 25', async () => {
+  it('Chat muestra botón upgrade cuando el usuario Free llega a su límite diario', async () => {
     global.fetch.mockResolvedValue({
       ok: true,
       json: async () => ({ sinStrava: true }),
@@ -58,9 +58,9 @@ describe('Fase 10: Monetización Stripe', () => {
       getMessages: vi.fn(() => Promise.resolve([])),
       saveMessage: vi.fn(() => Promise.resolve()),
     }))
-    vi.mock('../lib/profiles', () => ({
+    vi.mock('../lib/profiles', async (importOriginal) => ({
+      ...(await importOriginal()),
       canSendMessage: vi.fn(() => Promise.resolve(false)),
-      incrementMessageCount: vi.fn(() => Promise.resolve()),
     }))
     vi.mock('../lib/context', () => ({
       updateContext: vi.fn(() => Promise.resolve()),
@@ -75,7 +75,7 @@ describe('Fase 10: Monetización Stripe', () => {
       deporte: 'triatlon',
       plan: 'free',
       messages_today: 25,
-      last_message_date: new Date().toISOString().split('T')[0],
+      last_message_date: new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' }),
     }
     const onShowUpgrade = vi.fn()
     render(

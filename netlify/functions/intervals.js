@@ -1,14 +1,10 @@
+const { authenticate, corsHeaders } = require('./lib/auth')
 const https = require('https')
 
-const FUNCTION_SECRET = process.env.TRICOACH_SECRET
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type, x-tricoach-secret',
-  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-}
+let CORS = corsHeaders()
 
 function supabaseGet(path) {
   const hostname = new URL(SUPABASE_URL).hostname
@@ -65,15 +61,18 @@ function intervalsRequest(method, path, apiKey, body) {
 }
 
 exports.handler = async (event) => {
+  CORS = corsHeaders(event, 'GET, POST, DELETE, OPTIONS')
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' }
 
-  const secret = event.headers['x-tricoach-secret']
-  if (!FUNCTION_SECRET) {
-    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Server misconfigured' }) }
+  // El usuario sale del token; el userId de la query/body solo se compara
+  let bodyParsed = null
+  if (event.httpMethod === 'POST') {
+    try { bodyParsed = JSON.parse(event.body || '{}') }
+    catch { return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'JSON inválido' }) } }
   }
-  if (secret !== FUNCTION_SECRET) {
-    return { statusCode: 401, headers: CORS, body: JSON.stringify({ error: 'Unauthorized' }) }
-  }
+  const claimedUserId = bodyParsed?.userId || (event.queryStringParameters || {}).userId
+  const auth = await authenticate(event, { cors: CORS, bodyUserId: claimedUserId })
+  if (!auth.ok) return auth.response
 
   if (!SUPABASE_URL || !SUPABASE_KEY) {
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Supabase no configurado' }) }
@@ -86,7 +85,7 @@ exports.handler = async (event) => {
   const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
   if (event.httpMethod === 'GET') {
-    const userId = params.get('userId')
+    const userId = auth.userId
     if (!userId) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId requerido' }) }
     if (!UUID_REGEX.test(userId)) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId inválido' }) }
 
@@ -111,11 +110,8 @@ exports.handler = async (event) => {
 
   // POST — crear evento
   if (event.httpMethod === 'POST') {
-    let parsed
-    try { parsed = JSON.parse(event.body || '{}') }
-    catch { return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'JSON inválido' }) } }
-
-    const { userId, ...eventData } = parsed
+    const { userId: _ignorado, ...eventData } = bodyParsed
+    const userId = auth.userId
     if (!userId) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId requerido' }) }
     if (!UUID_REGEX.test(userId)) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId inválido' }) }
 
@@ -128,7 +124,7 @@ exports.handler = async (event) => {
 
   // DELETE — borrar evento
   if (event.httpMethod === 'DELETE') {
-    const userId = params.get('userId')
+    const userId = auth.userId
     const id = params.get('id')
     if (!userId || !id) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId e id requeridos' }) }
     if (!UUID_REGEX.test(userId)) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId inválido' }) }

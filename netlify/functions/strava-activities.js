@@ -1,12 +1,9 @@
+const { authenticate, corsHeaders } = require('./lib/auth');
 const https = require('https');
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type, x-tricoach-secret',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS'
-};
+let CORS = corsHeaders();
 
-const FUNCTION_SECRET = process.env.TRICOACH_SECRET;
+
 
 function formatPace(distanceM, movingTimeSec) {
   if (!distanceM || distanceM === 0) return null;
@@ -97,16 +94,10 @@ function formatActivities(raw, fcMaximaAtleta = null) {
 }
 
 exports.handler = async (event) => {
+  CORS = corsHeaders(event);
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS, body: 'Method Not Allowed' };
 
-  const secret = event.headers['x-tricoach-secret'];
-  if (!FUNCTION_SECRET) {
-    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Server misconfigured' }) };
-  }
-  if (secret !== FUNCTION_SECRET) {
-    return { statusCode: 401, headers: CORS, body: JSON.stringify({ error: 'Unauthorized' }) };
-  }
 
   let parsed;
   try {
@@ -115,7 +106,9 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'JSON inválido' }) };
   }
 
-  const { userId } = parsed;
+  const auth = await authenticate(event, { cors: CORS, bodyUserId: parsed.userId });
+  if (!auth.ok) return auth.response;
+  const userId = auth.userId;
   if (!userId) {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId requerido' }) };
   }
@@ -272,7 +265,7 @@ exports.handler = async (event) => {
     const feedbackUrl = `${process.env.URL || 'http://localhost:8888'}/.netlify/functions/strava-feedback`;
     fetch(feedbackUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-tricoach-secret': FUNCTION_SECRET },
+      headers: { 'Content-Type': 'application/json', 'x-internal-secret': process.env.INTERNAL_API_SECRET || '' },
       body: JSON.stringify({ userId, actividad: formatted.actividades[0] })
     }).catch(() => {});
   }

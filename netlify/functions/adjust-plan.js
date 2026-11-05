@@ -1,13 +1,10 @@
+const claudeApi = require('./lib/claude');
+const { authenticate, corsHeaders } = require('./lib/auth');
 const https = require('https');
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type, x-tricoach-secret',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS'
-};
+let CORS = corsHeaders();
 
-const FUNCTION_SECRET = process.env.TRICOACH_SECRET;
-const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
+
 
 function supabaseGet(hostname, path, key) {
   return new Promise((resolve) => {
@@ -61,37 +58,18 @@ function supabasePatch(hostname, path, key, body) {
   });
 }
 
-function callClaude(apiKey, systemPrompt, userMessage) {
-  const body = JSON.stringify({
-    model: CLAUDE_MODEL,
-    max_tokens: 2500,
+// Llamada a Claude vía lib/claude.js. Devuelve la respuesta de la API o null si falla
+// (el error queda registrado en los logs de Netlify).
+async function callClaude(apiKey, systemPrompt, userMessage, model) {
+  const r = await claudeApi.callClaude({
+    apiKey,
+    model,
     system: systemPrompt,
-    messages: [{ role: 'user', content: userMessage }]
+    messages: [{ role: 'user', content: userMessage }],
+    maxTokens: 6000,
+    timeoutMs: 24000,
   });
-
-  return new Promise((resolve) => {
-    const options = {
-      hostname: 'api.anthropic.com',
-      path: '/v1/messages',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'Content-Length': Buffer.byteLength(body)
-      }
-    };
-    const req = https.request(options, (r) => {
-      let d = '';
-      r.on('data', chunk => d += chunk);
-      r.on('end', () => {
-        try { resolve(JSON.parse(d)); } catch { resolve(null); }
-      });
-    });
-    req.on('error', () => resolve(null));
-    req.write(body);
-    req.end();
-  });
+  return r.ok ? r.data : null;
 }
 
 function migrarSesionAntigua(s) {
@@ -150,16 +128,10 @@ function getMensajeAjuste(motivo) {
 }
 
 exports.handler = async (event) => {
+  CORS = corsHeaders(event);
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS, body: 'Method Not Allowed' };
 
-  const secret = event.headers['x-tricoach-secret'];
-  if (!FUNCTION_SECRET) {
-    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Server misconfigured' }) };
-  }
-  if (secret !== FUNCTION_SECRET) {
-    return { statusCode: 401, headers: CORS, body: JSON.stringify({ error: 'Unauthorized' }) };
-  }
 
   let parsed;
   try {
@@ -168,7 +140,10 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'JSON inválido' }) };
   }
 
-  const { userId, planId, motivo: motivoRaw, signal, descripcion } = parsed;
+  const { planId, motivo: motivoRaw, signal, descripcion } = parsed;
+  const auth = await authenticate(event, { cors: CORS, bodyUserId: parsed.userId });
+  if (!auth.ok) return auth.response;
+  const userId = auth.userId;
   // signal is the new param; motivo is the legacy param — both accepted
   const motivo = signal || motivoRaw;
   if (!userId || !planId || !motivo) {
@@ -201,7 +176,7 @@ exports.handler = async (event) => {
   // Obtener perfil del usuario
   const profiles = await supabaseGet(
     hostname,
-    `/rest/v1/profiles?id=eq.${userId}&select=deporte,nivel,objetivo,fecha_carrera`,
+    `/rest/v1/profiles?id=eq.${userId}&select=deporte,nivel,objetivo,fecha_carrera,plan`,
     supabaseKey
   );
   const profile = Array.isArray(profiles) ? profiles[0] : {};
@@ -277,15 +252,15 @@ Conserva el campo "completada: true" y TODOS los campos originales (incluyendo e
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'API key not configured' }) };
   }
 
-  const claudeResponse = await callClaude(ANTHROPIC_KEY, systemPrompt, userMessage);
+  const claudeResponse = await callClaude(ANTHROPIC_KEY, systemPrompt, userMessage, claudeApi.modelFor(profile?.plan));
 
-  if (!claudeResponse || !claudeResponse.content?.[0]?.text) {
+  if (!claudeResponse || !claudeApi.extractText(claudeResponse)) {
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Error al ajustar el plan' }) };
   }
 
   let planData;
   try {
-    const text = claudeResponse.content[0].text.trim();
+    const text = claudeApi.extractText(claudeResponse);
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     planData = JSON.parse(jsonMatch ? jsonMatch[0] : text);
   } catch {

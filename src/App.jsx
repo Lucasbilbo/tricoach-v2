@@ -53,7 +53,32 @@ function App() {
       profile = await createProfile(user)
     }
     setProfile(profile)
-    loadOrCreateCycle(user.id, profile)
+    // El macrociclo se crea cuando el onboarding está hecho (deporte + carreras).
+    // Antes se creaba al iniciar sesión con el perfil vacío y salía genérico, sin carrera.
+    if (profile?.deporte) loadOrCreateCycle(user.id, profile)
+  }
+
+  function tieneCarreraFutura(profile) {
+    const hoy = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' })
+    return Array.isArray(profile?.carreras) &&
+      profile.carreras.some(c => /^\d{4}-\d{2}-\d{2}$/.test(c?.fecha || '') && c.fecha > hoy)
+  }
+
+  // Ciclos creados sin carrera aunque el usuario tenga una (bug hasta nov-2026):
+  // se recalculan una vez para que el plan apunte a su carrera.
+  async function repararCicloSinCarrera(cycle, profile) {
+    if (!cycle || cycle.fecha_carrera || !tieneCarreraFutura(profile)) return cycle
+    try {
+      const res = await fetch('/.netlify/functions/recalculate-cycle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: profile.id }),
+      })
+      const data = await res.json().catch(() => ({}))
+      return res.ok && data.cycle ? data.cycle : cycle
+    } catch {
+      return cycle
+    }
   }
 
   async function loadOrCreateCycle(userId, profile) {
@@ -65,13 +90,12 @@ function App() {
           .select('*')
           .eq('id', profile.active_cycle_id)
           .maybeSingle()
-        if (data) setActiveCycle(data)
+        if (data) setActiveCycle(await repararCicloSinCarrera(data, profile))
       } else {
         // Crear ciclo nuevo
-        const secret = import.meta.env.VITE_TRICOACH_SECRET || ''
         const res = await fetch('/.netlify/functions/create-cycle', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-tricoach-secret': secret },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId }),
         })
         const data = await res.json().catch(() => ({}))
@@ -96,7 +120,7 @@ function App() {
     stravaSyncedRef.current = true
     fetch('/.netlify/functions/strava-sync', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-tricoach-secret': import.meta.env.VITE_TRICOACH_SECRET || '' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: session.user.id })
     })
       .then(r => r.json())
@@ -119,10 +143,9 @@ function App() {
         await supabase.from('training_cycles').update({ estado: 'completed' }).eq('id', activeCycle.id)
       }
       // Crear nuevo ciclo
-      const secret = import.meta.env.VITE_TRICOACH_SECRET || ''
       const res = await fetch('/.netlify/functions/create-cycle', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-tricoach-secret': secret },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: session.user.id }),
       })
       const data = await res.json().catch(() => ({}))
@@ -177,11 +200,10 @@ function App() {
   useEffect(() => {
     if (!stravaCallbackCode || !session?.user?.id) return
     setCurrentScreen('profile')
-    const secret = import.meta.env.VITE_TRICOACH_SECRET || ''
     setStravaSyncToast('Conectando Strava...')
     fetch('/.netlify/functions/strava-auth', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-tricoach-secret': secret },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code: stravaCallbackCode, userId: session.user.id, redirectUri: import.meta.env.VITE_APP_URL || window.location.origin }),
     })
       .then(r => r.json())

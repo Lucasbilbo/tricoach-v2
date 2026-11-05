@@ -9,8 +9,8 @@ function emailsEnabled() {
   return process.env.EMAILS_ENABLED === 'true';
 }
 
-function sendEmail(to, subject, html) {
-  if (!emailsEnabled()) return Promise.resolve({ status: 200, body: 'emails pausados' });
+function sendEmail(to, subject, html, { force = false } = {}) {
+  if (!force && !emailsEnabled()) return Promise.resolve({ status: 200, body: 'emails pausados' });
   const bodyStr = JSON.stringify({
     from: 'TriCoach <coach@getricoach.com>',
     to: [to],
@@ -84,4 +84,16 @@ function buildPlanListoHtml(nombre, sesiones, volumenMin) {
     </html>`;
 }
 
-module.exports = { sendEmail, buildPlanListoHtml, emailsEnabled };
+// Alertas técnicas para el dueño del proyecto (health-check). No dependen de
+// EMAILS_ENABLED: aunque los emails a usuarios estén pausados, un fallo del coach
+// tiene que avisar. Destinatario: variable ALERT_EMAIL en Netlify.
+function sendAlertEmail(subject, html) {
+  const to = process.env.ALERT_EMAIL;
+  if (!to) {
+    console.error(`[alerta] ALERT_EMAIL no configurada — alerta no enviada: ${subject}`);
+    return Promise.resolve({ status: 0, body: 'sin ALERT_EMAIL' });
+  }
+  return sendEmail(to, subject, html, { force: true });
+}
+
+module.exports = { sendEmail, sendAlertEmail, buildPlanListoHtml, emailsEnabled };

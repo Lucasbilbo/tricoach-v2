@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import StravaConnect from './StravaConnect'
+import { fechaCarreraISO } from '../lib/fechas'
 
 // ─── Datos estáticos ──────────────────────────────────────────────────────────
 
@@ -327,7 +328,13 @@ export default function Onboarding({ userId, onComplete }) {
       setErroresCarrera(errors)
       return
     }
-    const fechaStr = `${nuevaCarrera.dia} ${nuevaCarrera.mes} ${nuevaCarrera.anio}`
+    // Fecha en ISO (YYYY-MM-DD): es el formato que esperan create-cycle, generate-plan,
+    // recalculate-cycle y el prompt del coach. Antes se guardaba "7 Marzo 2027" y se ignoraba.
+    const fechaStr = fechaCarreraISO(nuevaCarrera.dia, nuevaCarrera.mes, nuevaCarrera.anio)
+    if (!fechaStr) {
+      setErroresCarrera({ ...errors, fecha: 'Fecha no válida' })
+      return
+    }
     setErroresCarrera({ nombre: '', tipo: '', fecha: '' })
     const prioridadGuardada = nuevaCarrera.prioridad || 'A'
     setCarreras(prev => {
@@ -623,7 +630,7 @@ export default function Onboarding({ userId, onComplete }) {
                         </span>
                       </div>
                       <div style={{ color: 'var(--muted-foreground)', fontSize: 12, marginTop: 2 }}>
-                        {c.tipo}{c.fecha ? ` · ${c.fecha}` : ''}
+                        {c.tipo}{c.fecha ? ` · ${formatFecha(c.fecha)}` : ''}
                       </div>
                     </div>
                     <button

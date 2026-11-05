@@ -211,10 +211,9 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade,
 
     // Recalcular ciclo si cambió la carrera A
     if (onCycleUpdated && carreraAHaCambiado(profile.carreras, carreras)) {
-      const secret = import.meta.env.VITE_TRICOACH_SECRET || ''
       fetch('/.netlify/functions/recalculate-cycle', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-tricoach-secret': secret },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: profile.id }),
       })
         .then(r => r.json())
@@ -235,14 +234,18 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade,
   async function handleDelete() {
     setDeleting(true)
     try {
-      await fetch('/.netlify/functions/delete-account', {
+      const res = await fetch('/.netlify/functions/delete-account', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-tricoach-secret': import.meta.env.VITE_TRICOACH_SECRET || ''
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ userId: profile.id })
       })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        showToast(data.error || 'No se pudo eliminar la cuenta. Inténtalo de nuevo.', 'error')
+        return
+      }
       await supabase.auth.signOut()
     } catch (error) {
       console.error('Error borrando cuenta:', error)
@@ -312,12 +315,11 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade,
 
       const eventIds = planes?.intervals_event_ids
       if (Array.isArray(eventIds) && eventIds.length > 0) {
-        const secret = import.meta.env.VITE_TRICOACH_SECRET || ''
         await Promise.all(
           eventIds.map(item =>
             fetch(`/.netlify/functions/intervals?userId=${profile.id}&id=${item.id}`, {
               method: 'DELETE',
-              headers: { 'x-tricoach-secret': secret },
+              headers: { },
             }).catch(() => {})
           )
         )

@@ -34,27 +34,24 @@ export async function updateProfile(userId, updates) {
   return data
 }
 
-export async function canSendMessage(profile) {
-  if (profile.plan !== 'free') return true
+// Límites diarios de mensajes al coach. La fuente de verdad es el servidor
+// (netlify/functions/claude.js, DAILY_LIMIT); estos valores solo sirven para avisar antes.
+export const LIMITE_DIARIO = { free: 10, pro: 30 }
 
-  const today = new Date().toISOString().split('T')[0]
-  const lastDate = profile.last_message_date
-
-  if (lastDate !== today) return true
-  return profile.messages_today < 25
+export function hoyMadrid() {
+  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' })
 }
 
-export async function incrementMessageCount(userId, profile) {
-  const today = new Date().toISOString().split('T')[0]
-  const lastDate = profile.last_message_date
+export function mensajesHoy(profile, enviadosEnSesion = 0) {
+  const base = profile?.last_message_date === hoyMadrid() ? (profile?.messages_today || 0) : 0
+  return base + enviadosEnSesion
+}
 
-  const newCount = lastDate === today ? profile.messages_today + 1 : 1
+export function limiteDiario(profile) {
+  return profile?.plan === 'pro' ? LIMITE_DIARIO.pro : LIMITE_DIARIO.free
+}
 
-  const { error } = await supabase
-    .from('profiles')
-    .update({ messages_today: newCount, last_message_date: today })
-    .eq('id', userId)
-
-  if (error) return null
-  return newCount
+export async function canSendMessage(profile, enviadosEnSesion = 0) {
+  if (!profile) return true
+  return mensajesHoy(profile, enviadosEnSesion) < limiteDiario(profile)
 }

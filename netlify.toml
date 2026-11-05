@@ -37,13 +37,15 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "microphone=(*), camera=(), geolocation=()"
 
-# ── CORS solo para las functions (no para archivos estáticos) ────────────────
-[[headers]]
-  for = "/.netlify/functions/*"
-  [headers.values]
-    Access-Control-Allow-Origin = "*"
-    Access-Control-Allow-Headers = "Content-Type, x-tricoach-secret"
-    Access-Control-Allow-Methods = "GET, POST, DELETE, OPTIONS"
+# ── CORS de las functions ────────────────────────────────────────────────────
+# Lo gestiona cada function con netlify/functions/lib/auth.js (corsHeaders):
+# solo getricoach.com, tricoach-v2.netlify.app, sus deploy previews y localhost.
+# Antes era "*" a nivel de sitio.
+
+# ── Health-check diario del coach (nov-2026) ─────────────────────────────────
+# Prueba los modelos de Claude configurados y avisa a ALERT_EMAIL si fallan.
+[functions."health-check"]
+  schedule = "13 7 * * *"
 
 # PAUSA (29-oct-2026): crons desactivados. Para reactivar, restaurar estos 3 bloques:
 #   [functions."weekly-report"]    schedule = "0 19 * * 0"   (domingos 19:00 UTC)

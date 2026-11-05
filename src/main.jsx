@@ -5,6 +5,9 @@ import './index.css'
 import App from './App.jsx'
 import Privacidad from './pages/Privacidad.jsx'
 import Terminos from './pages/Terminos.jsx'
+import { instalarAuthFetch } from './lib/api.js'
+
+instalarAuthFetch()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
