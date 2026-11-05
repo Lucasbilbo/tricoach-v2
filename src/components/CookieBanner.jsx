@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { setAnalyticsConsent } from '../lib/analytics'
 
 export default function CookieBanner() {
   const [visible, setVisible] = useState(false)
@@ -10,6 +11,13 @@ export default function CookieBanner() {
 
   function accept() {
     localStorage.setItem('cookies_accepted', 'true')
+    setAnalyticsConsent(true)
+    setVisible(false)
+  }
+
+  function reject() {
+    localStorage.setItem('cookies_accepted', 'true')
+    setAnalyticsConsent(false)
     setVisible(false)
   }
 
@@ -31,12 +39,26 @@ export default function CookieBanner() {
       zIndex: 1000
     }}>
       <p style={{ margin: 0, fontSize: 14 }}>
-        Usamos cookies esenciales para el funcionamiento de la app y cookies analíticas para mejorar el servicio.
-        Al continuar, aceptas nuestra{' '}
+        Usamos cookies esenciales para el funcionamiento de la app y, si lo aceptas, cookies analíticas para mejorar el servicio.
+        Consulta nuestra{' '}
         <a href="/privacidad" style={{ color: '#60a5fa' }}>política de privacidad</a> y{' '}
 <a href="/terminos" style={{ color: '#60a5fa' }}>términos de uso</a>.
       </p>
       <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+        <button
+          onClick={reject}
+          style={{
+            background: 'transparent',
+            color: 'white',
+            border: '1px solid #555',
+            padding: '8px 16px',
+            borderRadius: 6,
+            cursor: 'pointer',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          Solo esenciales
+        </button>
         <button
           onClick={accept}
           style={{

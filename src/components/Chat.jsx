@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { getMessages, saveMessage } from '../lib/messages'
 import { canSendMessage, mensajesHoy, limiteDiario, LIMITE_DIARIO } from '../lib/profiles'
 import { planEfectivo, enPrueba, diasPruebaRestantes } from '../lib/planEfectivo'
+import { track } from '../lib/analytics'
 import { buildSystemPrompt } from '../prompts/buildSystemPrompt'
 import { updateContext } from '../lib/context'
 import { adjustPlan, generatePlan } from '../lib/plans'
@@ -134,6 +135,7 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
         const generated = await generatePlan(userId, null, null, soloConfirmacion ? null : texto.slice(0, 1000))
         if (generated?.sesiones) {
           onPlanUpdate?.(generated)
+          track('first_plan_generated')
           setMessages(prev => [...prev, { role: 'assistant', content: '✅ ¡Tu plan está listo! Pulsa **Plan** en el menú inferior para verlo.', local: true }])
         } else {
           setMessages(prev => [...prev, { role: 'assistant', content: 'No pude generar el plan ahora. Puedes generarlo desde la pestaña **Plan**.', local: true }])
@@ -213,6 +215,7 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
 
       setEnviadosHoy(n => n + 1)
       await saveMessage(userId, 'assistant', assistantMessage)
+      track('coach_reply')
 
       const finalMessages = [...updatedMessages, { role: 'assistant', content: assistantMessage }]
       setMessages(prev => [...prev, { role: 'assistant', content: assistantMessage }])

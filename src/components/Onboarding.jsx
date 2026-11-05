@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { fechaCarreraISO } from '../lib/fechas'
+import { track } from '../lib/analytics'
 
 // ─── Datos estáticos ──────────────────────────────────────────────────────────
 
@@ -293,6 +294,7 @@ export default function Onboarding({ userId, onComplete }) {
     } catch (e) {
       console.error('Exception en handleSubmit:', e)
     }
+    track('onboarding_complete', { n_deportes: deportes.length, con_carrera: carreras.length > 0 ? 1 : 0 })
     setSubmitted(true)
     setGenerando(true)
     localStorage.setItem('onboarding_just_completed', form.nombre || 'atleta')

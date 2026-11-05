@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { track } from '../lib/analytics'
 
 const PRICES = [
   {
@@ -32,6 +33,7 @@ export default function UpgradeModal({ userId, onClose }) {
       return
     }
     setLoading(planId)
+    track('begin_checkout', { plan: planId })
     try {
       const res = await fetch('/.netlify/functions/create-checkout', {
         method: 'POST',
