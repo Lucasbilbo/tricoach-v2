@@ -212,7 +212,18 @@ ${alertas.length > 0 ? `\n⚠️ ALERTAS: ${alertas.join('; ')}. Ajusta la inten
         label = s.completada ? ' ✓ completada' : ' (pendiente)'
       }
 
-      return `${s.dia} (${sesionDateStr}): ${s.tipo} - ${s.descripcion}${label}`
+      // Las sesiones con estructura (desde mayo-2026) no traen 'descripcion': antes el
+      // coach recibía "undefined" y no sabía qué sesión tocaba.
+      const detalle = s.descripcion || [
+        s.subtipo,
+        s.duracion_min ? `${s.duracion_min} min` : null,
+        s.distancia_km ? `${s.distancia_km} km` : null,
+        s.zona_objetivo || null,
+      ].filter(Boolean).join(', ')
+      const estructura = s.estructura
+        ? ` | Calentamiento: ${s.estructura.calentamiento || '-'} | Principal: ${s.estructura.principal || '-'} | Vuelta a la calma: ${s.estructura.vuelta_calma || '-'}${s.estructura.rpe_objetivo ? ` | RPE ${s.estructura.rpe_objetivo}` : ''}`
+        : ''
+      return `${s.dia} (${sesionDateStr}): ${s.tipo} - ${detalle || 'sin detalle'}${estructura}${label}`
     })
 
     return `\nPLAN SEMANA ACTUAL (semana del ${plan.semana}):${advertenciaSemana}\n${lines.join('\n')}${nota}`

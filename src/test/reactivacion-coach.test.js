@@ -133,3 +133,16 @@ describe('fechas de sesiones en planes que no empiezan en lunes', async () => {
     expect(getFechaSesion('2026-11-05', 'Sabado')).toBe('2026-11-07')
   })
 })
+
+describe('prompt del coach con sesiones estructuradas', async () => {
+  const { buildSystemPrompt } = await import('../prompts/buildSystemPrompt')
+  it('no escribe "undefined" cuando la sesión no trae descripcion', () => {
+    const hoy = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' })
+    const plan = { semana: hoy, sesiones: [{ dia: ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][new Date(hoy + 'T12:00:00').getDay()], tipo: 'Nadar', subtipo: 'Técnica', duracion_min: 45, estructura: { calentamiento: '200m', principal: '8x100', vuelta_calma: '100m', rpe_objetivo: '4-5' } }] }
+    const prompt = buildSystemPrompt({ nombre: 'Test', deporte: 'triatlon', nivel: 'intermedio' }, 'cercano', null, plan)
+    expect(prompt).not.toContain('undefined')
+    expect(prompt).toContain('Técnica, 45 min')
+    expect(prompt).toContain('Principal: 8x100')
+    expect(prompt).toContain('[HOY - pendiente]')
+  })
+})
