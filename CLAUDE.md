@@ -14,6 +14,7 @@ El coach no respondía desde el 15-jun-2026: `claude-sonnet-4-20250514` fue reti
 - **Macrociclo**: se crea cuando el perfil tiene `deporte` (tras onboarding). Ciclos activos sin `fecha_carrera` con carrera futura se recalculan solos al cargar (`repararCicloSinCarrera` en App.jsx).
 - **Bienvenida**: la primera respuesta tras el onboarding siempre genera el plan, con lo que cuente el usuario como `contexto_semana`.
 - **Límites**: `LIMITE_DIARIO` en `src/lib/profiles.js` (Free 10, Pro 20) = `DAILY_LIMIT` de claude.js. Nunca "ilimitados".
+- **Onboarding (5-nov-2026)**: 3 pantallas (tú: nombre+deportes+nivel / objetivo: carreras / tu semana: lesiones+disponibilidad). Personalidad `cercano` y coach `Coach` por defecto (se cambian en EditProfile); historial, equipamiento y Strava ya no se piden aquí. `disponibilidad` y `lesiones` ahora SÍ llegan a `generate-plan` (`restriccionesSection`) y a `buildSystemPrompt` (antes se guardaban y se ignoraban).
 - **Prueba Pro (5-nov-2026)**: `profiles.trial_ends_at` (migración 005; default now()+7d solo para filas nuevas, las existentes NULL). `planEfectivo()` (`src/lib/planEfectivo.js` + espejo `functions/lib/plan-efectivo.js`) decide modelo y límite de mensajes. **Strava/Intervals/feedback siguen exigiendo `profile.plan === 'pro'` de pago** (Strava limita a 10 atletas). Precios: 14,99 €/mes · 119 €/año; `create-checkout` solo acepta `STRIPE_PRICE_MONTHLY/ANNUAL`.
 - **Borrado de cuenta**: ahora es real (mensajes, planes, ciclos, perfil, usuario de auth; cancela Stripe y revoca Strava). Rechaza (409) entrenadores y atletas del Coach Dashboard. Las 8 cuentas "borradas" antiguas: `scripts/purgar-cuentas-borradas.sql` (a mano, irreversible).
 
@@ -34,7 +35,7 @@ Freemium: Free (10 msg/día, plan básico) / Pro (14,99€/mes o 119€/año, St
 - Frontend: React + Vite (JavaScript, NO TypeScript)
 - Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co) — RLS activado
 - Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
-- Tests: Vitest — **226 tests pasando** (29 archivos, cargan sin .env) + Playwright E2E (3 specs)
+- Tests: Vitest — **231 tests pasando** (29 archivos, cargan sin .env) + Playwright E2E (3 specs)
 - Deploy: Netlify (producción: https://tricoach-v2.netlify.app)
 - Pagos: Stripe (checkout + webhooks)
 - Email: Resend (coach@getricoach.com)
@@ -143,7 +144,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 
 ### Tests
 - Ejecutar `npm test` al terminar SIEMPRE
-- **226 tests deben pasar** (29 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
+- **231 tests deben pasar** (29 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
 - No borrar ni modificar tests existentes sin motivo explícito
 
 ## Estado del proyecto — Fases completadas

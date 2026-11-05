@@ -146,3 +146,21 @@ describe('prompt del coach con sesiones estructuradas', async () => {
     expect(prompt).toContain('[HOY - pendiente]')
   })
 })
+
+describe('onboarding corto: disponibilidad y lesiones llegan al coach', async () => {
+  const { buildSystemPrompt } = await import('../prompts/buildSystemPrompt')
+  it('el prompt incluye disponibilidad y lesiones del perfil', () => {
+    const p = buildSystemPrompt({ nombre: 'Test', deporte: 'running', nivel: 'intermedio', disponibilidad: 'Lunes mañana, Jueves tarde', lesiones: 'Rodilla derecha' }, 'cercano', null, null)
+    expect(p).toContain('Lunes mañana, Jueves tarde')
+    expect(p).toContain('Rodilla derecha')
+  })
+  it('"Sin lesiones actuales" no se cuenta como lesión', () => {
+    const p = buildSystemPrompt({ nombre: 'Test', deporte: 'running', nivel: 'intermedio', lesiones: 'Sin lesiones actuales' }, 'cercano', null, null)
+    expect(p).not.toContain('Lesiones o limitaciones')
+  })
+  it('generate-plan mete las mismas restricciones en el prompt del plan', () => {
+    const src = readFileSync(join(FUNCTIONS_DIR, 'generate-plan.js'), 'utf8')
+    expect(src).toContain('restriccionesSection')
+    expect(src).toContain('RESPETAR SIEMPRE')
+  })
+})

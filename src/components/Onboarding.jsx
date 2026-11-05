@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import StravaConnect from './StravaConnect'
 import { fechaCarreraISO } from '../lib/fechas'
 
 // ─── Datos estáticos ──────────────────────────────────────────────────────────
@@ -16,13 +15,6 @@ const NIVELES = [
   { value: 'principiante', label: 'Principiante', emoji: '🌱', desc: 'Empiezo a entrenar' },
   { value: 'intermedio', label: 'Intermedio', emoji: '🔥', desc: 'Entreno regularmente' },
   { value: 'avanzado', label: 'Avanzado', emoji: '⚡', desc: 'Compito y me exijo' },
-]
-
-const PERSONALIDADES = [
-  { value: 'cercano', label: '😊 Cercano', desc: 'Empático y motivador' },
-  { value: 'estricto', label: '💪 Estricto', desc: 'Directo y exigente' },
-  { value: 'gracioso', label: '😄 Gracioso', desc: 'Con humor y energía' },
-  { value: 'motivador', label: '🔥 Motivador', desc: 'Intenso y positivo' },
 ]
 
 const TIPOS_CARRERA = {
@@ -46,20 +38,6 @@ function getTipos(deporte, deportesArr) {
   return [...base, 'Otro']
 }
 
-const EQUIPAMIENTO_OPTIONS = [
-  { value: 'piscina', label: '🏊 Piscina' },
-  { value: 'bici_carretera', label: '🚴 Bici de carretera' },
-  { value: 'bici_montana', label: '🚵 Bici de montaña / gravel' },
-  { value: 'gimnasio', label: '🏋️ Gimnasio' },
-  { value: 'cinta', label: '🏃 Cinta de correr' },
-  { value: 'pesas_casa', label: '💪 Pesas en casa' },
-  { value: 'bandas', label: '🎽 Bandas elásticas' },
-  { value: 'pulsometro', label: '❤️ Monitor de frecuencia cardíaca' },
-  { value: 'reloj_gps', label: '⌚ Reloj GPS' },
-  { value: 'rodillo', label: '🔵 Rodillo / trainer' },
-  { value: 'otro', label: '✏️ Otro' },
-]
-
 function formatFecha(fecha) {
   if (!fecha) return ''
   const d = new Date(fecha + 'T00:00:00')
@@ -76,7 +54,7 @@ const DIAS_SLOTS = [
   ['Domingo mañana', 'Domingo tarde'],
 ]
 
-const TOTAL_STEPS = 8
+const TOTAL_STEPS = 3
 
 // ─── Subcomponentes ──────────────────────────────────────────────────────────
 
@@ -148,45 +126,6 @@ function Toggle({ active, onClick, label }) {
   )
 }
 
-function IntegracionCard({ logo, nombre, desc, badge, badgeColor, children, disabled }) {
-  return (
-    <div style={{
-      background: 'var(--card)',
-      border: '1px solid var(--border)',
-      borderRadius: 'var(--radius)',
-      padding: '14px 16px',
-      marginBottom: 10,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: 12,
-      opacity: disabled ? 0.55 : 1,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        {logo}
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-            <span style={{ fontWeight: 600, fontSize: 14 }}>{nombre}</span>
-            {badge && (
-              <span style={{
-                background: badgeColor || 'var(--secondary)',
-                color: badgeColor ? 'oklch(0.13 0.01 60)' : 'var(--muted-foreground)',
-                borderRadius: 4,
-                padding: '1px 6px',
-                fontSize: 10,
-                fontWeight: 600,
-              }}>
-                {badge}
-              </span>
-            )}
-          </div>
-          <p style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>{desc}</p>
-        </div>
-      </div>
-      {children}
-    </div>
-  )
-}
 
 // ─── Estilos comunes ─────────────────────────────────────────────────────────
 
@@ -266,18 +205,9 @@ export default function Onboarding({ userId, onComplete }) {
   const [mostrarFormCarrera, setMostrarFormCarrera] = useState(true)
   const [submitted, setSubmitted] = useState(false)
   const [generando, setGenerando] = useState(false)
-  const [otroEquipamiento, setOtroEquipamiento] = useState('')
   const [sinCarrera, setSinCarrera] = useState(false)
-  const [errores, setErrores] = useState({ nombre: '', deportes: '', nivel: '', carreras: '', historial: '', disponibilidad: '', equipamiento: '' })
+  const [errores, setErrores] = useState({ nombre: '', deportes: '', nivel: '', carreras: '', disponibilidad: '' })
   const [erroresCarrera, setErroresCarrera] = useState({ nombre: '', tipo: '', fecha: '' })
-
-  // Si volvemos del OAuth de Strava, saltar al paso de integraciones
-  // Usar href.includes para compatibilidad con Safari móvil
-  useEffect(() => {
-    if (window.location.href.includes('state=strava')) {
-      setStep(8)
-    }
-  }, [])
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
   const handleSelect = (field, value) => setForm({ ...form, [field]: value })
@@ -298,16 +228,6 @@ export default function Onboarding({ userId, onComplete }) {
     setDisponibilidadSlots(nuevaDisponibilidad)
     if (nuevaDisponibilidad.length > 0) {
       setErrores(prev => ({ ...prev, disponibilidad: '' }))
-    }
-  }
-
-  const toggleEquip = (value) => {
-    const nuevoEquipamiento = form.equipamiento.includes(value)
-      ? form.equipamiento.filter(e => e !== value)
-      : [...form.equipamiento, value]
-    setForm(prev => ({ ...prev, equipamiento: nuevoEquipamiento }))
-    if (nuevoEquipamiento.length > 0) {
-      setErrores(prev => ({ ...prev, equipamiento: '' }))
     }
   }
 
@@ -351,9 +271,6 @@ export default function Onboarding({ userId, onComplete }) {
       onComplete()
       return
     }
-    const equipamientoFinal = form.equipamiento.includes('otro') && otroEquipamiento
-      ? [...form.equipamiento.filter(e => e !== 'otro'), otroEquipamiento]
-      : form.equipamiento.filter(e => e !== 'otro')
 
     try {
       const deportesConNivel = deportes.map(d => ({
@@ -364,7 +281,6 @@ export default function Onboarding({ userId, onComplete }) {
         .from('profiles')
         .update({
           ...form,
-          equipamiento: equipamientoFinal,
           nombre_coach: form.nombre_coach || 'Coach',
           lesiones: sinLesiones ? 'Sin lesiones actuales' : form.lesiones,
           disponibilidad: disponibilidadSlots.join(', '),
@@ -448,40 +364,28 @@ export default function Onboarding({ userId, onComplete }) {
       <div key={step} className="step-animate" style={{ width: '100%', maxWidth: 480 }}>
         <ProgressDots current={step} total={TOTAL_STEPS} />
 
-        {/* ── Paso 1: Nombre ─────────────────────────────────────────────── */}
+        {/* ── Paso 1: Tú (nombre, deportes y nivel) ──────────────────────── */}
         {step === 1 && (
           <div>
-            {heading('¿Cómo te llamas?')}
-            {subheading('Así me dirigiré a ti durante los entrenamientos')}
+            {heading('Cuéntame de ti')}
+            {subheading('Con esto ya puedo prepararte tu primer plan')}
+
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>¿Cómo te llamas?</label>
             <input
               name="nombre"
               placeholder="Tu nombre"
               value={form.nombre}
               onChange={e => { handleChange(e); setErrores(prev => ({ ...prev, nombre: '' })) }}
-              style={INPUT_STYLE}
+              style={{ ...INPUT_STYLE, marginBottom: 6 }}
               autoFocus
             />
             {errores.nombre && (
-              <p style={{ color: 'var(--destructive)', fontSize: 13, marginTop: 6, textAlign: 'center' }}>{errores.nombre}</p>
+              <p style={{ color: 'var(--destructive)', fontSize: 13, marginBottom: 8 }}>{errores.nombre}</p>
             )}
-            <button onClick={() => {
-              if (!form.nombre.trim()) {
-                setErrores(prev => ({ ...prev, nombre: 'Tu nombre es obligatorio' }))
-                return
-              }
-              setErrores(prev => ({ ...prev, nombre: '' }))
-              setStep(2)
-            }} style={{ ...PRIMARY_BTN, marginTop: 24 }}>
-              Siguiente
-            </button>
-          </div>
-        )}
 
-        {/* ── Paso 2: Deportes (multi-select) ─────────────────────────────── */}
-        {step === 2 && (
-          <div>
-            {heading('¿Qué deportes practicas?')}
-            {subheading('Puedes seleccionar varios — el plan se adaptará a todos')}
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, margin: '18px 0 8px' }}>
+              ¿Qué deportes practicas? <span style={{ fontWeight: 400, color: 'var(--muted-foreground)' }}>(puedes elegir varios)</span>
+            </label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
               {DEPORTES.map(d => (
                 <OptionCard
@@ -494,7 +398,31 @@ export default function Onboarding({ userId, onComplete }) {
                 />
               ))}
             </div>
+            {errores.deportes && (
+              <p style={{ color: 'var(--destructive)', fontSize: 13, marginBottom: 8 }}>{errores.deportes}</p>
+            )}
 
+            {/* Un solo deporte: un nivel. Varios: un nivel por deporte */}
+            {deportes.length === 1 && (
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>¿Cuál es tu nivel?</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {NIVELES.map(n => (
+                    <OptionCard
+                      key={n.value}
+                      selected={form.nivel === n.value}
+                      onClick={() => { handleSelect('nivel', n.value); setErrores(prev => ({ ...prev, nivel: '' })) }}
+                      emoji={n.emoji}
+                      label={n.label}
+                      desc={n.desc}
+                    />
+                  ))}
+                </div>
+                {errores.nivel && (
+                  <p style={{ color: 'var(--destructive)', fontSize: 13, marginTop: 8 }}>{errores.nivel}</p>
+                )}
+              </div>
+            )}
             {/* Per-sport nivel when multiple selected */}
             {deportes.length > 1 && (
               <div style={{ marginBottom: 16 }}>
@@ -538,67 +466,32 @@ export default function Onboarding({ userId, onComplete }) {
               </div>
             )}
 
-            {errores.deportes && (
-              <p style={{ color: 'var(--destructive)', fontSize: 13, marginBottom: 8, textAlign: 'center' }}>{errores.deportes}</p>
-            )}
             <button onClick={() => {
+              const nuevos = {}
+              if (!form.nombre.trim()) nuevos.nombre = 'Tu nombre es obligatorio'
               if (deportes.length === 0) {
-                setErrores(prev => ({ ...prev, deportes: 'Selecciona al menos un deporte para continuar' }))
+                nuevos.deportes = 'Selecciona al menos un deporte para continuar'
+              } else if (deportes.length === 1) {
+                if (!form.nivel) nuevos.nivel = 'Selecciona tu nivel para continuar'
+              } else if (deportes.some(d => !nivelesDeportes[d])) {
+                nuevos.deportes = 'Indica tu nivel en cada deporte seleccionado'
+              }
+              if (Object.keys(nuevos).length > 0) {
+                setErrores(prev => ({ ...prev, nombre: '', deportes: '', nivel: '', ...nuevos }))
                 return
               }
               if (deportes.length > 1) {
-                const sinNivel = deportes.filter(d => !nivelesDeportes[d])
-                if (sinNivel.length > 0) {
-                  setErrores(prev => ({ ...prev, deportes: 'Indica tu nivel en cada deporte seleccionado' }))
-                  return
-                }
                 const primerNivel = nivelesDeportes[deportes[0]] || 'principiante'
                 setForm(prev => ({ ...prev, deporte: deportes[0], nivel: primerNivel }))
-                setErrores(prev => ({ ...prev, deportes: '' }))
-                setStep(4)
-                return
               }
-              setErrores(prev => ({ ...prev, deportes: '' }))
-              setStep(3)
-            }} style={PRIMARY_BTN}>Siguiente</button>
-            <button onClick={() => setStep(1)} style={BACK_BTN}>← Atrás</button>
+              setErrores(prev => ({ ...prev, nombre: '', deportes: '', nivel: '' }))
+              setStep(2)
+            }} style={{ ...PRIMARY_BTN, marginTop: 8 }}>Siguiente</button>
           </div>
         )}
 
-        {/* ── Paso 3: Nivel ──────────────────────────────────────────────── */}
-        {step === 3 && (
-          <div>
-            {heading('¿Cuál es tu nivel?')}
-            {subheading('Adaptaremos la intensidad a ti')}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
-              {NIVELES.map(n => (
-                <OptionCard
-                  key={n.value}
-                  selected={form.nivel === n.value}
-                  onClick={() => { handleSelect('nivel', n.value); setErrores(prev => ({ ...prev, nivel: '' })) }}
-                  emoji={n.emoji}
-                  label={n.label}
-                  desc={n.desc}
-                />
-              ))}
-            </div>
-            {errores.nivel && (
-              <p style={{ color: 'var(--destructive)', fontSize: 13, marginBottom: 8, textAlign: 'center' }}>{errores.nivel}</p>
-            )}
-            <button onClick={() => {
-              if (!form.nivel) {
-                setErrores(prev => ({ ...prev, nivel: 'Selecciona tu nivel para continuar' }))
-                return
-              }
-              setErrores(prev => ({ ...prev, nivel: '' }))
-              setStep(4)
-            }} style={PRIMARY_BTN}>Siguiente</button>
-            <button onClick={() => setStep(2)} style={BACK_BTN}>← Atrás</button>
-          </div>
-        )}
-
-        {/* ── Paso 4: Carreras ───────────────────────────────────────────── */}
-        {step === 4 && (
+        {/* ── Paso 2: Objetivo (carreras) ───────────────────────────────── */}
+        {step === 2 && (
           <div>
             {heading('¿Cuáles son tus próximas carreras?')}
             {subheading('Puedes añadir varias — adaptaremos el plan a cada objetivo')}
@@ -790,47 +683,22 @@ export default function Onboarding({ userId, onComplete }) {
                 return
               }
               setErrores(prev => ({ ...prev, carreras: '' }))
-              setStep(5)
+              setStep(3)
             }} style={PRIMARY_BTN}>Siguiente</button>
-            <button onClick={() => setStep(deportes.length > 1 ? 2 : 3)} style={BACK_BTN}>← Atrás</button>
+            <button onClick={() => setStep(1)} style={BACK_BTN}>← Atrás</button>
           </div>
         )}
 
-        {/* ── Paso 5: Contexto personal ──────────────────────────────────── */}
-        {step === 5 && (
+        {/* ── Paso 3: Tu semana (disponibilidad y lesiones) ───────────────── */}
+        {step === 3 && (
           <div>
-            {heading('Cuéntanos un poco más')}
-            {subheading('Esto ayuda al coach a personalizar tu entrenamiento')}
-
-            {/* A. Historial deportivo */}
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
-                Historial deportivo <span style={{ color: 'var(--destructive)' }}>*</span>
-              </label>
-              <div style={{ position: 'relative' }}>
-                <textarea
-                  name="historial_deportivo"
-                  placeholder="Ej: Llevo 2 años corriendo, completé mi primera media maratón en 2024..."
-                  value={form.historial_deportivo}
-                  onChange={e => {
-                    if (e.target.value.length <= 300) handleChange(e)
-                  }}
-                  rows={3}
-                  style={{ ...INPUT_STYLE, display: 'block' }}
-                />
-                <span style={{ position: 'absolute', bottom: 8, right: 12, fontSize: 11, color: 'var(--muted-foreground)' }}>
-                  {form.historial_deportivo.length}/300
-                </span>
-              </div>
-              {errores.historial && (
-                <p style={{ color: 'var(--destructive)', fontSize: 12, marginTop: 4 }}>{errores.historial}</p>
-              )}
-            </div>
+            {heading('Tu semana')}
+            {subheading('Para encajar los entrenamientos en tu vida')}
 
             {/* B. Lesiones */}
             <div style={{ marginBottom: 20 }}>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
-                Lesiones o limitaciones
+                Lesiones o limitaciones <span style={{ fontWeight: 400, color: 'var(--muted-foreground)' }}>(opcional)</span>
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, cursor: 'pointer' }}>
                 <input
@@ -878,181 +746,21 @@ export default function Onboarding({ userId, onComplete }) {
               )}
             </div>
 
-            {/* D. Equipamiento */}
-            <div style={{ marginBottom: 24 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 10 }}>
-                ¿Con qué cuentas para entrenar? <span style={{ color: 'var(--destructive)' }}>*</span>
-              </label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {EQUIPAMIENTO_OPTIONS.map(opt => (
-                  <Toggle
-                    key={opt.value}
-                    active={form.equipamiento.includes(opt.value)}
-                    onClick={() => toggleEquip(opt.value)}
-                    label={opt.label}
-                  />
-                ))}
-              </div>
-              {form.equipamiento.includes('otro') && (
-                <input
-                  placeholder="Especifica qué tienes..."
-                  value={otroEquipamiento}
-                  onChange={e => setOtroEquipamiento(e.target.value)}
-                  style={{ ...INPUT_STYLE, marginTop: 10 }}
-                />
-              )}
-              {errores.equipamiento && (
-                <p style={{ color: 'var(--destructive)', fontSize: 12, marginTop: 6 }}>{errores.equipamiento}</p>
-              )}
-            </div>
-
             <button onClick={() => {
-              const newErrors = {}
-              if (form.historial_deportivo.trim().length < 20) newErrors.historial = 'Cuéntanos algo sobre tu historial (mínimo 20 caracteres)'
-              if (disponibilidadSlots.length === 0) newErrors.disponibilidad = 'Selecciona al menos un horario disponible'
-              if (form.equipamiento.length === 0) newErrors.equipamiento = 'Selecciona al menos una opción de equipamiento'
-              if (Object.keys(newErrors).length > 0) {
-                setErrores(prev => ({ ...prev, ...newErrors }))
+              if (disponibilidadSlots.length === 0) {
+                setErrores(prev => ({ ...prev, disponibilidad: 'Selecciona al menos un horario disponible' }))
                 return
               }
-              setErrores(prev => ({ ...prev, historial: '', disponibilidad: '', equipamiento: '' }))
-              setStep(6)
-            }} style={PRIMARY_BTN}>Siguiente</button>
-            <button onClick={() => setStep(4)} style={BACK_BTN}>← Atrás</button>
-          </div>
-        )}
-
-        {/* ── Paso 6: Personalidad del coach ────────────────────────────── */}
-        {step === 6 && (
-          <div>
-            {heading('Tu coach ideal')}
-            {subheading('¿Cómo quieres que sea tu entrenador?')}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 24 }}>
-              {PERSONALIDADES.map(p => (
-                <OptionCard
-                  key={p.value}
-                  selected={form.personalidad === p.value}
-                  onClick={() => handleSelect('personalidad', p.value)}
-                  emoji={null}
-                  label={p.label}
-                  desc={p.desc}
-                  small
-                />
-              ))}
-            </div>
-            <button onClick={() => setStep(7)} style={PRIMARY_BTN}>Siguiente</button>
-            <button onClick={() => setStep(5)} style={BACK_BTN}>← Atrás</button>
-          </div>
-        )}
-
-        {/* ── Paso 7: Nombre del coach ───────────────────────────────────── */}
-        {step === 7 && (
-          <div>
-            {heading('¿Cómo quieres llamar a tu coach?')}
-            {subheading('Dale personalidad a tu entrenador')}
-
-            {/* Chips de nombres sugeridos */}
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 20 }}>
-              {['Javi', 'Alex', 'Sara', 'Marcos'].map(name => (
-                <button
-                  key={name}
-                  onClick={() => handleSelect('nombre_coach', form.nombre_coach === name ? '' : name)}
-                  style={{
-                    background: form.nombre_coach === name ? 'oklch(0.7 0.18 45 / 0.12)' : 'var(--card)',
-                    border: `2px solid ${form.nombre_coach === name ? 'var(--primary)' : 'var(--border)'}`,
-                    borderRadius: 24,
-                    padding: '10px 24px',
-                    fontFamily: 'var(--font-sans)',
-                    fontSize: 15,
-                    fontWeight: 600,
-                    color: form.nombre_coach === name ? 'var(--primary)' : 'var(--foreground)',
-                    cursor: 'pointer',
-                    transition: 'all 0.12s',
-                  }}
-                >
-                  {name}
-                </button>
-              ))}
-            </div>
-
-            <input
-              placeholder="O escribe un nombre..."
-              value={form.nombre_coach}
-              onChange={e => handleSelect('nombre_coach', e.target.value)}
-              style={{ ...INPUT_STYLE, marginBottom: 24 }}
-            />
-
-            <button onClick={() => setStep(8)} style={PRIMARY_BTN}>Siguiente</button>
-            <button onClick={() => setStep(6)} style={BACK_BTN}>← Atrás</button>
-          </div>
-        )}
-
-        {/* ── Paso 8: Integraciones ──────────────────────────────────────── */}
-        {step === 8 && (
-          <div>
-            {heading('Conecta tus apps')}
-            {subheading('Para que el coach conozca tus entrenamientos reales')}
-
-            {/* Strava */}
-            <IntegracionCard
-              logo={
-                <div style={{
-                  width: 36, height: 36, background: '#FC4C02', borderRadius: 8,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                }}>
-                  <svg viewBox="0 0 40 64" width="18" height="28" fill="white">
-                    <path d="M18 4L2 36h11l5-10 5 10h11zm10 22L17 50h11l4-8.5 4 8.5h10L18 4z" />
-                  </svg>
-                </div>
-              }
-              nombre="Strava"
-              desc="Importa tus actividades automáticamente"
-            >
-              <StravaConnect userId={userId} />
-            </IntegracionCard>
-
-            {/* Apple Health — próximamente */}
-            <IntegracionCard
-              disabled
-              logo={<div style={{ width: 36, height: 36, fontSize: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>⌚</div>}
-              nombre="Apple Health"
-              desc="Pasos, sueño y frecuencia cardíaca"
-              badge="Próximamente"
-            >
-              <span style={{ fontSize: 11, color: 'var(--muted-foreground)', whiteSpace: 'nowrap' }}>Próximamente</span>
-            </IntegracionCard>
-
-            {/* Garmin — próximamente */}
-            <IntegracionCard
-              disabled
-              logo={<div style={{ width: 36, height: 36, fontSize: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>⌚</div>}
-              nombre="Garmin Connect"
-              desc="Sincroniza tus actividades de Garmin"
-              badge="Próximamente"
-            >
-              <span style={{ fontSize: 11, color: 'var(--muted-foreground)', whiteSpace: 'nowrap' }}>Próximamente</span>
-            </IntegracionCard>
-
-            {/* Intervals.icu — disponible Pro, se conecta desde el perfil */}
-            <IntegracionCard
-              logo={<div style={{ width: 36, height: 36, fontSize: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>📊</div>}
-              nombre="Intervals.icu"
-              desc="Wellness, sync de tu plan al calendario y envío al reloj"
-              badge="Pro"
-              badgeColor="var(--primary)"
-            >
-              <span style={{ fontSize: 11, color: 'var(--muted-foreground)', whiteSpace: 'nowrap' }}>Desde tu perfil</span>
-            </IntegracionCard>
-
-            <button onClick={handleSubmit} style={{ ...PRIMARY_BTN, marginTop: 16 }}>
-              ¡Empezar a entrenar!
-            </button>
+              setErrores(prev => ({ ...prev, disponibilidad: '' }))
+              handleSubmit()
+            }} style={PRIMARY_BTN}>¡Crear mi plan!</button>
             <p style={{ fontSize: 12, color: 'var(--muted-foreground)', textAlign: 'center', marginTop: 12, lineHeight: 1.5 }}>
-              Puedes conectar estas apps en cualquier momento desde tu perfil
+              Incluye 7 días de Pro gratis, sin tarjeta. Lo demás (historial, material, personalidad del coach) lo afinamos en el chat.
             </p>
-            <button onClick={() => setStep(7)} style={BACK_BTN}>← Atrás</button>
+            <button onClick={() => setStep(2)} style={BACK_BTN}>← Atrás</button>
           </div>
         )}
+
 
       </div>
     </div>
