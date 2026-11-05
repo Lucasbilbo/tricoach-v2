@@ -107,7 +107,7 @@ function buildEmailHtmlFree(nombre, sesiones) {
             ¿Quieres ver el análisis completo cada semana — sesión por sesión, RPE, adherencia y mensaje del coach?
           </p>
           <a href="https://app.getricoach.com" style="color:#FF6B2B;font-weight:700;font-size:14px;text-decoration:none;">
-            Hazte Pro por 9,99€/mes →
+            Hazte Pro por 14,99€/mes →
           </a>
         </div>
 

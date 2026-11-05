@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { planEfectivo } from './planEfectivo'
 
 export async function getProfile(userId) {
   const { data, error } = await supabase
@@ -36,7 +37,7 @@ export async function updateProfile(userId, updates) {
 
 // Límites diarios de mensajes al coach. La fuente de verdad es el servidor
 // (netlify/functions/claude.js, DAILY_LIMIT); estos valores solo sirven para avisar antes.
-export const LIMITE_DIARIO = { free: 10, pro: 30 }
+export const LIMITE_DIARIO = { free: 10, pro: 20 }
 
 export function hoyMadrid() {
   return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' })
@@ -48,7 +49,7 @@ export function mensajesHoy(profile, enviadosEnSesion = 0) {
 }
 
 export function limiteDiario(profile) {
-  return profile?.plan === 'pro' ? LIMITE_DIARIO.pro : LIMITE_DIARIO.free
+  return planEfectivo(profile) === 'pro' ? LIMITE_DIARIO.pro : LIMITE_DIARIO.free
 }
 
 export async function canSendMessage(profile, enviadosEnSesion = 0) {

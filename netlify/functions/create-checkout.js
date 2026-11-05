@@ -81,6 +81,12 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId inválido' }) };
   }
 
+  // Solo se aceptan los precios configurados en Netlify (el cliente no puede elegir otro)
+  const preciosValidos = [process.env.STRIPE_PRICE_MONTHLY, process.env.STRIPE_PRICE_ANNUAL].filter(Boolean);
+  if (!preciosValidos.includes(priceId)) {
+    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'Precio no válido' }) };
+  }
+
   const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
   if (!STRIPE_SECRET_KEY) {
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Stripe no configurado' }) };

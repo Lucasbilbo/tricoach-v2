@@ -17,6 +17,7 @@ import Progress from './components/Progress'
 import SessionDetail from './components/SessionDetail'
 import ErrorBoundary from './components/ErrorBoundary'
 import WelcomeGuide from './components/WelcomeGuide'
+import { enPrueba, diasPruebaRestantes } from './lib/planEfectivo'
 
 function App() {
   const [session, setSession] = useState(null)
@@ -480,7 +481,7 @@ function App() {
                   {profile?.nombre || 'Mi perfil'}
                 </h2>
                 <p style={{ fontSize: 12, color: 'var(--muted-foreground)', marginTop: 2 }}>
-                  {profile?.plan === 'pro' ? '✦ Plan Pro' : 'Plan Free'}
+                  {profile?.plan === 'pro' ? '✦ Plan Pro' : enPrueba(profile) ? `✦ Prueba Pro · ${diasPruebaRestantes(profile)} d` : 'Plan Free'}
                   {profile?.deporte ? ` · ${profile.deporte}` : ''}
                 </p>
               </div>

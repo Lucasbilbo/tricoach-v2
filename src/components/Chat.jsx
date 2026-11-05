@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { getMessages, saveMessage } from '../lib/messages'
 import { canSendMessage, mensajesHoy, limiteDiario, LIMITE_DIARIO } from '../lib/profiles'
+import { planEfectivo, enPrueba, diasPruebaRestantes } from '../lib/planEfectivo'
 import { buildSystemPrompt } from '../prompts/buildSystemPrompt'
 import { updateContext } from '../lib/context'
 import { adjustPlan, generatePlan } from '../lib/plans'
@@ -59,6 +60,7 @@ const soportaVoz = typeof window !== 'undefined' && ('SpeechRecognition' in wind
 let stravaActivitiesCache = { fetched: false, data: null, ts: 0, userId: null }
 
 function textoLimite(profile) {
+  if (enPrueba(profile)) return `Has llegado a los ${LIMITE_DIARIO.pro} mensajes de hoy. Mañana seguimos; te quedan ${diasPruebaRestantes(profile)} días de prueba Pro.`
   if (profile?.plan === 'pro') return `Has llegado a los ${LIMITE_DIARIO.pro} mensajes de hoy. Mañana seguimos.`
   return `Has llegado a los ${LIMITE_DIARIO.free} mensajes diarios del plan Free. Con Pro tienes ${LIMITE_DIARIO.pro} al día.`
 }
@@ -372,7 +374,7 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
 
 
   const usadosHoy = mensajesHoy(profile, enviadosHoy)
-  const esFree = !profile?.plan || profile?.plan === 'free'
+  const esFree = planEfectivo(profile) === 'free'
   const limitAlcanzado = usadosHoy >= limiteDiario(profile)
   const nombreCoach = profile?.nombre_coach || 'Coach'
 
@@ -790,7 +792,7 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
               cursor: 'pointer',
             }}
           >
-            Hazte Pro — {LIMITE_DIARIO.pro} mensajes al día
+            Hazte Pro — Strava y {LIMITE_DIARIO.pro} mensajes al día
           </button>
         </div>
       )}

@@ -15,7 +15,7 @@ export default function Terminos() {
       </ul>
 
       <h2>3. Plan Free y Pro</h2>
-      <p>El plan Free incluye 10 mensajes diarios. El plan Pro ofrece 30 mensajes diarios y funciones adicionales por 9,99€/mes o 79€/año.</p>
+      <p>El plan Free incluye 10 mensajes diarios. El plan Pro ofrece 20 mensajes diarios con un modelo de IA más avanzado, conexión con Strava y funciones adicionales por 14,99€/mes o 119€/año. Las cuentas nuevas disfrutan de 7 días de prueba de Pro sin tarjeta; al terminar pasan automáticamente al plan Free salvo que contraten Pro.</p>
 
       <h2>4. Limitación de responsabilidad</h2>
       <p>TriCoach AI proporciona recomendaciones generales de entrenamiento. Consulta siempre con un médico antes de iniciar un programa de ejercicio intenso. No nos responsabilizamos de lesiones derivadas del uso del servicio.</p>

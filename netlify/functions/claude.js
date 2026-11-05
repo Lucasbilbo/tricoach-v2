@@ -1,12 +1,13 @@
 const https = require('https');
 const { authenticate, corsHeaders } = require('./lib/auth');
 const { modelFor, cheapModel, extractText, callClaude } = require('./lib/claude');
+const { planEfectivo } = require('./lib/plan-efectivo');
 
 const MAX_BODY_BYTES = 64 * 1024;
 const CLAUDE_MAX_TOKENS = 2048;      // incluye el razonamiento de los modelos 5.5
 const CONTEXTO_MAX_TOKENS = 400;
 
-const DAILY_LIMIT = { free: 10, pro: 30 };
+const DAILY_LIMIT = { free: 10, pro: 20 };
 
 // Resumen de contexto del atleta (src/lib/context.js). El system lo fija el servidor:
 // el cliente solo aporta la conversación. Usa siempre el modelo barato y no cuenta
@@ -184,10 +185,10 @@ exports.handler = async (event) => {
 
   // Plan del usuario: decide el modelo y el límite diario
   const profile = supabaseHostname
-    ? await supabaseGet(supabaseHostname, `/rest/v1/profiles?id=eq.${userId}&select=plan,deleted_at`, supabaseServiceKey)
+    ? await supabaseGet(supabaseHostname, `/rest/v1/profiles?id=eq.${userId}&select=plan,deleted_at,trial_ends_at`, supabaseServiceKey)
     : null;
   if (profile?.deleted_at) return json(403, CORS, { error: 'Cuenta eliminada' });
-  const plan = profile?.plan === 'pro' ? 'pro' : 'free';
+  const plan = planEfectivo(profile);
 
   // ── Límite diario (RPC atómica). El resumen de contexto no cuenta. ──
   if (!esContexto && supabaseHostname) {

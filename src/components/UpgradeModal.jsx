@@ -4,7 +4,7 @@ const PRICES = [
   {
     id: 'monthly',
     label: 'Mensual',
-    price: '9,99€',
+    price: '14,99€',
     period: '/mes',
     popular: false,
     priceId: import.meta.env.VITE_STRIPE_PRICE_MONTHLY,
@@ -12,11 +12,11 @@ const PRICES = [
   {
     id: 'annual',
     label: 'Anual',
-    price: '79€',
+    price: '119€',
     period: '/año',
     popular: true,
     priceId: import.meta.env.VITE_STRIPE_PRICE_ANNUAL,
-    savings: 'Ahorras 40€',
+    savings: 'Ahorras 61€',
   },
 ]
 
@@ -100,7 +100,7 @@ export default function UpgradeModal({ userId, onClose }) {
             Hazte Pro
           </h2>
           <p style={{ color: 'var(--muted-foreground)', fontSize: 14 }}>
-            30 mensajes al día, análisis de Strava y planes adaptativos
+            20 mensajes al día con el modelo más avanzado, análisis de Strava y planes adaptativos
           </p>
         </div>
 
