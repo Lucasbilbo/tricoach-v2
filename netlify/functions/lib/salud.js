@@ -38,6 +38,26 @@ async function probarCompleto(plan) {
     maxTokens: 2048,
     timeoutMs: 22000,
   });
+  // Mismo camino que claude.js cuando el modelo solo usa la herramienta
+  let chatTexto = extractText(chat.data);
+  let seguimiento = false;
+  const toolUses = (chat.data?.content || []).filter(b => b.type === 'tool_use');
+  if (chat.ok && !chatTexto && toolUses.length) {
+    seguimiento = true;
+    const f = await callClaude({
+      model,
+      system: 'Eres un coach de running. Responde en español en 2 frases.',
+      tools: [TOOL],
+      maxTokens: 2048,
+      timeoutMs: 15000,
+      messages: [
+        { role: 'user', content: 'Mi mejor 10k es 52 minutos. ¿A qué ritmo hago el rodaje suave?' },
+        { role: 'assistant', content: chat.data.content },
+        { role: 'user', content: toolUses.map(b => ({ type: 'tool_result', tool_use_id: b.id, content: 'Guardado en el perfil.' })) },
+      ],
+    });
+    chatTexto = f.ok ? extractText(f.data) : `ERROR seguimiento ${f.status}: ${f.error}`;
+  }
   const tChat = Date.now() - t0;
   const t1 = Date.now();
   const planRes = await callClaude({
@@ -56,8 +76,8 @@ async function probarCompleto(plan) {
   } catch { sesiones = null; }
   return {
     model,
-    chat: { ok: chat.ok, status: chat.status, ms: tChat, texto: extractText(chat.data).slice(0, 200), stop: chat.data?.stop_reason, uso: chat.data?.usage },
-    plan: { ok: planRes.ok, status: planRes.status, ms: tPlan, sesiones, stop: planRes.data?.stop_reason, uso: planRes.data?.usage, error: planRes.error },
+    chat: { ok: chat.ok && Boolean(chatTexto) && !chatTexto.startsWith('ERROR'), status: chat.status, ms: tChat, seguimiento, texto: chatTexto.slice(0, 200), stop: chat.data?.stop_reason },
+    plan: { ok: planRes.ok && sesiones === 7, status: planRes.status, ms: tPlan, sesiones, stop: planRes.data?.stop_reason, tokens: planRes.data?.usage?.output_tokens, error: planRes.error },
   };
 }
 
