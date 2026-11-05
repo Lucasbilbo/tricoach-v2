@@ -708,6 +708,18 @@ Prioridad: llegar fresco al día de la carrera. Reduce volumen 30-50%, mantén a
 
   const metodo = calcularMetodo(fechaCarreraEfectiva, profile.nivel);
 
+  // Disponibilidad y lesiones que el atleta indica en el onboarding (hasta nov-2026 se
+  // guardaban pero no llegaban nunca al prompt: el plan ignoraba sus días libres y lesiones)
+  const restriccionesPerfil = [];
+  if (profile.disponibilidad && String(profile.disponibilidad).trim()) {
+    restriccionesPerfil.push(`Disponibilidad habitual para entrenar: ${truncar(profile.disponibilidad, 300)}. Coloca las sesiones en esos huecos y deja descanso en el resto.`);
+  }
+  const lesionesPerfil = String(profile.lesiones || '').trim();
+  if (lesionesPerfil && !/^sin lesiones/i.test(lesionesPerfil)) {
+    restriccionesPerfil.push(`Lesiones o limitaciones (RESPETAR SIEMPRE): ${truncar(lesionesPerfil, 300)}. Evita o adapta cualquier sesión que las agrave.`);
+  }
+  const restriccionesSection = restriccionesPerfil.length ? `\n${restriccionesPerfil.join('\n')}` : '';
+
   // Obtener planes recientes para detectar primer plan y plan anterior
   const planesRecientes = await supabaseGet(
     hostname,
@@ -866,7 +878,7 @@ Nivel: ${nivelPrimario}
 Objetivo: ${profile.objetivo || 'mejorar forma física'}
 ${carrerasTexto ? `Carreras/eventos próximos: ${carrerasTexto}` : ''}
 ${semanaLabel}${rendimientoSection}
-${profile.contexto ? `Contexto del atleta: ${truncar(profile.contexto, 500)}` : ''}${analisisSection}${macrocicloSection}
+${profile.contexto ? `Contexto del atleta: ${truncar(profile.contexto, 500)}` : ''}${restriccionesSection}${analisisSection}${macrocicloSection}
 ${distribucionDeportes}${contextoSemanaSection}${wellnessWarning}
 
 El plan empieza el ${weekStart}. Los días en orden son: ${dias.join(', ')}.

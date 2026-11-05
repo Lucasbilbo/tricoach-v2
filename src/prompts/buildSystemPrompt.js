@@ -74,9 +74,20 @@ export function buildSystemPrompt(profile, personalidad = 'cercano', actividades
   const fechaCarrera = fechaCarreraLegible
     ? `El próximo evento es "${carreraProxima.nombre || carreraProxima.tipo}" el ${fechaCarreraLegible}.`
     : ''
-  const contexto = profile.contexto
+  // Disponibilidad y lesiones del onboarding (antes se guardaban pero el coach no las veía)
+  const lesionesPerfil = String(profile.lesiones || '').trim()
+  const restriccionesPerfil = [
+    profile.disponibilidad && String(profile.disponibilidad).trim()
+      ? `Disponibilidad habitual para entrenar: ${truncar(profile.disponibilidad, 300)}.`
+      : '',
+    lesionesPerfil && !/^sin lesiones/i.test(lesionesPerfil)
+      ? `Lesiones o limitaciones (tenlas SIEMPRE en cuenta): ${truncar(lesionesPerfil, 300)}.`
+      : '',
+  ].filter(Boolean)
+  const restricciones = restriccionesPerfil.length ? `\nDATOS FIJOS DEL ATLETA:\n${restriccionesPerfil.join('\n')}` : ''
+  const contexto = restricciones + (profile.contexto
     ? `\nLo que sabes de este atleta de conversaciones anteriores:\n${truncar(profile.contexto, 500)}\nNota: el contexto puede incluir datos temporales de semanas anteriores. Úsalo solo para métricas permanentes. Para disponibilidad semanal usa siempre profile.disponibilidad.`
-    : ''
+    : '')
 
   const deporteInfo = {
     triatlon: 'triatlón olímpico (natación 1.5km, ciclismo 40km, running 10km)',
