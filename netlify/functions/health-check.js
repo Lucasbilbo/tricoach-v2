@@ -5,26 +5,15 @@
 // Esta función hace una llamada mínima a cada modelo configurado (Free y Pro) y, si
 // alguna falla, manda un email a ALERT_EMAIL. Coste: dos respuestas de pocos tokens al día.
 //
-// Prueba manual: POST con header x-internal-secret = INTERNAL_API_SECRET.
+// Prueba manual: Netlify no deja invocar por URL una función programada; usar
+// claude-status (POST con x-internal-secret), que hace la misma prueba sin email.
 
 const { isInternalCall } = require('./lib/auth');
-const { callClaude, extractText, modelFor } = require('./lib/claude');
+const { probarModelos } = require('./lib/salud');
 const { sendAlertEmail } = require('./lib/email');
 
 function esProgramada(event) {
   try { return Boolean(JSON.parse(event?.body || '{}').next_run); } catch { return false; }
-}
-
-async function probarModelo(model) {
-  const t0 = Date.now();
-  const r = await callClaude({
-    model,
-    messages: [{ role: 'user', content: 'Responde solo con la palabra OK.' }],
-    maxTokens: 64,
-    timeoutMs: 15000,
-  });
-  const texto = r.ok ? extractText(r.data) : '';
-  return { model, ok: r.ok && texto.length > 0, status: r.status, error: r.error || (r.ok && !texto ? 'respuesta sin texto' : null), ms: Date.now() - t0 };
 }
 
 exports.handler = async (event) => {
@@ -34,8 +23,7 @@ exports.handler = async (event) => {
     return { statusCode: 401, body: JSON.stringify({ error: 'No autorizado' }) };
   }
 
-  const modelos = [...new Set([modelFor('free'), modelFor('pro')])];
-  const resultados = await Promise.all(modelos.map(probarModelo));
+  const resultados = await probarModelos();
   const fallos = resultados.filter(r => !r.ok);
 
   if (fallos.length > 0) {
