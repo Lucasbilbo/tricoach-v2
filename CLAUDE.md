@@ -33,7 +33,7 @@ Freemium: Free (10 msg/día, plan básico) / Pro (9,99€/mes, Strava + plan ada
 - Frontend: React + Vite (JavaScript, NO TypeScript)
 - Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co) — RLS activado
 - Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
-- Tests: Vitest — **214 tests pasando** (28 archivos, cargan sin .env) + Playwright E2E (3 specs)
+- Tests: Vitest — **217 tests pasando** (28 archivos, cargan sin .env) + Playwright E2E (3 specs)
 - Deploy: Netlify (producción: https://tricoach-v2.netlify.app)
 - Pagos: Stripe (checkout + webhooks)
 - Email: Resend (coach@getricoach.com)
@@ -142,7 +142,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 
 ### Tests
 - Ejecutar `npm test` al terminar SIEMPRE
-- **214 tests deben pasar** (28 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
+- **217 tests deben pasar** (28 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
 - No borrar ni modificar tests existentes sin motivo explícito
 
 ## Estado del proyecto — Fases completadas
