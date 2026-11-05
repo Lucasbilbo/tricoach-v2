@@ -85,7 +85,7 @@ export function buildSystemPrompt(profile, personalidad = 'cercano', actividades
       : '',
   ].filter(Boolean)
   const restricciones = restriccionesPerfil.length ? `\nDATOS FIJOS DEL ATLETA:\n${restriccionesPerfil.join('\n')}` : ''
-  const contexto = restricciones + (profile.contexto
+  const contexto = restricciones + (profile.contexto && profile.contexto !== 'null'
     ? `\nLo que sabes de este atleta de conversaciones anteriores:\n${truncar(profile.contexto, 500)}\nNota: el contexto puede incluir datos temporales de semanas anteriores. Úsalo solo para métricas permanentes. Para disponibilidad semanal usa siempre profile.disponibilidad.`
     : '')
 

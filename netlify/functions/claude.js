@@ -105,7 +105,7 @@ async function actualizarContextoPerfil(userId, datos, hostname, supabaseKey) {
   if (!perfil) return;
 
   const hoy = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
-  let contexto = (perfil.contexto || '').trimEnd();
+  let contexto = (perfil.contexto && perfil.contexto !== 'null' ? perfil.contexto : '').trimEnd();
 
   for (const dato of datos) {
     const linea = `${dato} (actualizado ${hoy})`;

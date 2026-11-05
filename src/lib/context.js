@@ -25,7 +25,7 @@ FORMATO OBLIGATORIO (omite secciones sin datos):
 - ALERTAS: [sobreentrenamiento, fatiga acumulada, riesgos]
 
 Contexto previo:
-${currentContext || 'Sin contexto previo'}
+${currentContext && currentContext !== 'null' ? currentContext : 'Sin contexto previo'}
 
 Conversación reciente:
 ${lastMessages}

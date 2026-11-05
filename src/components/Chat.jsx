@@ -136,7 +136,17 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
         if (generated?.sesiones) {
           onPlanUpdate?.(generated)
           track('first_plan_generated')
-          setMessages(prev => [...prev, { role: 'assistant', content: '✅ ¡Tu plan está listo! Pulsa **Plan** en el menú inferior para verlo.', local: true }])
+          const aviso = '✅ ¡Tu plan está listo! Pulsa **Plan** en el menú inferior para verlo.'
+          setMessages(prev => [...prev, { role: 'assistant', content: aviso, local: true }])
+          // Guardar la conversación de bienvenida: así el coach recuerda lo que contó el atleta
+          // (lesiones, semanas con poca disponibilidad) en chats posteriores. Si hizo una pregunta,
+          // el flujo normal de abajo guarda su mensaje.
+          if (!esPregunta && !soloConfirmacion) {
+            try {
+              await saveMessage(userId, 'user', texto)
+              await saveMessage(userId, 'assistant', aviso)
+            } catch (e) { console.error('[welcome] no se pudo guardar la conversación:', e?.message) }
+          }
         } else {
           setMessages(prev => [...prev, { role: 'assistant', content: 'No pude generar el plan ahora. Puedes generarlo desde la pestaña **Plan**.', local: true }])
         }
