@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { enPrueba, diasPruebaRestantes } from '../lib/planEfectivo'
 
 function StravaDisconnect({ userId, onDisconnected }) {
   const [disconnecting, setDisconnecting] = useState(false)
@@ -408,7 +409,7 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade,
               cursor: 'pointer',
             }}
           >
-            Hazte Pro — 9,99€/mes
+            Hazte Pro — 14,99€/mes
           </button>
         </div>
       )}
@@ -422,6 +423,22 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade,
         marginBottom: 12,
       }}>
         <p style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 14, fontWeight: 600 }}>Datos del perfil</p>
+
+        {enPrueba(profile) && (
+          <span style={{
+            display: 'inline-block',
+            background: 'oklch(0.7 0.18 45 / 0.2)',
+            border: '1px solid var(--primary)',
+            color: 'var(--primary)',
+            borderRadius: 999,
+            padding: '4px 12px',
+            fontSize: 12,
+            fontWeight: 700,
+            marginBottom: 14,
+          }}>
+            ✦ Prueba Pro · te quedan {diasPruebaRestantes(profile)} {diasPruebaRestantes(profile) === 1 ? 'día' : 'días'}
+          </span>
+        )}
 
         {profile?.plan === 'pro' && (
           <span style={{
