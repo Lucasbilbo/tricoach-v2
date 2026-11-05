@@ -7,7 +7,18 @@ let CORS = corsHeaders();
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const DIA_OFFSET_MAP = { Lunes: 0, Martes: 1, 'Miércoles': 2, Jueves: 3, Viernes: 4, Sábado: 5, Domingo: 6 };
+const DIA_OFFSET_MAP = { Lunes: 0, Martes: 1, 'Miércoles': 2, Miercoles: 2, Jueves: 3, Viernes: 4, Sábado: 5, Sabado: 5, Domingo: 6 };
+
+// Los planes son semanas "rodantes": plan.semana es el día en que empieza el plan
+// (lunes en los automáticos, pero el primer plan empieza el día del alta). El offset
+// de cada sesión se cuenta desde ese día, no desde el lunes. Para planes que empiezan
+// en lunes el resultado es idéntico al de antes.
+function offsetDesdeInicio(inicio, dia) {
+  const objetivo = DIA_OFFSET_MAP[dia] ?? DIA_OFFSET_MAP[String(dia || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')] ?? 0;
+  const inicioIdx = (inicio.getDay() + 6) % 7;
+  return (objetivo - inicioIdx + 7) % 7;
+}
+
 
 const STRAVA_TIPO_MAP = {
   Run: 'Correr', VirtualRun: 'Correr',
@@ -167,7 +178,7 @@ exports.handler = async (event) => {
 
     if (pool.length > 0) {
       sesionPlanificada = pool.reduce((closest, s) => {
-        const offset = DIA_OFFSET_MAP[s.dia] ?? 0;
+        const offset = offsetDesdeInicio(baseDate, s.dia);
         const sesionDate = new Date(baseDate);
         sesionDate.setDate(baseDate.getDate() + offset);
         const sesionDateStr = sesionDate.toISOString().split('T')[0];
@@ -211,7 +222,7 @@ exports.handler = async (event) => {
     const pendientes = plan.sesiones
       .filter(s => s.tipo?.toLowerCase() !== 'descanso' && !s.completada)
       .map(s => {
-        const offset = DIA_OFFSET_MAP[s.dia] ?? 0;
+        const offset = offsetDesdeInicio(baseDate, s.dia);
         const d = new Date(baseDate);
         d.setDate(baseDate.getDate() + offset);
         return { sesion: s, fecha: d.toISOString().split('T')[0] };

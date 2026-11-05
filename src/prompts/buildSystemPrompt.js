@@ -160,7 +160,16 @@ ${alertas.length > 0 ? `\n⚠️ ALERTAS: ${alertas.join('; ')}. Ajusta la inten
   }
 
   // ── DIA_OFFSET_MAP: semana empieza en lunes (índice 0) ──────────────────────
-  const DIA_OFFSET_MAP = { Lunes: 0, Martes: 1, 'Miércoles': 2, Jueves: 3, Viernes: 4, Sábado: 5, Domingo: 6 }
+  const DIA_OFFSET_MAP = { Lunes: 0, Martes: 1, 'Miércoles': 2, Miercoles: 2, Jueves: 3, Viernes: 4, Sábado: 5, Sabado: 5, Domingo: 6 }
+  // Los planes son semanas "rodantes": plan.semana es el día en que empieza el plan
+  // (lunes en los automáticos, pero el primer plan empieza el día del alta). El offset
+  // de cada sesión se cuenta desde ese día, no desde el lunes. Para planes que empiezan
+  // en lunes el resultado es idéntico al de antes.
+  function offsetDesdeInicio(inicio, dia) {
+    const objetivo = DIA_OFFSET_MAP[dia] ?? DIA_OFFSET_MAP[String(dia || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')] ?? 0
+    const inicioIdx = (inicio.getDay() + 6) % 7
+    return (objetivo - inicioIdx + 7) % 7
+  }
 
   const planSection = plan ? (() => {
     const nDias = plan.sesiones.length
@@ -185,7 +194,7 @@ ${alertas.length > 0 ? `\n⚠️ ALERTAS: ${alertas.join('; ')}. Ajusta la inten
       : ''
 
     const lines = plan.sesiones.map(s => {
-      const offset = DIA_OFFSET_MAP[s.dia] ?? 0
+      const offset = offsetDesdeInicio(lunesPlan, s.dia)
       const sesionDate = new Date(lunesPlan)
       sesionDate.setDate(lunesPlan.getDate() + offset)
       const sesionDateStr = sesionDate.toISOString().split('T')[0]

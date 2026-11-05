@@ -117,3 +117,19 @@ describe('fechas de carrera del onboarding', () => {
     expect(fechaCarreraISO('5', 'Marzzo', '2027')).toBeNull()
   })
 })
+
+describe('fechas de sesiones en planes que no empiezan en lunes', async () => {
+  const { getFechaSesion } = await import('../lib/fechas')
+  it('plan de lunes: igual que antes', () => {
+    expect(getFechaSesion('2026-11-02', 'Lunes')).toBe('2026-11-02')
+    expect(getFechaSesion('2026-11-02', 'Jueves')).toBe('2026-11-05')
+    expect(getFechaSesion('2026-11-02', 'Domingo')).toBe('2026-11-08')
+  })
+  it('primer plan que empieza un jueves (Jueves..Miércoles)', () => {
+    expect(getFechaSesion('2026-11-05', 'Jueves')).toBe('2026-11-05')
+    expect(getFechaSesion('2026-11-05', 'Domingo')).toBe('2026-11-08')
+    expect(getFechaSesion('2026-11-05', 'Lunes')).toBe('2026-11-09')
+    expect(getFechaSesion('2026-11-05', 'Miércoles')).toBe('2026-11-11')
+    expect(getFechaSesion('2026-11-05', 'Sabado')).toBe('2026-11-07')
+  })
+})
