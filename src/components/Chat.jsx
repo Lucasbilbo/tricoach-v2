@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { getMessages, saveMessage } from '../lib/messages'
-import { canSendMessage } from '../lib/profiles'
+import { canSendMessage, mensajesHoy, limiteDiario, LIMITE_DIARIO } from '../lib/profiles'
 import { buildSystemPrompt } from '../prompts/buildSystemPrompt'
 import { updateContext } from '../lib/context'
 import { adjustPlan, generatePlan } from '../lib/plans'
@@ -58,8 +58,14 @@ const soportaVoz = typeof window !== 'undefined' && ('SpeechRecognition' in wind
 // Module-level cache — persists across tab navigation, resets on full page reload
 let stravaActivitiesCache = { fetched: false, data: null, ts: 0, userId: null }
 
+function textoLimite(profile) {
+  if (profile?.plan === 'pro') return `Has llegado a los ${LIMITE_DIARIO.pro} mensajes de hoy. Mañana seguimos.`
+  return `Has llegado a los ${LIMITE_DIARIO.free} mensajes diarios del plan Free. Con Pro tienes ${LIMITE_DIARIO.pro} al día.`
+}
+
 export default function Chat({ userId, profile, activeCycle, plan, planProximaSemana, historialPlanes, personalidad, onPersonalidadChange, onShowUpgrade, onPlanUpdate, prefillMessage }) {
   const [messages, setMessages] = useState([])
+  const [enviadosHoy, setEnviadosHoy] = useState(0) // mensajes enviados en esta sesión (el perfil cargado no se refresca)
   const [welcomeOnboarding, setWelcomeOnboarding] = useState(null) // nombre del usuario si viene de onboarding
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -110,34 +116,38 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
 
     const userMessage = input
 
-    // Flujo de bienvenida tras onboarding — detectar intención de generar plan
+    // Flujo de bienvenida tras onboarding: la primera respuesta SIEMPRE genera el plan.
+    // Lo que cuente el usuario (lesiones, disponibilidad...) se pasa como contexto de la
+    // semana. Antes, si respondía con información en vez de "generar", el plan no se
+    // generaba y lo que contaba no llegaba al plan.
     if (welcomeOnboarding) {
-      setWelcomeOnboarding(null) // desactivar tras primera respuesta
-      if (GENERAR_RE.test(userMessage.trim())) {
-        setInput('')
-        setLoading(true)
-        setMessages(prev => [...prev, { role: 'user', content: userMessage }])
-        try {
-          const generated = await generatePlan(userId)
-          if (generated?.sesiones) {
-            onPlanUpdate?.(generated)
-            setMessages(prev => [...prev, { role: 'assistant', content: '✅ ¡Tu plan está listo! Pulsa **Plan** en el menú inferior para verlo.' }])
-          } else {
-            setMessages(prev => [...prev, { role: 'assistant', content: 'No pude generar el plan ahora. Escríbeme cuando quieras e intentamos de nuevo.' }])
-          }
-        } catch {
-          setMessages(prev => [...prev, { role: 'assistant', content: 'Hubo un error al generar el plan. Inténtalo de nuevo.' }])
-        } finally {
-          setLoading(false)
+      setWelcomeOnboarding(null)
+      const texto = userMessage.trim()
+      const soloConfirmacion = GENERAR_RE.test(texto) && texto.split(/\s+/).length <= 3
+      const esPregunta = texto.includes('?')
+      setInput('')
+      setLoading(true)
+      if (!esPregunta) setMessages(prev => [...prev, { role: 'user', content: userMessage, local: true }])
+      try {
+        const generated = await generatePlan(userId, null, null, soloConfirmacion ? null : texto.slice(0, 1000))
+        if (generated?.sesiones) {
+          onPlanUpdate?.(generated)
+          setMessages(prev => [...prev, { role: 'assistant', content: '✅ ¡Tu plan está listo! Pulsa **Plan** en el menú inferior para verlo.', local: true }])
+        } else {
+          setMessages(prev => [...prev, { role: 'assistant', content: 'No pude generar el plan ahora. Puedes generarlo desde la pestaña **Plan**.', local: true }])
         }
-        return
+      } catch {
+        setMessages(prev => [...prev, { role: 'assistant', content: 'Hubo un error al generar el plan. Puedes generarlo desde la pestaña **Plan**.', local: true }])
+      } finally {
+        setLoading(false)
       }
-      // Si no hay keywords → flujo normal de Claude (el welcome se desactiva)
+      if (!esPregunta) return
+      // Si además preguntaba algo, sigue el flujo normal y el coach le responde
     }
 
-    const canSend = await canSendMessage(profile)
+    const canSend = await canSendMessage(profile, enviadosHoy)
     if (!canSend) {
-      setMessages((prev) => [...prev, { role: 'assistant', content: '⚠️ Has alcanzado el límite de 25 mensajes diarios del plan Free. Actualiza a Pro para mensajes ilimitados.' }])
+      setMessages((prev) => [...prev, { role: 'assistant', content: textoLimite(profile), local: true }])
       return
     }
 
@@ -148,7 +158,7 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
     try {
       if (userMessage) await saveMessage(userId, 'user', userMessage)
       const updatedMessages = [...messages, { role: 'user', content: userMessage }]
-      setMessages(updatedMessages)
+      setMessages(prev => [...prev, { role: 'user', content: userMessage }])
 
       const profileActualizado = { ...profile, contexto: localContextoRef.current }
       const systemPrompt = buildSystemPrompt(profileActualizado, profile.personalidad || 'cercano', stravaData, plan, planProximaSemana, historialPlanes || [], activeCycle || null, wellnessData)
@@ -157,7 +167,7 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
       // then drop any leading assistant messages (coach intro is saved as assistant
       // in Supabase and would be the first item — Anthropic requires first msg = user).
       const rawMessages = [
-        ...messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
+        ...messages.filter(m => !m.local && !m.system).slice(-10).map(m => ({ role: m.role, content: m.content })),
         { role: 'user', content: userMessage }
       ].reduce((acc, m) => {
         const last = acc[acc.length - 1]
@@ -172,8 +182,7 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
       const response = await fetch('/.netlify/functions/claude', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-tricoach-secret': import.meta.env.VITE_TRICOACH_SECRET || ''
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           userId,
@@ -182,26 +191,32 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
         }),
       })
 
+      const data = await response.json().catch(() => ({}))
+
       if (response.status === 429) {
-        setMessages((prev) => [...prev, { role: 'assistant', content: '⚠️ Has alcanzado el límite diario del plan Free. Actualiza a Pro para mensajes ilimitados.' }])
+        setEnviadosHoy(limiteDiario(profile))
+        setMessages((prev) => [...prev, { role: 'assistant', content: textoLimite(profile), local: true }])
         return
       }
 
-      if (response.status === 408) {
-        setMessages((prev) => [...prev, { role: 'assistant', content: 'El coach tardó demasiado. Pulsa enviar de nuevo.' }])
+      const assistantMessage = response.ok ? (data.text || data.content?.find?.(b => b.type === 'text')?.text || '') : ''
+
+      // Si el coach falla, se avisa en pantalla pero NO se guarda como respuesta del coach
+      // (antes se guardaba "Error al responder" y se reenviaba como historial).
+      if (!assistantMessage) {
+        const aviso = data.error || 'El coach no está disponible ahora mismo. Inténtalo en un rato.'
+        setMessages((prev) => [...prev, { role: 'assistant', content: `⚠️ ${aviso}`, local: true }])
         return
       }
 
-      const data = await response.json()
-      const assistantMessage = data.content?.[0]?.text || 'Error al responder'
-
-      if (assistantMessage) await saveMessage(userId, 'assistant', assistantMessage)
+      setEnviadosHoy(n => n + 1)
+      await saveMessage(userId, 'assistant', assistantMessage)
 
       const finalMessages = [...updatedMessages, { role: 'assistant', content: assistantMessage }]
-      setMessages(finalMessages)
+      setMessages(prev => [...prev, { role: 'assistant', content: assistantMessage }])
       leerEnVoz(assistantMessage)
 
-      updateContext(userId, finalMessages.filter(m => !m.system), localContextoRef.current).then(nuevoContexto => {
+      updateContext(userId, finalMessages.filter(m => !m.system && !m.local), localContextoRef.current).then(nuevoContexto => {
         if (nuevoContexto) localContextoRef.current = nuevoContexto
       }).catch(() => {})
 
@@ -237,7 +252,7 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
     const controller = new AbortController()
     fetch(`/.netlify/functions/intervals?action=wellness&userId=${userId}`, {
       method: 'GET',
-      headers: { 'x-tricoach-secret': import.meta.env.VITE_TRICOACH_SECRET || '' },
+      headers: { },
       signal: controller.signal,
     })
       .then(r => r.json())
@@ -262,8 +277,7 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
     fetch('/.netlify/functions/strava-activities', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'x-tricoach-secret': import.meta.env.VITE_TRICOACH_SECRET || ''
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({ userId }),
       signal: controller.signal,
@@ -357,12 +371,12 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
   }, [plan])
 
 
-  const messagesHoy = profile?.messages_today || 0
+  const usadosHoy = mensajesHoy(profile, enviadosHoy)
   const esFree = !profile?.plan || profile?.plan === 'free'
-  const limitAlcanzado = esFree && messagesHoy >= 25
+  const limitAlcanzado = usadosHoy >= limiteDiario(profile)
   const nombreCoach = profile?.nombre_coach || 'Coach'
 
-  const remaining = esFree ? (25 - messagesHoy) : (150 - messagesHoy)
+  const remaining = limiteDiario(profile) - usadosHoy
   const showCounter = !limitAlcanzado && (esFree ? remaining < 8 : remaining < 20)
 
   const visibleMessages = messages.filter(m => !m.system)
@@ -612,7 +626,7 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
                 color: 'var(--foreground)',
               }}
                 dangerouslySetInnerHTML={{ __html: renderMarkdown(
-                  `¡Bienvenido/a ${welcomeOnboarding}! Ya tengo toda la info que necesito para prepararte el plan. Antes de generarlo, ¿hay algo más que quieras contarme? Lesiones recientes, semanas con menos disponibilidad, o cualquier cosa relevante. Si no, dime **"generar"** y empezamos.`
+                  `¡Bienvenido/a ${welcomeOnboarding}! Ya tengo toda la info que necesito para prepararte el plan. Antes de generarlo, ¿hay algo más que deba saber? Lesiones recientes, semanas con menos disponibilidad o cualquier cosa relevante: lo tendré en cuenta en el plan. Si no, escribe **"generar"** y empezamos.`
                 )}}
               />
             </div>
@@ -754,7 +768,7 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
       </div>
 
       {/* Upgrade banner when limit reached */}
-      {limitAlcanzado && (
+      {limitAlcanzado && esFree && (
         <div style={{
           background: 'oklch(0.7 0.18 45 / 0.08)',
           borderTop: '1px solid oklch(0.7 0.18 45 / 0.35)',
@@ -776,7 +790,7 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
               cursor: 'pointer',
             }}
           >
-            🏆 Hazte Pro — mensajes ilimitados
+            Hazte Pro — {LIMITE_DIARIO.pro} mensajes al día
           </button>
         </div>
       )}

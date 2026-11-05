@@ -1,18 +1,17 @@
 const https = require('https');
+const { authenticate, corsHeaders } = require('./lib/auth');
+const { modelFor, cheapModel, extractText, callClaude } = require('./lib/claude');
 
 const MAX_BODY_BYTES = 64 * 1024;
-const FUNCTION_SECRET = process.env.TRICOACH_SECRET;
-
-const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
-const CLAUDE_MAX_TOKENS = 2048;
+const CLAUDE_MAX_TOKENS = 2048;      // incluye el razonamiento de los modelos 5.5
+const CONTEXTO_MAX_TOKENS = 400;
 
 const DAILY_LIMIT = { free: 10, pro: 30 };
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type, x-tricoach-secret',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS'
-};
+// Resumen de contexto del atleta (src/lib/context.js). El system lo fija el servidor:
+// el cliente solo aporta la conversación. Usa siempre el modelo barato y no cuenta
+// para el límite diario de mensajes.
+const CONTEXTO_SYSTEM = 'Eres un asistente que resume conversaciones de coaching deportivo. Responde SOLO con el resumen, sin explicaciones ni saludos.';
 
 const ACTUALIZAR_PERFIL_TOOL = {
   name: 'actualizar_perfil',
@@ -29,42 +28,6 @@ const ACTUALIZAR_PERFIL_TOOL = {
   }
 };
 
-function withTimeout(promise, ms, errorMsg) {
-  const timer = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error(errorMsg)), ms)
-  );
-  return Promise.race([promise, timer]);
-}
-
-function callClaude(apiKey, body) {
-  return new Promise((resolve, reject) => {
-    const options = {
-      hostname: 'api.anthropic.com',
-      path: '/v1/messages',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'Content-Length': Buffer.byteLength(body)
-      }
-    };
-    const req = https.request(options, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        resolve({
-          statusCode: res.statusCode,
-          headers: { ...CORS, 'Content-Type': 'application/json' },
-          body: data
-        });
-      });
-    });
-    req.on('error', (e) => reject(e));
-    req.write(body);
-    req.end();
-  });
-}
 
 function supabaseGet(hostname, path, key) {
   return new Promise((resolve) => {
@@ -176,150 +139,152 @@ async function actualizarContextoPerfil(userId, datos, hostname, supabaseKey) {
   });
 }
 
+function json(statusCode, cors, obj) {
+  return { statusCode, headers: { ...cors, 'Content-Type': 'application/json' }, body: JSON.stringify(obj) };
+}
+
+// Mensaje para el usuario según el fallo. Nunca se guarda como respuesta del coach.
+function mensajeError(status) {
+  if (status === 408) return 'El coach tardó demasiado en responder. Inténtalo de nuevo.';
+  if (status === 429 || status === 529) return 'El coach está saturado ahora mismo. Inténtalo en un minuto.';
+  return 'El coach no está disponible ahora mismo. Ya estamos avisados; inténtalo en un rato.';
+}
+
 exports.handler = async (event) => {
+  const CORS = corsHeaders(event);
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS, body: 'Method Not Allowed' };
 
-  const secret = event.headers['x-tricoach-secret'];
-  if (!FUNCTION_SECRET) {
-    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Server misconfigured' }) };
-  }
-  if (secret !== FUNCTION_SECRET) {
-    return { statusCode: 401, headers: CORS, body: JSON.stringify({ error: 'Unauthorized' }) };
-  }
-
   const rawBody = event.body || '';
   if (Buffer.byteLength(rawBody) > MAX_BODY_BYTES) {
-    return { statusCode: 413, headers: CORS, body: JSON.stringify({ error: 'Request demasiado grande' }) };
+    return json(413, CORS, { error: 'Request demasiado grande' });
   }
 
   let parsed;
   try {
     parsed = JSON.parse(rawBody);
   } catch {
-    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'JSON inválido' }) };
+    return json(400, CORS, { error: 'JSON inválido' });
   }
+
+  const auth = await authenticate(event, { cors: CORS, bodyUserId: parsed.userId });
+  if (!auth.ok) return auth.response;
+  const userId = auth.userId;
 
   if (!parsed.messages || !Array.isArray(parsed.messages) || parsed.messages.length === 0) {
-    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'messages requerido' }) };
+    return json(400, CORS, { error: 'messages requerido' });
   }
+  if (parsed.messages.length > 60) parsed.messages = parsed.messages.slice(-60);
 
-  if (parsed.messages.length > 60) {
-    parsed.messages = parsed.messages.slice(-60);
-  }
+  const esContexto = parsed.purpose === 'contexto';
 
-  // ── Rate limiting via atomic Supabase RPC ──
-  // Hoist supabase connection vars so tool_use handler can reuse them below
-  const { userId } = parsed;
-  let supabaseHostname = null;
-  let supabaseServiceKey = null;
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+  const supabaseHostname = supabaseUrl ? new URL(supabaseUrl).hostname : null;
 
-  if (userId) {
-    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!UUID_REGEX.test(userId)) {
-      return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId inválido' }) };
+  // Plan del usuario: decide el modelo y el límite diario
+  const profile = supabaseHostname
+    ? await supabaseGet(supabaseHostname, `/rest/v1/profiles?id=eq.${userId}&select=plan,deleted_at`, supabaseServiceKey)
+    : null;
+  if (profile?.deleted_at) return json(403, CORS, { error: 'Cuenta eliminada' });
+  const plan = profile?.plan === 'pro' ? 'pro' : 'free';
+
+  // ── Límite diario (RPC atómica). El resumen de contexto no cuenta. ──
+  if (!esContexto && supabaseHostname) {
+    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
+    const newCount = await supabaseRpc(supabaseHostname, '/rest/v1/rpc/increment_messages_today', supabaseServiceKey, {
+      p_user_id: userId, p_limit: DAILY_LIMIT[plan], p_today: today,
+    });
+    if (newCount === -1) {
+      return json(429, CORS, { error: 'Has alcanzado el límite de mensajes de hoy', limite: DAILY_LIMIT[plan], plan });
     }
+    // newCount === null → Supabase falló: se deja pasar el mensaje en vez de bloquear
+  }
 
-    const supabaseUrl = process.env.SUPABASE_URL;
-    supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
-    supabaseHostname = new URL(supabaseUrl).hostname;
+  // Limpieza de mensajes: sin vacíos, solo user/assistant, sin errores antiguos guardados
+  // como respuesta del coach, empezando y terminando en user (los modelos 5.5 rechazan
+  // un último turno de assistant).
+  let cleanMessages = parsed.messages
+    .filter(m => m && (m.role === 'user' || m.role === 'assistant'))
+    .filter(m => typeof m.content === 'string' && m.content.trim() !== '')
+    .filter(m => !(m.role === 'assistant' && m.content.trim() === 'Error al responder'))
+    .map(m => ({ role: m.role, content: m.content }));
 
-    // Read plan to determine the right limit, then atomically increment
-    // Both Supabase calls are wrapped with a 5s timeout — if Supabase is slow the handler
-    // must not hang until Netlify's 26s function timeout kills the request.
-    const profile = await withTimeout(
-      supabaseGet(supabaseHostname, `/rest/v1/profiles?id=eq.${userId}&select=plan`, supabaseServiceKey),
-      5000,
-      'Supabase profile timeout'
-    ).catch(() => null);
-
-    if (profile) {
-      const today = new Date().toISOString().split('T')[0];
-      const plan = profile.plan || 'free';
-      const limit = DAILY_LIMIT[plan] ?? DAILY_LIMIT.free;
-
-      // Single atomic operation: increment if under limit, reset if new day, return -1 if blocked
-      const newCount = await withTimeout(
-        supabaseRpc(supabaseHostname, '/rest/v1/rpc/increment_messages_today', supabaseServiceKey, { p_user_id: userId, p_limit: limit, p_today: today }),
-        5000,
-        'Supabase RPC timeout'
-      ).catch(() => null);
-
-      if (newCount === -1) {
-        return {
-          statusCode: 429,
-          headers: CORS,
-          body: JSON.stringify({ error: 'Has alcanzado el límite de mensajes de hoy' })
-        };
-      }
-      // newCount === null means Supabase failed/timed out — allow the message rather than blocking
+  // Fusionar turnos consecutivos del mismo rol (al quitar errores pueden quedar dos user seguidos)
+  cleanMessages = cleanMessages.reduce((acc, m) => {
+    const last = acc[acc.length - 1];
+    if (last && last.role === m.role) {
+      acc[acc.length - 1] = { ...last, content: `${last.content}\n${m.content}` };
+    } else {
+      acc.push(m);
     }
-  }
+    return acc;
+  }, []);
+  const firstUser = cleanMessages.findIndex(m => m.role === 'user');
+  cleanMessages = firstUser >= 0 ? cleanMessages.slice(firstUser) : [];
+  while (cleanMessages.length && cleanMessages[cleanMessages.length - 1].role !== 'user') cleanMessages.pop();
 
-  const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
-  if (!ANTHROPIC_KEY) {
-    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'API key not configured' }) };
-  }
+  if (cleanMessages.length === 0) return json(400, CORS, { error: 'No hay mensajes válidos' });
 
-  const cleanMessages = parsed.messages
-    .filter(m => m.content !== null && m.content !== undefined && m.content !== '')
-    .filter(m => m.role === 'user' || m.role === 'assistant')
+  const system = esContexto ? CONTEXTO_SYSTEM : (typeof parsed.system === 'string' ? parsed.system.slice(0, 40000) : undefined);
+  const model = esContexto ? cheapModel() : modelFor(plan);
+  const tools = esContexto ? undefined : [ACTUALIZAR_PERFIL_TOOL];
 
-  const firstUser = cleanMessages.findIndex(m => m.role === 'user')
-  const finalMessages = firstUser > 0 ? cleanMessages.slice(firstUser) : cleanMessages
-
-  if (finalMessages.length === 0) {
-    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'No hay mensajes válidos' }) }
-  }
-
-  const { userId: _u, model: _m, max_tokens: _mt, messages: _msgs, ...parsedClean } = parsed;
-  const body = JSON.stringify({
-    ...parsedClean,
-    messages: finalMessages,
-    model: CLAUDE_MODEL,
-    max_tokens: CLAUDE_MAX_TOKENS,
-    tools: [ACTUALIZAR_PERFIL_TOOL],
+  const first = await callClaude({
+    model, system, messages: cleanMessages, tools,
+    maxTokens: esContexto ? CONTEXTO_MAX_TOKENS : CLAUDE_MAX_TOKENS,
+    timeoutMs: 22000,
   });
 
-  try {
-    const claudeResult = await withTimeout(callClaude(ANTHROPIC_KEY, body), 25000, 'Claude timeout');
+  if (!first.ok) {
+    return json(first.status === 408 ? 408 : 502, CORS, { error: mensajeError(first.status), codigo: 'claude_error' });
+  }
 
-    // ── Handle tool_use: actualizar_perfil ──────────────────────────────────
-    if (claudeResult.statusCode === 200 && userId && supabaseHostname) {
-      let claudeParsed;
-      try { claudeParsed = JSON.parse(claudeResult.body); } catch { claudeParsed = null; }
+  let data = first.data;
+  let text = extractText(data);
 
-      if (claudeParsed) {
-        const toolUseBlocks = (claudeParsed.content || []).filter(
-          b => b.type === 'tool_use' && b.name === 'actualizar_perfil'
-        );
+  // ── tool_use: actualizar_perfil ──
+  const toolUses = (data.content || []).filter(b => b.type === 'tool_use' && b.name === 'actualizar_perfil');
+  if (toolUses.length > 0 && supabaseHostname) {
+    const datos = toolUses.map(b => b.input?.dato).filter(Boolean);
+    await Promise.race([
+      actualizarContextoPerfil(userId, datos, supabaseHostname, supabaseServiceKey),
+      new Promise(resolve => setTimeout(resolve, 2000)),
+    ]).catch(() => {});
 
-        if (toolUseBlocks.length > 0) {
-          const datos = toolUseBlocks.map(b => b.input?.dato).filter(Boolean);
-
-          // Await with tight timeout — Netlify function must complete before returning
-          await Promise.race([
-            actualizarContextoPerfil(userId, datos, supabaseHostname, supabaseServiceKey),
-            new Promise(resolve => setTimeout(resolve, 2000))
-          ]).catch(() => {});
-
-          // Return only text blocks — strip tool_use from the response
-          const textContent = (claudeParsed.content || []).filter(b => b.type === 'text');
-          if (textContent.length > 0) {
-            return {
-              ...claudeResult,
-              body: JSON.stringify({ ...claudeParsed, content: textContent, stop_reason: 'end_turn' })
-            };
-          }
-        }
+    // Si Claude solo guardó el dato y no escribió nada, se le devuelve el resultado de la
+    // herramienta para que conteste. Antes esto acababa en "Error al responder".
+    if (!text) {
+      const followUp = await callClaude({
+        model, system, tools,
+        maxTokens: CLAUDE_MAX_TOKENS,
+        timeoutMs: 15000,
+        messages: [
+          ...cleanMessages,
+          { role: 'assistant', content: data.content },
+          { role: 'user', content: toolUses.map(b => ({ type: 'tool_result', tool_use_id: b.id, content: 'Guardado en el perfil.' })) },
+        ],
+      });
+      if (followUp.ok) {
+        data = followUp.data;
+        text = extractText(data);
       }
     }
-
-    return claudeResult;
-  } catch (e) {
-    if (e.message === 'Claude timeout') {
-      return { statusCode: 408, headers: CORS, body: JSON.stringify({ error: 'El coach tardó demasiado en responder. Inténtalo de nuevo.' }) };
-    }
-    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: e.message }) };
   }
+
+  if (!text) {
+    if (data?.stop_reason === 'refusal') {
+      text = 'Prefiero no responder a eso. Si es sobre tu entrenamiento, cuéntamelo de otra forma y lo vemos.';
+    } else {
+      console.error(`[claude] respuesta sin texto (stop_reason=${data?.stop_reason}) user=${userId}`);
+      return json(502, CORS, { error: mensajeError(502), codigo: 'sin_texto' });
+    }
+  }
+
+  return json(200, CORS, {
+    content: [{ type: 'text', text }],
+    text,
+    stop_reason: data?.stop_reason || 'end_turn',
+    model,
+  });
 };

@@ -1,3 +1,4 @@
+const { guardScheduled } = require('./lib/auth');
 // Orquestador de generación automática semanal de planes.
 // SCHEDULED: lunes 03:00 UTC (= 04:00/05:00 Madrid — fuera de la ventana de
 // peligro DST; ver tasks/analisis-flujo-datos.md §4). Config en netlify.toml.
@@ -75,9 +76,6 @@ function postGeneracion(body, timeoutMs) {
       headers: {
         'Content-Type': 'application/json',
         'x-internal-secret': process.env.INTERNAL_API_SECRET || '',
-        // Fallback: si INTERNAL_API_SECRET aún no existe en las env, la generación
-        // funciona igualmente por el camino normal (sin email ni limpieza de nota)
-        'x-tricoach-secret': process.env.TRICOACH_SECRET || '',
         'Content-Length': Buffer.byteLength(bodyStr),
       }
     }, (r) => {
@@ -100,7 +98,10 @@ function postGeneracion(body, timeoutMs) {
   });
 }
 
-exports.handler = async () => {
+exports.handler = async (event) => {
+  const bloqueo = guardScheduled(event);
+  if (bloqueo) return bloqueo;
+
   const inicio = Date.now();
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_KEY;

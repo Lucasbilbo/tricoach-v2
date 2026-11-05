@@ -36,8 +36,7 @@ export default function UpgradeModal({ userId, onClose }) {
       const res = await fetch('/.netlify/functions/create-checkout', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-tricoach-secret': import.meta.env.VITE_TRICOACH_SECRET || ''
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ userId, priceId })
       })
@@ -101,7 +100,7 @@ export default function UpgradeModal({ userId, onClose }) {
             Hazte Pro
           </h2>
           <p style={{ color: 'var(--muted-foreground)', fontSize: 14 }}>
-            Mensajes ilimitados, análisis de Strava y planes adaptativos
+            30 mensajes al día, análisis de Strava y planes adaptativos
           </p>
         </div>
 

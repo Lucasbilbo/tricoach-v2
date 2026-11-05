@@ -22,3 +22,21 @@ export function getFechaSesion(semana, dia) {
 export function getHoyMadrid() {
   return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' })
 }
+
+
+const MESES_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+
+/**
+ * Fecha de carrera en ISO (YYYY-MM-DD) a partir de los selectores del onboarding
+ * (día, nombre de mes en español, año). Devuelve null si algo no cuadra.
+ * Antes se guardaba "7 Marzo 2027" y el resto del código (ciclo, plan, prompt) lo ignoraba.
+ */
+export function fechaCarreraISO(dia, mes, anio) {
+  const m = MESES_ES.indexOf(String(mes || '').toLowerCase()) + 1
+  const d = Number(dia)
+  const a = Number(anio)
+  if (!m || !d || !a || d < 1 || d > 31) return null
+  const iso = `${a}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+  const check = new Date(`${iso}T12:00:00`)
+  return check.getDate() === d ? iso : null
+}

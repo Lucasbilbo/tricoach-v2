@@ -1,17 +1,14 @@
+const claudeApi = require('./lib/claude');
+const { authenticate, corsHeaders } = require('./lib/auth');
 const https = require('https');
 const { evaluarWellness } = require('./lib/wellness');
 const { decidirAccionPlan } = require('./lib/planes');
 const { getMondayOfCurrentWeek, getHoyMadrid } = require('./lib/fechas');
 const { sendEmail, buildPlanListoHtml } = require('./lib/email');
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type, x-tricoach-secret',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS'
-};
+let CORS = corsHeaders();
 
-const FUNCTION_SECRET = process.env.TRICOACH_SECRET;
-const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
+
 
 const getTodayDate = getHoyMadrid; // alias histórico — fechas Madrid desde lib/fechas
 
@@ -121,37 +118,18 @@ function withTimeout(promise, ms, errorMsg) {
   return Promise.race([promise, timer]);
 }
 
-function callClaude(apiKey, systemPrompt, userMessage) {
-  const body = JSON.stringify({
-    model: CLAUDE_MODEL,
-    max_tokens: 3000,
+// Llamada a Claude vía lib/claude.js. Devuelve la respuesta de la API o null si falla
+// (el error queda registrado en los logs de Netlify).
+async function callClaude(apiKey, systemPrompt, userMessage, model) {
+  const r = await claudeApi.callClaude({
+    apiKey,
+    model,
     system: systemPrompt,
-    messages: [{ role: 'user', content: userMessage }]
+    messages: [{ role: 'user', content: userMessage }],
+    maxTokens: 8000,
+    timeoutMs: 24000,
   });
-
-  return new Promise((resolve) => {
-    const options = {
-      hostname: 'api.anthropic.com',
-      path: '/v1/messages',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'Content-Length': Buffer.byteLength(body)
-      }
-    };
-    const req = https.request(options, (r) => {
-      let d = '';
-      r.on('data', chunk => d += chunk);
-      r.on('end', () => {
-        try { resolve(JSON.parse(d)); } catch { resolve(null); }
-      });
-    });
-    req.on('error', () => resolve(null));
-    req.write(body);
-    req.end();
-  });
+  return r.ok ? r.data : null;
 }
 
 async function refreshStravaToken(userId, stravaToken, stravaRefreshToken, stravaExpiresAt, hostname, supabaseKey) {
@@ -559,22 +537,11 @@ async function syncIntervalsCalendar(sesionesActivas, weekStart, athleteId, apiK
 }
 
 exports.handler = async (event) => {
+  CORS = corsHeaders(event);
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS, body: 'Method Not Allowed' };
 
-  // Auth: camino normal (x-tricoach-secret, frontend) o camino interno server-to-server
-  // (x-internal-secret === INTERNAL_API_SECRET, usado por el orquestador auto-plans).
-  // Sin header interno válido, el comportamiento es exactamente el de siempre.
-  const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET;
-  const esInterno = !!INTERNAL_SECRET && event.headers['x-internal-secret'] === INTERNAL_SECRET;
 
-  const secret = event.headers['x-tricoach-secret'];
-  if (!FUNCTION_SECRET) {
-    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Server misconfigured' }) };
-  }
-  if (!esInterno && secret !== FUNCTION_SECRET) {
-    return { statusCode: 401, headers: CORS, body: JSON.stringify({ error: 'Unauthorized' }) };
-  }
 
   let parsed;
   try {
@@ -583,7 +550,11 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'JSON inválido' }) };
   }
 
-  const { userId, planAnterior, fechaInicio, contexto_semana, forzar } = parsed;
+  const { planAnterior, fechaInicio, contexto_semana, forzar } = parsed;
+  const auth = await authenticate(event, { cors: CORS, bodyUserId: parsed.userId, allowInternal: true });
+  if (!auth.ok) return auth.response;
+  const userId = auth.userId;
+  const esInterno = auth.internal;
   if (!userId) {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId requerido' }) };
   }
@@ -954,7 +925,7 @@ IMPORTANTE: El campo contexto puede contener información de semanas anteriores 
   let claudeResponse;
   try {
     claudeResponse = await withTimeout(
-      callClaude(ANTHROPIC_KEY, systemPrompt, userMessage),
+      callClaude(ANTHROPIC_KEY, systemPrompt, userMessage, claudeApi.modelFor(profile.plan)),
       30000,
       'Claude timeout'
     );
@@ -962,13 +933,13 @@ IMPORTANTE: El campo contexto puede contener información de semanas anteriores 
     return { statusCode: 408, headers: CORS, body: JSON.stringify({ error: 'La generación del plan tardó demasiado. Inténtalo de nuevo.' }) };
   }
 
-  if (!claudeResponse || !claudeResponse.content?.[0]?.text) {
+  if (!claudeResponse || !claudeApi.extractText(claudeResponse)) {
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Error al generar el plan' }) };
   }
 
   let planData;
   try {
-    const text = claudeResponse.content[0].text.trim();
+    const text = claudeApi.extractText(claudeResponse);
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     planData = JSON.parse(jsonMatch ? jsonMatch[0] : text);
   } catch {

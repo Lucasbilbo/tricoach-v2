@@ -1,11 +1,8 @@
+const { authenticate, corsHeaders } = require('./lib/auth');
 const https = require('https');
 const { URL } = require('url');
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type, x-tricoach-secret',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS'
-};
+let CORS = corsHeaders();
 
 function supabaseGet(hostname, path, key) {
   return new Promise((resolve) => {
@@ -31,19 +28,13 @@ function supabaseGet(hostname, path, key) {
   });
 }
 
-const FUNCTION_SECRET = process.env.TRICOACH_SECRET;
+
 
 exports.handler = async (event) => {
+  CORS = corsHeaders(event);
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS, body: 'Method Not Allowed' };
 
-  const secret = event.headers['x-tricoach-secret'];
-  if (!FUNCTION_SECRET) {
-    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Server misconfigured' }) };
-  }
-  if (secret !== FUNCTION_SECRET) {
-    return { statusCode: 401, headers: CORS, body: JSON.stringify({ error: 'Unauthorized' }) };
-  }
 
   let parsedBody;
   try {
@@ -51,7 +42,10 @@ exports.handler = async (event) => {
   } catch {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'JSON inválido' }) };
   }
-  const { code, userId, redirectUri: clientRedirectUri } = parsedBody;
+  const { code, redirectUri: clientRedirectUri } = parsedBody;
+  const auth = await authenticate(event, { cors: CORS, bodyUserId: parsedBody.userId });
+  if (!auth.ok) return auth.response;
+  const userId = auth.userId;
   if (!code) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'code requerido' }) };
 
   // Fetch profile: validate Pro plan and get per-user Strava credentials

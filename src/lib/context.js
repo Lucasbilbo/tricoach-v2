@@ -3,16 +3,15 @@ import { supabase } from './supabase'
 export async function updateContext(userId, messages, currentContext) {
   if (messages.length < 4) return
 
-  const lastMessages = messages.slice(-6).map(m => `${m.role}: ${m.content}`).join('\n')
+  const lastMessages = messages.filter(m => !m.local).slice(-6).map(m => `${m.role}: ${m.content}`).join('\n')
 
   const response = await fetch('/.netlify/functions/claude', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
-      'x-tricoach-secret': import.meta.env.VITE_TRICOACH_SECRET || ''
+      'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      system: 'Eres un asistente que resume conversaciones de coaching deportivo. Responde SOLO con el resumen, sin explicaciones ni saludos.',
+      purpose: 'contexto', // el servidor fija el system, usa el modelo barato y no cuenta para el límite
       messages: [
         {
           role: 'user',
@@ -33,13 +32,13 @@ ${lastMessages}
 
 Genera la ficha técnica actualizada (máximo 150 palabras, sin paja):`
         }
-      ],
-      max_tokens: 200
+      ]
     })
   })
 
-  const data = await response.json()
-  const nuevoContexto = data.content?.[0]?.text
+  if (!response.ok) return
+  const data = await response.json().catch(() => ({}))
+  const nuevoContexto = data.text || data.content?.find?.(b => b.type === 'text')?.text
   if (!nuevoContexto) return
 
   const { error } = await supabase

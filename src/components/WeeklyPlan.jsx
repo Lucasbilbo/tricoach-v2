@@ -123,10 +123,9 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
             .filter(s => s.tipo !== 'Descanso')
             .map(s => ({ dia: s.dia, tipo: s.tipo, descripcion: s.descripcion }))
         : []
-      const secret = import.meta.env.VITE_TRICOACH_SECRET || ''
       const res = await fetch('/.netlify/functions/coach-intro', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-tricoach-secret': secret },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId,
           perfil: {

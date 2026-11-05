@@ -168,7 +168,6 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-tricoach-secret': import.meta.env.VITE_TRICOACH_SECRET || '',
         },
         body: JSON.stringify({ userId }),
       })
@@ -206,7 +205,6 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-tricoach-secret': import.meta.env.VITE_TRICOACH_SECRET || '',
         },
         body: JSON.stringify({
           userId,

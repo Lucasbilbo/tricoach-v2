@@ -1,10 +1,7 @@
+const { authenticate, corsHeaders } = require('./lib/auth');
 const https = require('https');
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type, x-tricoach-secret',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS'
-};
+let CORS = corsHeaders();
 
 function httpsRequest(options, body) {
   return new Promise((resolve, reject) => {
@@ -20,17 +17,9 @@ function httpsRequest(options, body) {
 }
 
 exports.handler = async (event) => {
+  CORS = corsHeaders(event);
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS, body: 'Method Not Allowed' };
-
-  const FUNCTION_SECRET = process.env.TRICOACH_SECRET;
-  const secret = event.headers['x-tricoach-secret'];
-  if (!FUNCTION_SECRET) {
-    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Server misconfigured' }) };
-  }
-  if (secret !== FUNCTION_SECRET) {
-    return { statusCode: 401, headers: CORS, body: JSON.stringify({ error: 'Unauthorized' }) };
-  }
 
   let parsed;
   try {
@@ -39,7 +28,9 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'JSON inválido' }) };
   }
 
-  const { userId } = parsed;
+  const auth = await authenticate(event, { cors: CORS, bodyUserId: parsed.userId });
+  if (!auth.ok) return auth.response;
+  const userId = auth.userId;
   if (!userId) {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId requerido' }) };
   }
@@ -58,44 +49,88 @@ exports.handler = async (event) => {
     'Authorization': `Bearer ${supabaseKey}`,
     'Content-Type': 'application/json',
   };
+  const rest = (method, path, body) => httpsRequest({
+    hostname, path, method,
+    headers: body ? { ...baseHeaders, 'Content-Length': Buffer.byteLength(body) } : baseHeaders,
+  }, body);
+  const getJson = async (path) => {
+    const r = await rest('GET', path);
+    try { return JSON.parse(r.body); } catch { return null; }
+  };
 
-  // Delete messages
-  const messagesResult = await httpsRequest({
-    hostname,
-    path: `/rest/v1/messages?user_id=eq.${userId}`,
-    method: 'DELETE',
-    headers: baseHeaders,
-  });
-  if (messagesResult.status >= 300) {
-    console.error('delete-account: error borrando messages', messagesResult.body);
-    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Error al borrar mensajes' }) };
+  // 1. Protección del Coach Dashboard (comparte esta base de datos): entrenadores y
+  //    atletas vinculados a un entrenador no se borran desde aquí, porque se perderían
+  //    sus sesiones, temporada y disponibilidad del panel.
+  const [esCoach, esAtletaDePanel] = await Promise.all([
+    getJson(`/rest/v1/coaches?id=eq.${userId}&select=id`),
+    getJson(`/rest/v1/coach_athletes?athlete_id=eq.${userId}&select=id`),
+  ]);
+  if ((Array.isArray(esCoach) && esCoach.length) || (Array.isArray(esAtletaDePanel) && esAtletaDePanel.length)) {
+    return {
+      statusCode: 409,
+      headers: CORS,
+      body: JSON.stringify({ error: 'Tu cuenta está vinculada al panel de tu entrenador. Escríbenos a coach@getricoach.com y la damos de baja.' }),
+    };
   }
 
-  // Delete plans
-  const plansResult = await httpsRequest({
-    hostname,
-    path: `/rest/v1/plans?user_id=eq.${userId}`,
-    method: 'DELETE',
-    headers: baseHeaders,
-  });
-  if (plansResult.status >= 300) {
-    console.error('delete-account: error borrando plans', plansResult.body);
-    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Error al borrar planes' }) };
+  const perfiles = await getJson(`/rest/v1/profiles?id=eq.${userId}&select=strava_token,stripe_customer_id`);
+  const perfil = Array.isArray(perfiles) ? perfiles[0] : null;
+
+  // 2. Stripe: cancelar suscripciones y borrar el cliente (las facturas se conservan en Stripe)
+  if (perfil?.stripe_customer_id && process.env.STRIPE_SECRET_KEY) {
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    const stripe = (method, path) => httpsRequest({
+      hostname: 'api.stripe.com', path, method,
+      headers: { Authorization: `Bearer ${stripeKey}` },
+    }).catch(e => ({ status: 500, body: e.message }));
+    const subs = await stripe('GET', `/v1/subscriptions?customer=${encodeURIComponent(perfil.stripe_customer_id)}&status=all&limit=20`);
+    let lista = [];
+    try { lista = JSON.parse(subs.body).data || []; } catch { /* sin suscripciones */ }
+    for (const sub of lista.filter(x => !['canceled', 'incomplete_expired'].includes(x.status))) {
+      const r = await stripe('DELETE', `/v1/subscriptions/${sub.id}`);
+      if (r.status >= 300) console.error('delete-account: no se pudo cancelar la suscripción', sub.id, r.status);
+    }
+    const del = await stripe('DELETE', `/v1/customers/${encodeURIComponent(perfil.stripe_customer_id)}`);
+    if (del.status >= 300) console.error('delete-account: no se pudo borrar el cliente de Stripe', del.status);
   }
 
-  // Soft-delete profile: set deleted_at instead of hard DELETE so the account
-  // can be detected on login and the user shown a clear message.
-  // Required migration: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
-  const deletedAtBody = JSON.stringify({ deleted_at: new Date().toISOString() });
-  const profileResult = await httpsRequest({
-    hostname,
-    path: `/rest/v1/profiles?id=eq.${userId}`,
-    method: 'PATCH',
-    headers: { ...baseHeaders, 'Content-Length': Buffer.byteLength(deletedAtBody) },
-  }, deletedAtBody);
-  if (profileResult.status >= 300) {
-    console.error('delete-account: error actualizando profile', profileResult.body);
+  // 3. Strava: revocar el acceso (libera una de las 10 plazas de la app)
+  if (perfil?.strava_token) {
+    const body = `access_token=${encodeURIComponent(perfil.strava_token)}`;
+    await httpsRequest({
+      hostname: 'www.strava.com', path: '/oauth/deauthorize', method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(body) },
+    }, body).catch(() => null);
+  }
+
+  // 4. Datos de la app. plans y training_cycles también caen en cascada al borrar el perfil.
+  const borrados = [
+    ['messages', `/rest/v1/messages?user_id=eq.${userId}`],
+    ['plans', `/rest/v1/plans?user_id=eq.${userId}`],
+  ];
+  for (const [nombre, path] of borrados) {
+    const r = await rest('DELETE', path);
+    if (r.status >= 300) {
+      console.error(`delete-account: error borrando ${nombre}`, r.body);
+      return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Error al eliminar la cuenta' }) };
+    }
+  }
+  const noCiclo = JSON.stringify({ active_cycle_id: null });
+  await rest('PATCH', `/rest/v1/profiles?id=eq.${userId}`, noCiclo);
+  const ciclos = await rest('DELETE', `/rest/v1/training_cycles?user_id=eq.${userId}`);
+  if (ciclos.status >= 300) console.error('delete-account: error borrando training_cycles', ciclos.body);
+
+  const perfilBorrado = await rest('DELETE', `/rest/v1/profiles?id=eq.${userId}`);
+  if (perfilBorrado.status >= 300) {
+    console.error('delete-account: error borrando profile', perfilBorrado.body);
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Error al eliminar la cuenta' }) };
+  }
+
+  // 5. Usuario de autenticación (email y acceso)
+  const authDel = await rest('DELETE', `/auth/v1/admin/users/${userId}`);
+  if (authDel.status >= 300) {
+    console.error('delete-account: error borrando el usuario de auth', authDel.status, authDel.body);
+    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Se borraron tus datos pero no el acceso. Escríbenos a coach@getricoach.com.' }) };
   }
 
   return { statusCode: 200, headers: CORS, body: JSON.stringify({ success: true }) };

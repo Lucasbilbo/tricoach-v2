@@ -1,3 +1,4 @@
+const { guardScheduled } = require('./lib/auth');
 /**
  * weekly-report.js — Informe semanal por email para usuarios Pro
  * Scheduled: domingos a las 19:00 UTC
@@ -202,7 +203,10 @@ function buildEmailHtml(nombre, sesiones) {
   `
 }
 
-exports.handler = async () => {
+exports.handler = async (event) => {
+  const bloqueo = guardScheduled(event);
+  if (bloqueo) return bloqueo;
+
   if (!emailsEnabled()) return { statusCode: 200, body: 'emails pausados' }
 
   if (!process.env.RESEND_API_KEY || !process.env.SUPABASE_SERVICE_KEY) {

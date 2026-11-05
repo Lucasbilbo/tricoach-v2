@@ -1,14 +1,11 @@
+const claudeApi = require('./lib/claude');
+const { authenticate, corsHeaders } = require('./lib/auth');
 const https = require('https');
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type, x-tricoach-secret',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS'
-};
+let CORS = corsHeaders();
 
-const FUNCTION_SECRET = process.env.TRICOACH_SECRET;
+
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
 
 const DIA_OFFSET_MAP = { Lunes: 0, Martes: 1, 'Miércoles': 2, Jueves: 3, Viernes: 4, Sábado: 5, Domingo: 6 };
 
@@ -83,45 +80,25 @@ function supabasePost(hostname, path, key, body) {
   });
 }
 
-function callClaude(apiKey, systemPrompt, userMessage) {
-  const body = JSON.stringify({
-    model: CLAUDE_MODEL,
-    max_tokens: 400,
+// Llamada a Claude vía lib/claude.js. Devuelve la respuesta de la API o null si falla
+// (el error queda registrado en los logs de Netlify).
+async function callClaude(apiKey, systemPrompt, userMessage, model) {
+  const r = await claudeApi.callClaude({
+    apiKey,
+    model,
     system: systemPrompt,
-    messages: [{ role: 'user', content: userMessage }]
+    messages: [{ role: 'user', content: userMessage }],
+    maxTokens: 1200,
+    timeoutMs: 20000,
   });
-
-  return new Promise((resolve) => {
-    const options = {
-      hostname: 'api.anthropic.com',
-      path: '/v1/messages',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'Content-Length': Buffer.byteLength(body)
-      }
-    };
-    const req = https.request(options, (r) => {
-      let d = '';
-      r.on('data', chunk => d += chunk);
-      r.on('end', () => { try { resolve(JSON.parse(d)); } catch { resolve(null); } });
-    });
-    req.on('error', () => resolve(null));
-    req.write(body);
-    req.end();
-  });
+  return r.ok ? r.data : null;
 }
 
 exports.handler = async (event) => {
+  CORS = corsHeaders(event);
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS, body: 'Method Not Allowed' };
 
-  const secret = event.headers['x-tricoach-secret'];
-  if (!FUNCTION_SECRET || secret !== FUNCTION_SECRET) {
-    return { statusCode: 401, headers: CORS, body: JSON.stringify({ error: 'Unauthorized' }) };
-  }
 
   let parsed;
   try {
@@ -130,7 +107,10 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'JSON inválido' }) };
   }
 
-  const { userId, actividad } = parsed;
+  const { actividad } = parsed;
+  const auth = await authenticate(event, { cors: CORS, bodyUserId: parsed.userId, allowInternal: true });
+  if (!auth.ok) return auth.response;
+  const userId = auth.userId;
   if (!userId) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId requerido' }) };
   if (!UUID_REGEX.test(userId)) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId inválido' }) };
   if (!actividad) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'actividad requerida' }) };
@@ -265,8 +245,8 @@ ${proximaInfo}
 Escribe el mensaje de feedback ahora.`;
 
   // 6. Llamar a Claude
-  const claudeResponse = await callClaude(anthropicKey, systemPrompt, userMessage);
-  const mensaje = claudeResponse?.content?.[0]?.text;
+  const claudeResponse = await callClaude(anthropicKey, systemPrompt, userMessage, claudeApi.modelFor(profile?.plan));
+  const mensaje = claudeApi.extractText(claudeResponse);
 
   if (!mensaje) {
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'No se pudo generar el mensaje' }) };

@@ -1,3 +1,4 @@
+const { guardScheduled } = require('./lib/auth');
 /**
  * thursday-reminder.js — Recordatorio semanal para usuarios sin plan
  * Scheduled: jueves a las 17:00 UTC (0 17 * * 4)
@@ -116,7 +117,10 @@ function buildEmailHtml(nombre) {
   `
 }
 
-exports.handler = async () => {
+exports.handler = async (event) => {
+  const bloqueo = guardScheduled(event);
+  if (bloqueo) return bloqueo;
+
   if (!emailsEnabled()) return { statusCode: 200, body: 'emails pausados' }
 
   if (!process.env.RESEND_API_KEY || !process.env.SUPABASE_SERVICE_KEY || !process.env.SUPABASE_URL) {

@@ -1,12 +1,9 @@
+const { authenticate, corsHeaders } = require('./lib/auth');
 const https = require('https');
 
-const FUNCTION_SECRET = process.env.TRICOACH_SECRET;
+
 const SUPABASE_HOST = 'luqpjgzpydquqturgjmt.supabase.co';
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type, x-tricoach-secret',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+let CORS = corsHeaders();
 
 // ─── Supabase helpers ────────────────────────────────────────────────────────
 
@@ -128,20 +125,19 @@ function addWeeks(dateStr, weeks) {
 // ─── Handler ─────────────────────────────────────────────────────────────────
 
 exports.handler = async (event) => {
+  CORS = corsHeaders(event);
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS, body: 'Method Not Allowed' };
 
-  const secret = event.headers['x-tricoach-secret'];
-  if (FUNCTION_SECRET && secret !== FUNCTION_SECRET) {
-    return { statusCode: 401, headers: CORS, body: JSON.stringify({ error: 'Unauthorized' }) };
-  }
 
   let parsed;
   try { parsed = JSON.parse(event.body || '{}'); } catch {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'JSON inválido' }) };
   }
 
-  const { userId } = parsed;
+  const auth = await authenticate(event, { cors: CORS, bodyUserId: parsed.userId });
+  if (!auth.ok) return auth.response;
+  const userId = auth.userId;
   if (!userId) {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId requerido' }) };
   }

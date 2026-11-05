@@ -266,8 +266,7 @@ export default function Progress({ userId, profile, activeCycle, plan: planActua
     fetch('/.netlify/functions/strava-activities', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'x-tricoach-secret': import.meta.env.VITE_TRICOACH_SECRET || ''
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({ userId })
     })

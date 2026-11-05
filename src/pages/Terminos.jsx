@@ -15,7 +15,7 @@ export default function Terminos() {
       </ul>
 
       <h2>3. Plan Free y Pro</h2>
-      <p>El plan Free incluye 10 mensajes diarios. El plan Pro ofrece mensajes ilimitados y funciones adicionales por 9,99€/mes o 79€/año.</p>
+      <p>El plan Free incluye 10 mensajes diarios. El plan Pro ofrece 30 mensajes diarios y funciones adicionales por 9,99€/mes o 79€/año.</p>
 
       <h2>4. Limitación de responsabilidad</h2>
       <p>TriCoach AI proporciona recomendaciones generales de entrenamiento. Consulta siempre con un médico antes de iniciar un programa de ejercicio intenso. No nos responsabilizamos de lesiones derivadas del uso del servicio.</p>

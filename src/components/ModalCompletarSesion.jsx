@@ -29,10 +29,9 @@ export default function ModalCompletarSesion({ sesion, planId, profile, onClose,
     const timeoutId = setTimeout(() => controller.abort(), 5000)
     setStravaLoading(true)
 
-    const secret = import.meta.env.VITE_TRICOACH_SECRET || ''
     fetch('/.netlify/functions/strava-match-activity', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-tricoach-secret': secret },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: profile.id, sessionDate: sesion.fecha, sessionTipo: sesion.tipo }),
       signal: controller.signal,
     })

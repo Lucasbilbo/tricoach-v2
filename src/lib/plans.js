@@ -114,13 +114,11 @@ export async function getPlanForWeek(userId, semana) {
  * devolverlo con { ya_existe: true }.
  */
 export async function generatePlan(userId, planAnterior = null, fechaInicio = null, contextoSemana = null, forzar = false) {
-  const secret = import.meta.env.VITE_TRICOACH_SECRET || ''
   const res = await fetch('/.netlify/functions/generate-plan', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'x-tricoach-secret': secret
+      'Accept': 'application/json'
     },
     body: JSON.stringify({ userId, planAnterior, fechaInicio, contexto_semana: contextoSemana || undefined, forzar: forzar || undefined })
   })
@@ -164,13 +162,11 @@ export async function completarSesion(planId, dia, campos = {}) {
 }
 
 export async function adjustPlan(userId, planId, motivo, descripcion) {
-  const secret = import.meta.env.VITE_TRICOACH_SECRET || ''
   const response = await fetch('/.netlify/functions/adjust-plan', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'x-tricoach-secret': secret
+      'Accept': 'application/json'
     },
     body: JSON.stringify({ userId, planId, motivo, descripcion })
   })
@@ -178,13 +174,11 @@ export async function adjustPlan(userId, planId, motivo, descripcion) {
 }
 
 export async function autoAdjustPlan(userId, planId, signal) {
-  const secret = import.meta.env.VITE_TRICOACH_SECRET || ''
   const response = await fetch('/.netlify/functions/adjust-plan', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'x-tricoach-secret': secret
+      'Accept': 'application/json'
     },
     body: JSON.stringify({ userId, planId, signal })
   })
