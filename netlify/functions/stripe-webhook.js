@@ -1,25 +1,12 @@
 const https = require('https');
-const { emailsEnabled } = require('./lib/email');
-const crypto = require('crypto');
+const { emailsEnabled, sendAlertEmail } = require('./lib/email');
+const { verificarFirma, decidirAccion, quedaSuscripcionViva } = require('./lib/stripe-eventos');
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'Content-Type, stripe-signature',
   'Access-Control-Allow-Methods': 'POST, OPTIONS'
 };
-
-function verifyStripeSignature(rawBody, signature, secret) {
-  if (!signature || !secret) return false;
-  const parts = signature.split(',');
-  const tPart = parts.find(p => p.startsWith('t='));
-  const v1Part = parts.find(p => p.startsWith('v1='));
-  if (!tPart || !v1Part) return false;
-  const t = tPart.slice(2);
-  const v1 = v1Part.slice(3);
-  const payload = `${t}.${rawBody}`;
-  const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex');
-  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(v1));
-}
 
 function supabasePatch(hostname, path, key, body) {
   const bodyStr = JSON.stringify(body);
@@ -73,6 +60,28 @@ function supabaseGet(hostname, path, key) {
   });
 }
 
+function suscripcionesDeCliente(customerId) {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    const req = https.request({
+      hostname: 'api.stripe.com',
+      path: `/v1/subscriptions?customer=${encodeURIComponent(customerId)}&status=all&limit=100`,
+      method: 'GET',
+      headers: { Authorization: `Bearer ${key}` },
+    }, (r) => {
+      let d = '';
+      r.on('data', c => d += c);
+      r.on('end', () => {
+        try { const j = JSON.parse(d); resolve(r.statusCode === 200 && Array.isArray(j.data) ? j.data : null); } catch { resolve(null); }
+      });
+    });
+    req.setTimeout(8000, () => { req.destroy(); resolve(null); });
+    req.on('error', () => resolve(null));
+    req.end();
+  });
+}
+
 function sendWelcomeEmail(resendKey, to, nombre) {
   const nombreDisplay = nombre || 'atleta';
   const bodyStr = JSON.stringify({
@@ -84,7 +93,7 @@ function sendWelcomeEmail(resendKey, to, nombre) {
       <p>Tu cuenta <strong>TriCoach AI Pro</strong> ya está activa. 🎉</p>
       <p>A partir de ahora tienes:</p>
       <ul>
-        <li>✅ Mensajes ilimitados con tu coach IA</li>
+        <li>✅ 20 mensajes al día con tu coach IA (Sonnet)</li>
         <li>✅ Planes adaptativos semanales</li>
         <li>✅ Análisis de actividades de Strava</li>
       </ul>
@@ -121,7 +130,7 @@ exports.handler = async (event) => {
   const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
   const signature = event.headers['stripe-signature'];
 
-  if (!verifyStripeSignature(event.body || '', signature, WEBHOOK_SECRET)) {
+  if (!verificarFirma(event.body || '', signature, WEBHOOK_SECRET)) {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'Firma inválida' }) };
   }
 
@@ -183,18 +192,32 @@ exports.handler = async (event) => {
     }
   }
 
-  if (stripeEvent.type === 'customer.subscription.deleted') {
-    const subscription = stripeEvent.data?.object;
-    const customerId = subscription?.customer;
+  const decision = decidirAccion(stripeEvent);
+  const idCliente = decision.customerId ? encodeURIComponent(decision.customerId) : null;
 
-    if (customerId) {
-      await supabasePatch(
-        hostname,
-        `/rest/v1/profiles?stripe_customer_id=eq.${customerId}`,
-        supabaseKey,
-        { plan: 'free' }
-      );
+  if (decision.accion === 'reactivar' && idCliente) {
+    await supabasePatch(hostname, `/rest/v1/profiles?stripe_customer_id=eq.${idCliente}`, supabaseKey, { plan: 'pro' });
+  }
+
+  if (decision.accion === 'revisar_baja' && idCliente) {
+    // Un cliente puede tener varias suscripciones: solo se baja a Free si no queda ninguna viva.
+    // Si Stripe no responde, NO se baja (mejor un Pro de más que quitar un servicio pagado) y se avisa.
+    const subs = await suscripcionesDeCliente(decision.customerId);
+    if (subs === null) {
+      console.error('[Stripe] No se pudo comprobar las suscripciones de', decision.customerId);
+      await sendAlertEmail('⚠️ TriCoach: baja de suscripción sin verificar', `<p>Stripe notificó el fin de una suscripción del cliente <code>${decision.customerId}</code>, pero no se pudo consultar su estado. No se ha cambiado su plan. Revísalo a mano.</p>`);
+    } else if (!quedaSuscripcionViva(subs)) {
+      await supabasePatch(hostname, `/rest/v1/profiles?stripe_customer_id=eq.${idCliente}`, supabaseKey, { plan: 'free' });
     }
+  }
+
+  if (decision.accion === 'avisar_pago') {
+    console.error('[Stripe] Cobro fallido — cliente:', decision.customerId, '| intento:', decision.intento);
+    await sendAlertEmail(
+      '⚠️ TriCoach: ha fallado un cobro',
+      `<p>Ha fallado el cobro de una suscripción${decision.importe !== null ? ` (${decision.importe.toFixed(2)} €)` : ''}${decision.email ? ` de <b>${String(decision.email).replace(/</g, '&lt;')}</b>` : ''}. Intento nº ${decision.intento || '?'}.</p>
+       <p>Stripe reintentará según tu configuración. Su plan no se cambia hasta que la suscripción termine. Cliente: <code>${decision.customerId}</code>.</p>`
+    );
   }
 
   return {

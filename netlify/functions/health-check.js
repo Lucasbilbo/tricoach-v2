@@ -9,7 +9,7 @@
 // claude-status (POST con x-internal-secret), que hace la misma prueba sin email.
 
 const { isInternalCall } = require('./lib/auth');
-const { probarModelos } = require('./lib/salud');
+const { probarModelos, comprobarRespuestasChat } = require('./lib/salud');
 const { sendAlertEmail } = require('./lib/email');
 
 function esProgramada(event) {
@@ -37,9 +37,21 @@ exports.handler = async (event) => {
     );
   }
 
+  // Usuarios reales sin respuesta del coach en las últimas 24 h (independiente de la prueba de modelos)
+  const chat = await comprobarRespuestasChat();
+  if (chat.alerta) {
+    console.error('[health-check] USUARIOS SIN RESPUESTA', JSON.stringify(chat));
+    await sendAlertEmail(
+      '⚠️ TriCoach: usuarios sin respuesta del coach',
+      `<p>En las últimas 24 h, <b>${chat.sinRespuesta} de ${chat.total}</b> mensajes de usuarios no recibieron respuesta del coach (${Math.round(chat.ratio * 100)} %).</p>
+       <p>Revisa los logs de la function <code>claude</code> en Netlify (busca <code>[claude]</code>) y el saldo/clave en console.anthropic.com.</p>`
+    );
+  }
+
+  const ok = fallos.length === 0 && !chat.alerta;
   return {
-    statusCode: fallos.length ? 500 : 200,
+    statusCode: ok ? 200 : 500,
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ok: fallos.length === 0, resultados }),
+    body: JSON.stringify({ ok, resultados, chat }),
   };
 };
