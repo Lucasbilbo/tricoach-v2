@@ -1,4 +1,5 @@
 const claudeApi = require('./lib/claude');
+const { validarDuracion } = require('./lib/duraciones');
 const { authenticate, corsHeaders } = require('./lib/auth');
 const https = require('https');
 const { evaluarWellness } = require('./lib/wellness');
@@ -420,19 +421,7 @@ ${esSemanaDescarga
 - Si RPE medio < 5 y completadas >= ${activas.length}: se puede aumentar carga un 10%`;
 }
 
-// ─── Duración mínima por fase y tipo ─────────────────────────────────────────
-
-function validarDuracion(sesion, fase) {
-  if (sesion.tipo?.toLowerCase() === 'descanso') return sesion.duracion_min || 0;
-  const minimos = {
-    base:  { 'Correr': 55, 'Bici': 80, 'Nadar': 45, 'Fuerza': 50 },
-    build: { 'Correr': 65, 'Bici': 90, 'Nadar': 55, 'Fuerza': 55 },
-    peak:  { 'Correr': 70, 'Bici': 100, 'Nadar': 60, 'Fuerza': 55 },
-    taper: { 'Correr': 35, 'Bici': 50, 'Nadar': 35, 'Fuerza': 40 },
-  };
-  const min = minimos[fase]?.[sesion.tipo] || 45;
-  return Math.max(sesion.duracion_min || 0, min);
-}
+// Duraciones mínimas por fase/nivel: ver ./lib/duraciones.js
 
 // ─── Macrocycle helpers (inlined — cannot import from src/ in CommonJS) ───────
 
@@ -981,7 +970,7 @@ IMPORTANTE: El campo contexto puede contener información de semanas anteriores 
   if (!necesitaDiagnostico) {
     const faseNombre = faseActual?.nombre || 'base';
     planData.sesiones = planData.sesiones.map(s => {
-      const duracionCorregida = validarDuracion(s, faseNombre);
+      const duracionCorregida = validarDuracion(s, faseNombre, profile.nivel);
       return duracionCorregida !== s.duracion_min ? { ...s, duracion_min: duracionCorregida } : s;
     });
   }

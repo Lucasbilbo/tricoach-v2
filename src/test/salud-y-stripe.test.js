@@ -101,3 +101,19 @@ describe('webhook de Stripe', () => {
     expect(quedaSuscripcionViva([])).toBe(false)
   })
 })
+
+describe('validarDuracion (red de seguridad del plan)', () => {
+  const { validarDuracion } = require('../../netlify/functions/lib/duraciones')
+
+  it('sube sesiones demasiado cortas al mínimo de la fase para niveles no principiantes', () => {
+    expect(validarDuracion({ tipo: 'Correr', duracion_min: 40 }, 'build', 'intermedio')).toBe(65)
+    expect(validarDuracion({ tipo: 'Bici', duracion_min: 120 }, 'build', 'avanzado')).toBe(120)
+  })
+  it('a un principiante nunca se le suben ni se le pasa de 60 min', () => {
+    expect(validarDuracion({ tipo: 'Bici', duracion_min: 40 }, 'build', 'principiante')).toBe(40)
+    expect(validarDuracion({ tipo: 'Correr', duracion_min: 90 }, 'base', 'principiante')).toBe(60)
+  })
+  it('no toca los descansos', () => {
+    expect(validarDuracion({ tipo: 'Descanso', duracion_min: 0 }, 'peak', 'intermedio')).toBe(0)
+  })
+})
