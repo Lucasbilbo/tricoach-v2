@@ -18,6 +18,7 @@
 - [Plan de entrenamiento 10K](https://getricoach.com/plan-entrenamiento-10k): 8 semanas, sesiones, ritmos y estrategia de carrera.
 - [Maratón para principiantes](https://getricoach.com/plan-primer-maraton): plan de 16 a 20 semanas, tiradas largas, nutrición y ritmo.
 - [Calculadora de ritmo de maratón](https://getricoach.com/calculadora-ritmo-maraton): predice tu tiempo y calcula parciales.
+- [Natación para triatlón](https://getricoach.com/natacion-para-triatlon): técnica de crol, test CSS y aguas abiertas.
 - [Entrenamiento en zona 2](https://getricoach.com/entrenamiento-zona-2): qué es, cómo calcular las zonas y cuánto entrenar.
 - [Plan de entrenamiento Hyrox](https://getricoach.com/plan-entrenamiento-hyrox): las 8 estaciones, running y fuerza funcional.
 - [Maratón Valencia](https://getricoach.com/maraton-valencia): plan de 16 semanas y estrategia de carrera.

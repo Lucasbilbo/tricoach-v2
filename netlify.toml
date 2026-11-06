@@ -176,6 +176,17 @@
   status = 200
 
 [[redirects]]
+  from = "/natacion-para-triatlon.html"
+  to = "/natacion-para-triatlon"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/natacion-para-triatlon"
+  to = "/natacion-para-triatlon.html"
+  status = 200
+
+[[redirects]]
   from = "/index.html"
   to = "/"
   status = 301
