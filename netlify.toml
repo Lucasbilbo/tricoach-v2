@@ -143,6 +143,39 @@
   status = 200
 
 [[redirects]]
+  from = "/plan-entrenamiento-10k.html"
+  to = "/plan-entrenamiento-10k"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/plan-entrenamiento-10k"
+  to = "/plan-entrenamiento-10k.html"
+  status = 200
+
+[[redirects]]
+  from = "/plan-primer-maraton.html"
+  to = "/plan-primer-maraton"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/plan-primer-maraton"
+  to = "/plan-primer-maraton.html"
+  status = 200
+
+[[redirects]]
+  from = "/calculadora-ritmo-maraton.html"
+  to = "/calculadora-ritmo-maraton"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/calculadora-ritmo-maraton"
+  to = "/calculadora-ritmo-maraton.html"
+  status = 200
+
+[[redirects]]
   from = "/index.html"
   to = "/"
   status = 301
