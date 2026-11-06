@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TriCoach AI — Tu entrenador personal de running y triatlón con IA</title>
-  <meta name="description" content="TriCoach AI analiza tus entrenamientos de Strava y crea un plan personalizado que se adapta cada semana a tu progreso. Running, triatlón, Hyrox y natación. Empieza gratis." />
+  <meta name="description" content="Entrenador personal con IA en español para running, triatlón y Hyrox. Plan semanal que se adapta a tu progreso y a Strava. Prueba Pro 7 días sin tarjeta; plan gratis para siempre." />
   <meta name="keywords" content="entrenador triatlón online, plan entrenamiento triatlón, app entrenamiento running, plan running personalizado, entrenador running IA, entrenamiento zona 2, coach triatlón español" />
   <meta property="og:title" content="TriCoach AI — Tu entrenador personal de running y triatlón con IA" />
   <meta property="og:description" content="El único coach IA en español que analiza tus datos de Strava y te dice exactamente qué entrenar hoy." />
@@ -805,16 +805,16 @@
   "inLanguage": "es-ES",
   "applicationCategory": "SportsApplication",
   "operatingSystem": "Web",
-  "offers": {
-    "@type": "Offer",
-    "price": "0",
-    "priceCurrency": "EUR"
-  }
+  "offers": [{"@type":"Offer","name":"Free","price":"0","priceCurrency":"EUR"},{"@type":"Offer","name":"Pro mensual","price":"14.99","priceCurrency":"EUR"},{"@type":"Offer","name":"Pro anual","price":"119","priceCurrency":"EUR"}]
 }
 </script>
 
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"Organization","name":"TriCoach AI","url":"https://getricoach.com/","logo":"https://getricoach.com/app/icon-512.png","email":"coach@getricoach.com"}
+</script>
+
+<script type="application/ld+json">
+{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Necesito experiencia en triatlón o running?", "acceptedAnswer": {"@type": "Answer", "text": "No. TriCoach AI se adapta tanto a principiantes que empiezan desde cero como a atletas más avanzados. En el onboarding defines tu nivel y el coach se ajusta."}}, {"@type": "Question", "name": "¿Funciona con Strava?", "acceptedAnswer": {"@type": "Answer", "text": "Sí. La app se conecta con Strava para analizar tus entrenamientos reales y compararlos con el plan. La conexión con Strava está disponible en el plan Pro de pago."}}, {"@type": "Question", "name": "¿El plan se adapta automáticamente?", "acceptedAnswer": {"@type": "Answer", "text": "Sí. El plan se ajusta según tu progreso y cómo vas completando las sesiones, y también puedes pedirle al coach que lo cambie si tienes una lesión, un viaje o poco tiempo."}}, {"@type": "Question", "name": "¿Es gratis?", "acceptedAnswer": {"@type": "Answer", "text": "Hay un plan Free sin límite de tiempo con 10 mensajes al día y plan semanal básico. Las cuentas nuevas empiezan con 7 días de prueba Pro sin tarjeta; al terminar pasas a Free salvo que contrates Pro."}}, {"@type": "Question", "name": "¿Cuánto cuesta el plan Pro?", "acceptedAnswer": {"@type": "Answer", "text": "14,99 € al mes o 119 € al año. Incluye 20 mensajes al día con el coach, Strava, Intervals.icu, feedback automático tras cada entreno y plan adaptativo."}}, {"@type": "Question", "name": "¿Cómo se paga y qué métodos acepta?", "acceptedAnswer": {"@type": "Answer", "text": "El pago se procesa con Stripe, con tarjeta, de forma segura. TriCoach AI no guarda los datos de tu tarjeta."}}, {"@type": "Question", "name": "¿Puedo cancelar cuando quiera?", "acceptedAnswer": {"@type": "Answer", "text": "Sí, no hay permanencia. Escribe a coach@getricoach.com y cancelamos tu suscripción; al borrar tu cuenta desde el perfil la suscripción también se cancela."}}, {"@type": "Question", "name": "¿Qué pasa con mis datos si me doy de baja?", "acceptedAnswer": {"@type": "Answer", "text": "Al borrar tu cuenta desde el perfil se eliminan tus mensajes, planes, ciclos y perfil, y se revoca la conexión con Strava."}}, {"@type": "Question", "name": "¿Cómo contacto con soporte?", "acceptedAnswer": {"@type": "Answer", "text": "Escribiendo a coach@getricoach.com. También puedes reportar un problema desde el enlace del pie de página."}}, {"@type": "Question", "name": "¿Para qué deportes funciona?", "acceptedAnswer": {"@type": "Answer", "text": "Running, triatlón, Hyrox y natación. El coach puede combinar varias disciplinas en un solo plan si tienes varios objetivos."}}, {"@type": "Question", "name": "¿Funciona con mi reloj Garmin, Suunto o Polar?", "acceptedAnswer": {"@type": "Answer", "text": "Puedes descargar las sesiones en formato TCX y cargarlas en tu reloj. Además, la actividad se sincroniza vía Strava en el plan Pro."}}, {"@type": "Question", "name": "¿Sustituye a un entrenador humano?", "acceptedAnswer": {"@type": "Answer", "text": "No del todo. TriCoach AI da un plan estructurado y respuestas al instante, pero no te ve correr ni nadar. Si necesitas corrección de técnica en persona, un coach humano sigue siendo lo mejor."}}]}
 </script>
 
 <!-- NAV -->
@@ -858,11 +858,11 @@
   </div>
 
   <div class="hero-ctas">
-    <a href="https://getricoach.com/app" class="btn-primary">Empieza gratis →</a>
+    <a href="https://getricoach.com/app" class="btn-primary">Prueba 7 días gratis →</a>
     <a href="#como-funciona" class="btn-secondary">Ver cómo funciona</a>
   </div>
 
-  <p class="hero-note">Sin tarjeta de crédito · Plan gratuito para siempre · Cancela cuando quieras</p>
+  <p class="hero-note">7 días de prueba Pro sin tarjeta · Después, plan gratuito para siempre · Sin permanencia</p>
 </section>
 
 <!-- STATS BAR -->
@@ -1063,64 +1063,46 @@
   <div class="section-inner">
     <div class="reveal" style="max-width:600px">
       <div class="label">Comparativa</div>
-      <h2>El único coach IA<br><em>en español.</em></h2>
-      <p class="section-sub">Ningún competidor combina IA conversacional, datos reales de Strava y soporte completo en español.</p>
+      <h2>Un plan que se ajusta<br><em>a tu semana real.</em></h2>
+      <p class="section-sub">IA conversacional, datos reales de Strava y todo en español. Y lo que no hace, dicho claro.</p>
     </div>
     <table class="diff-table reveal">
       <thead>
         <tr>
           <th>Característica</th>
           <th class="ours">TriCoach AI</th>
-          <th>TrainingPeaks</th>
-          <th>Runna</th>
+          <th>Plan genérico (PDF o plantilla)</th>
           <th>Coach humano</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td>Precio mensual</td>
-          <td class="ours"><strong>0 – 9,99€</strong></td>
-          <td>19,95 $</td>
-          <td>14,99 $</td>
-          <td>100-300€</td>
+          <td>Precio</td>
+          <td class="ours"><strong>0 € · Pro 14,99 €/mes</strong></td><td>Suele ser gratis o de pago único</td><td>Habitualmente 100–300 €/mes</td>
         </tr>
         <tr>
           <td>En español</td>
-          <td class="ours"><span class="yes">✓ Sí</span></td>
-          <td><span class="no">✗ No</span></td>
-          <td><span class="no">✗ No</span></td>
-          <td><span class="yes">✓ Sí</span></td>
+          <td class="ours"><span class="yes">✓ Sí</span></td><td>Depende</td><td><span class="yes">✓ Sí</span></td>
         </tr>
         <tr>
-          <td>IA conversacional</td>
-          <td class="ours"><span class="yes">✓ Sí</span></td>
-          <td><span class="no">✗ No</span></td>
-          <td><span class="no">✗ No</span></td>
-          <td><span class="no">✗ No</span></td>
+          <td>Se adapta a tu semana real</td>
+          <td class="ours"><span class="yes">✓ Cada semana, según lo que haces</span></td><td><span class="no">✗ Mismo plan para todos</span></td><td><span class="yes">✓ Sí</span></td>
         </tr>
         <tr>
-          <td>Integración Strava</td>
-          <td class="ours"><span class="yes">✓ Profunda</span></td>
-          <td><span class="yes">✓ Básica</span></td>
-          <td><span class="yes">✓ Básica</span></td>
-          <td><span class="no">✗ No</span></td>
+          <td>Chat para dudas al momento</td>
+          <td class="ours"><span class="yes">✓ Sí, todos los días</span></td><td><span class="no">✗ No</span></td><td>A veces, en horario del coach</td>
         </tr>
         <tr>
-          <td>Adapta el plan en tiempo real</td>
-          <td class="ours"><span class="yes">✓ Sí</span></td>
-          <td><span class="no">✗ No</span></td>
-          <td><span class="no">✗ No</span></td>
-          <td><span class="yes">✓ Sí</span></td>
+          <td>Datos de Strava</td>
+          <td class="ours"><span class="yes">✓ En Pro</span></td><td><span class="no">✗ No</span></td><td>Según el coach</td>
         </tr>
         <tr>
-          <td>Disponible 24/7</td>
-          <td class="ours"><span class="yes">✓ Sí</span></td>
-          <td><span class="yes">✓ Sí</span></td>
-          <td><span class="yes">✓ Sí</span></td>
-          <td><span class="no">✗ No</span></td>
+          <td>Corrige tu técnica viéndote</td>
+          <td class="ours"><span class="no">✗ No</span></td><td><span class="no">✗ No</span></td><td><span class="yes">✓ Sí, es su punto fuerte</span></td>
         </tr>
       </tbody>
     </table>
+    <p class="section-sub reveal" style="margin-top:18px;max-width:640px">Un coach humano sigue siendo la mejor opción si necesitas que te vean nadar o correr. TriCoach AI es para quien quiere un plan serio, ajustado cada semana, a una fracción del coste.</p>
   </div>
 </section>
 
@@ -1187,36 +1169,36 @@
       <div class="price-card reveal">
         <div class="price-plan">Free</div>
         <div class="price-amount">0€ <span>/mes</span></div>
-        <div class="price-desc">Para empezar a entrenar con IA sin compromisos.</div>
+        <div class="price-desc">Para empezar a entrenar con IA sin compromiso.</div>
         <ul class="price-features">
           <li class="price-feature"><span class="price-check">✓</span> 10 mensajes al coach por día</li>
-          <li class="price-feature"><span class="price-check">✓</span> 1 plan semanal</li>
-          <li class="price-feature"><span class="price-check">✓</span> Semana de diagnóstico IA</li>
-          <li class="price-feature"><span class="price-check">✓</span> Descarga TCX para el reloj</li>
-          <li class="price-feature"><span class="price-check">✓</span> 4 personalidades de coach</li>
+          <li class="price-feature"><span class="price-check">✓</span> Plan semanal básico y semana de diagnóstico</li>
+          <li class="price-feature"><span class="price-check">✓</span> Macrociclo hacia tu carrera</li>
+          <li class="price-feature"><span class="price-check">✓</span> Ajuste automático del plan</li>
+          <li class="price-feature"><span class="price-check">✓</span> 5 personalidades de coach</li>
         </ul>
         <a href="https://getricoach.com/app" class="btn-price-ghost">Empezar gratis</a>
       </div>
       <div class="price-card featured reveal">
-        <div class="featured-badge">Popular</div>
+        <div class="featured-badge">7 días de prueba</div>
         <div class="price-plan">Pro</div>
-        <div class="price-amount">9,99€ <span>/mes</span></div>
-        <div class="price-desc">Para atletas serios que quieren sacar el máximo partido.</div>
+        <div class="price-amount">14,99€ <span>/mes</span></div>
+        <div class="price-desc">O 119 €/año. Para atletas que quieren sacar el máximo partido.</div>
         <ul class="price-features">
-          <li class="price-feature"><span class="price-check">✓</span> 30 mensajes al coach por día</li>
-          <li class="price-feature"><span class="price-check">✓</span> 3 planes semanales</li>
-          <li class="price-feature"><span class="price-check">✓</span> Integración Strava completa</li>
-          <li class="price-feature"><span class="price-check">✓</span> FC, potencia y cadencia en el coach</li>
-          <li class="price-feature"><span class="price-check">✓</span> 5 ajustes de plan por día</li>
-          <li class="price-feature"><span class="price-check">✓</span> Análisis semana anterior</li>
+          <li class="price-feature"><span class="price-check">✓</span> 20 mensajes al coach por día</li>
+          <li class="price-feature"><span class="price-check">✓</span> Coach con el modelo de IA más avanzado</li>
+          <li class="price-feature"><span class="price-check">✓</span> Integración con Strava e Intervals.icu</li>
+          <li class="price-feature"><span class="price-check">✓</span> Feedback automático tras cada entreno</li>
+          <li class="price-feature"><span class="price-check">✓</span> Plan adaptativo con tus datos reales</li>
         </ul>
-        <a href="https://getricoach.com/app" class="btn-price-main">Empezar con Pro →</a>
+        <a href="https://getricoach.com/app" class="btn-price-main">Probar 7 días sin tarjeta →</a>
       </div>
     </div>
     <p class="pricing-note reveal">
       <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      Plan anual: 79€/año — ahorra un 34% · Sin permanencia en ningún plan
+      Prueba Pro de 7 días al crear tu cuenta, sin tarjeta · Plan anual 119 €/año · Sin permanencia
     </p>
+    <p class="pricing-note reveal" style="margin-top:8px">La prueba incluye el coach avanzado y 20 mensajes al día. Strava e Intervals.icu se activan con el plan Pro de pago.</p>
   </div>
 </section>
 
@@ -1234,31 +1216,47 @@
       </div>
       <div class="faq-item reveal">
         <h3>¿Funciona con Strava?</h3>
-        <p>Sí. La app se conecta con Strava para analizar tus entrenamientos reales — FC, potencia, cadencia y desnivel. Disponible en el plan Pro.</p>
+        <p>Sí. La app se conecta con Strava para analizar tus entrenamientos reales y compararlos con el plan. La conexión con Strava está disponible en el plan Pro de pago.</p>
       </div>
       <div class="faq-item reveal">
         <h3>¿El plan se adapta automáticamente?</h3>
-        <p>Sí. Cada semana el plan se ajusta según tu progreso y los datos de Strava. También puedes pedirle al coach que lo cambie si tienes una lesión, viaje o poco tiempo.</p>
-      </div>
-      <div class="faq-item reveal">
-        <h3>¿Qué diferencia a TriCoach AI de otros planes?</h3>
-        <p>Es el único coach IA en español con integración profunda de Strava. No es un plan genérico — es una IA conversacional que conoce tu historial y adapta cada sesión a tu vida real.</p>
+        <p>Sí. El plan se ajusta según tu progreso y cómo vas completando las sesiones, y también puedes pedirle al coach que lo cambie si tienes una lesión, un viaje o poco tiempo.</p>
       </div>
       <div class="faq-item reveal">
         <h3>¿Es gratis?</h3>
-        <p>Sí, hay un plan gratuito para siempre con 10 mensajes al día y 1 plan semanal. El plan Pro (9,99€/mes) incluye Strava, más mensajes y más ajustes.</p>
+        <p>Hay un plan Free sin límite de tiempo con 10 mensajes al día y plan semanal básico. Las cuentas nuevas empiezan con 7 días de prueba Pro sin tarjeta; al terminar pasas a Free salvo que contrates Pro.</p>
       </div>
       <div class="faq-item reveal">
-        <h3>¿Para qué deportes funciona?</h3>
-        <p>Running, triatlón, Hyrox y natación. El coach puede combinar varias disciplinas en un solo plan si tienes múltiples objetivos.</p>
+        <h3>¿Cuánto cuesta el plan Pro?</h3>
+        <p>14,99 € al mes o 119 € al año. Incluye 20 mensajes al día con el coach, Strava, Intervals.icu, feedback automático tras cada entreno y plan adaptativo.</p>
+      </div>
+      <div class="faq-item reveal">
+        <h3>¿Cómo se paga y qué métodos acepta?</h3>
+        <p>El pago se procesa con Stripe, con tarjeta, de forma segura. TriCoach AI no guarda los datos de tu tarjeta.</p>
       </div>
       <div class="faq-item reveal">
         <h3>¿Puedo cancelar cuando quiera?</h3>
-        <p>Sí, sin contratos ni permanencia. Cancelas en un clic desde tu perfil y no se te cobra nada más.</p>
+        <p>Sí, no hay permanencia. Escribe a coach@getricoach.com y cancelamos tu suscripción; al borrar tu cuenta desde el perfil la suscripción también se cancela.</p>
       </div>
       <div class="faq-item reveal">
-        <h3>¿Funciona con mi reloj Garmin o Suunto?</h3>
-        <p>Sí. Puedes descargar cada sesión en formato TCX directamente a tu Garmin, Suunto o Polar. Sin copiar nada a mano.</p>
+        <h3>¿Qué pasa con mis datos si me doy de baja?</h3>
+        <p>Al borrar tu cuenta desde el perfil se eliminan tus mensajes, planes, ciclos y perfil, y se revoca la conexión con Strava.</p>
+      </div>
+      <div class="faq-item reveal">
+        <h3>¿Cómo contacto con soporte?</h3>
+        <p>Escribiendo a coach@getricoach.com. También puedes reportar un problema desde el enlace del pie de página.</p>
+      </div>
+      <div class="faq-item reveal">
+        <h3>¿Para qué deportes funciona?</h3>
+        <p>Running, triatlón, Hyrox y natación. El coach puede combinar varias disciplinas en un solo plan si tienes varios objetivos.</p>
+      </div>
+      <div class="faq-item reveal">
+        <h3>¿Funciona con mi reloj Garmin, Suunto o Polar?</h3>
+        <p>Puedes descargar las sesiones en formato TCX y cargarlas en tu reloj. Además, la actividad se sincroniza vía Strava en el plan Pro.</p>
+      </div>
+      <div class="faq-item reveal">
+        <h3>¿Sustituye a un entrenador humano?</h3>
+        <p>No del todo. TriCoach AI da un plan estructurado y respuestas al instante, pero no te ve correr ni nadar. Si necesitas corrección de técnica en persona, un coach humano sigue siendo lo mejor.</p>
       </div>
     </div>
   </div>
@@ -1273,12 +1271,12 @@
       Empieza hoy — es gratis
     </div>
     <h2>Tu próxima carrera<br><em>empieza hoy.</em></h2>
-    <p>Únete a los primeros atletas que entrenan con IA en español. Sin tarjeta, sin compromiso.</p>
+    <p>Crea tu cuenta, cuéntale tu objetivo al coach y recibe tu primer plan en minutos. Sin tarjeta, sin permanencia.</p>
     <div class="hero-ctas">
       <a href="https://getricoach.com/app" class="btn-primary">Empezar gratis →</a>
       <a href="#precios" class="btn-secondary">Ver planes</a>
     </div>
-    <p class="hero-note" style="margin-top: 16px;">Sin tarjeta · Sin compromiso · En español</p>
+    <p class="hero-note" style="margin-top: 16px;">7 días de prueba Pro · Sin tarjeta · Sin permanencia · En español</p>
   </div>
 </section>
 
