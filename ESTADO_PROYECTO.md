@@ -89,3 +89,20 @@ Si no responden antes del 12 de mayo → reenviar con vídeo demo.
 
 **Sprint actual** → Strava aprobación + mejoras menores
 **Sprint 2** → Strava integración completa (cuando se apruebe)
+
+## 🔎 SEO y captación — estado a 6-nov-2026 (informe completo: `tasks/seo-informe-2026-11-06.md`)
+
+**Hecho (en producción):** guías de maratón rescatadas del 404 (estaban bajo /app/), redirects canónicos, robots.txt, sitemap con lastmod (14 URLs), llms.txt, IndexNow (14 URLs enviadas), verificación de Bing (`static/BingSiteAuth.xml`), schema (Article, BreadcrumbList, FAQPage), imagen OG, 5 guías nuevas (5K, 10K, primer maratón, calculadora de ritmo, natación), landing con precios reales (14,99 €/119 €, prueba 7 días, 20 msg Pro). Search Console: sitemap enviado y indexación solicitada. GA4: `sign_up`, `onboarding_complete`, `first_plan_generated` marcados como eventos clave. Bing: sitio verificado y sitemap enviado.
+
+**Pendiente (por orden de impacto):**
+1. **Login.jsx**: mostrar "7 días de prueba Pro sin tarjeta" y 3 puntos de valor bajo el botón de Google (hoy solo hay un botón). Cambio de mayor impacto esperado en conversión; toca la app.
+2. **GA4**: marcar `begin_checkout`, `upgrade_success` (y `strava_connected`) como eventos clave cuando salten por primera vez (pestaña "Eventos recientes").
+3. **Revisar resultados** ~13-16 nov: Search Console (Páginas indexadas, consultas nuevas) y Bing; si alguna URL no se indexa, mirar el motivo.
+4. **Ads y redes** (material en el informe): 10 posts, 3 campañas (Google búsqueda, Meta, retargeting/marca). Presupuesto sugerido ≈ 150-200 € + 70-110 € + 90 €/mes. Lanzar solo con `sign_up` medido en GA4.
+5. **Stripe Customer Portal** enlazado desde el perfil (hoy la cancelación es por email a coach@getricoach.com; la FAQ lo dice).
+6. Más guías de intención alta: Hyrox por estaciones, recuperación, bici para triatlón, zonas de FC, página /precios.
+7. Reescribir las guías de maratón con fechas verificadas (la de Valencia habla de dic-2026 y un plan de 16 semanas que ya no cabe).
+8. Fuentes/LCP y enlaces entrantes (directorios, foros, clubs de Strava).
+9. Comprobar que `app.getricoach.com` (callback de Strava) no crea cadenas de redirects hacia `getricoach.com/app`.
+
+**Cómo añadir una guía:** crear `<slug>.html` en la raíz (build-static.js la copia sola), y añadirla a `sitemap.xml`, `netlify.toml` (par de redirects) y `static/llms.txt`.
