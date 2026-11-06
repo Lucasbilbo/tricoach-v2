@@ -52,10 +52,24 @@
 #   [functions."thursday-reminder"] schedule = "0 17 * * 4"   (jueves 17:00 UTC)
 #   [functions."auto-plans"]       schedule = "0 3 * * 1"    (lunes 03:00 UTC, fuera de ventana DST)
 # ── Páginas SEO ──────────────────────────────────────────────────────────────
+# /slug sirve /slug.html (200) y /slug.html redirige a /slug (301) para tener una sola URL canónica.
+# Al añadir una guía: copiar un par de bloques, añadirla a sitemap.xml y a llms.txt (static/).
+[[redirects]]
+  from = "/entrenamiento-zona-2.html"
+  to = "/entrenamiento-zona-2"
+  status = 301
+  force = true
+
 [[redirects]]
   from = "/entrenamiento-zona-2"
   to = "/entrenamiento-zona-2.html"
   status = 200
+
+[[redirects]]
+  from = "/plan-media-maraton.html"
+  to = "/plan-media-maraton"
+  status = 301
+  force = true
 
 [[redirects]]
   from = "/plan-media-maraton"
@@ -63,9 +77,21 @@
   status = 200
 
 [[redirects]]
+  from = "/preparar-primer-triatlon.html"
+  to = "/preparar-primer-triatlon"
+  status = 301
+  force = true
+
+[[redirects]]
   from = "/preparar-primer-triatlon"
   to = "/preparar-primer-triatlon.html"
   status = 200
+
+[[redirects]]
+  from = "/plan-entrenamiento-triatlon.html"
+  to = "/plan-entrenamiento-triatlon"
+  status = 301
+  force = true
 
 [[redirects]]
   from = "/plan-entrenamiento-triatlon"
@@ -73,10 +99,77 @@
   status = 200
 
 [[redirects]]
+  from = "/plan-entrenamiento-hyrox.html"
+  to = "/plan-entrenamiento-hyrox"
+  status = 301
+  force = true
+
+[[redirects]]
   from = "/plan-entrenamiento-hyrox"
   to = "/plan-entrenamiento-hyrox.html"
   status = 200
-  
+
+[[redirects]]
+  from = "/maraton-valencia.html"
+  to = "/maraton-valencia"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/maraton-valencia"
+  to = "/maraton-valencia.html"
+  status = 200
+
+[[redirects]]
+  from = "/maraton-madrid.html"
+  to = "/maraton-madrid"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/maraton-madrid"
+  to = "/maraton-madrid.html"
+  status = 200
+
+[[redirects]]
+  from = "/maraton-barcelona.html"
+  to = "/maraton-barcelona"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/maraton-barcelona"
+  to = "/maraton-barcelona.html"
+  status = 200
+
+[[redirects]]
+  from = "/index.html"
+  to = "/"
+  status = 301
+  force = true
+
+# Legal: las páginas viven dentro de la app (basename /app); la landing enlaza a /privacidad
+[[redirects]]
+  from = "/privacidad"
+  to = "/app/privacidad"
+  status = 301
+
+[[redirects]]
+  from = "/terminos"
+  to = "/app/terminos"
+  status = 301
+
+# La app no debe indexarse (la landing y las guías sí)
+[[headers]]
+  for = "/app"
+  [headers.values]
+    X-Robots-Tag = "noindex, follow"
+
+[[headers]]
+  for = "/app/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, follow"
+
 [dev]
   command = "npm run dev"
   port = 8888

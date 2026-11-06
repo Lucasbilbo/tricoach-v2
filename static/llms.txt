@@ -1,0 +1,22 @@
+# TriCoach AI
+
+> TriCoach AI (https://getricoach.com) es un entrenador personal con inteligencia artificial en español para corredores, triatletas y atletas de Hyrox. Crea un plan semanal personalizado, lo ajusta según cómo entrenas y responde dudas en un chat de coach. Se conecta con Strava (plan Pro).
+
+## Datos del producto
+- Idioma: español (España y Latinoamérica).
+- Deportes: running (5K a maratón), triatlón (sprint a 70.3), Hyrox, natación y fuerza.
+- Plan Free: gratis, 10 mensajes al día con el coach, plan semanal básico.
+- Plan Pro: 14,99 €/mes o 119 €/año; 20 mensajes al día, Strava, Intervals.icu, plan adaptativo y feedback tras cada entreno.
+- Las cuentas nuevas tienen 7 días de prueba Pro sin tarjeta.
+- Aplicación web: https://getricoach.com/app
+- Contacto: coach@getricoach.com
+
+## Guías de entrenamiento
+- [Plan de entrenamiento de triatlón](https://getricoach.com/plan-entrenamiento-triatlon): sprint, olímpico y 70.3, periodización y semana tipo.
+- [Triatlón para principiantes: preparar tu primer triatlón](https://getricoach.com/preparar-primer-triatlon): distancias, equipamiento, entrenamiento y transiciones.
+- [Plan de entrenamiento para media maratón](https://getricoach.com/plan-media-maraton): del principiante al avanzado, sesiones y ritmo objetivo.
+- [Entrenamiento en zona 2](https://getricoach.com/entrenamiento-zona-2): qué es, cómo calcular las zonas y cuánto entrenar.
+- [Plan de entrenamiento Hyrox](https://getricoach.com/plan-entrenamiento-hyrox): las 8 estaciones, running y fuerza funcional.
+- [Maratón Valencia](https://getricoach.com/maraton-valencia): plan de 16 semanas y estrategia de carrera.
+- [Maratón Madrid](https://getricoach.com/maraton-madrid): plan de 16 semanas y recorrido.
+- [Maratón Barcelona](https://getricoach.com/maraton-barcelona): plan de 16 semanas y recorrido costero.

@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /.netlify/
+
+# /app (la aplicación) lleva cabecera X-Robots-Tag: noindex; no se bloquea aquí para que los buscadores puedan leerla.
+
+Sitemap: https://getricoach.com/sitemap.xml

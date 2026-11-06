@@ -2,47 +2,38 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://getricoach.com/</loc>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
+    <lastmod>2026-11-06</lastmod>
   </url>
   <url>
     <loc>https://getricoach.com/entrenamiento-zona-2</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-11-06</lastmod>
   </url>
   <url>
     <loc>https://getricoach.com/plan-media-maraton</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-11-06</lastmod>
   </url>
   <url>
     <loc>https://getricoach.com/preparar-primer-triatlon</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-11-06</lastmod>
   </url>
   <url>
     <loc>https://getricoach.com/plan-entrenamiento-triatlon</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-11-06</lastmod>
   </url>
   <url>
     <loc>https://getricoach.com/plan-entrenamiento-hyrox</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-11-06</lastmod>
   </url>
   <url>
     <loc>https://getricoach.com/maraton-valencia</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-11-06</lastmod>
   </url>
   <url>
     <loc>https://getricoach.com/maraton-madrid</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-11-06</lastmod>
   </url>
   <url>
     <loc>https://getricoach.com/maraton-barcelona</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-11-06</lastmod>
   </url>
 </urlset>
