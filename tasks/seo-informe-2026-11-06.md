@@ -25,7 +25,7 @@ Datos de partida (GA4 y Search Console, 5-nov): 9 clics y 156 impresiones en 90 
 |---|---|
 | `40dddfc` | Guías de maratón movidas a la raíz; `scripts/build-static.js` (copia landing + todas las guías + `static/` a `dist/`); redirects `/slug.html` → `/slug` (301) y `/slug` → `/slug.html` (200); `/privacidad` y `/terminos` → `/app/...`; cabecera `X-Robots-Tag: noindex, follow` en `/app`; `static/robots.txt` (con `Sitemap:`), `static/llms.txt`, clave IndexNow; sitemap con `lastmod`; títulos evergreen; `BreadcrumbList`, `dateModified`, `author`, `hreflang`; canonical de la landing con barra; Organization JSON-LD; bloque de enlaces a todas las guías en el pie; CTA de maratones a `getricoach.com/app` |
 | `9a3d0a0` | 3 guías nuevas: `/plan-entrenamiento-10k`, `/plan-primer-maraton` (maratón para principiantes), `/calculadora-ritmo-maraton` (calculadora interactiva Riegel + parciales cada 5 km). Cada una con title/meta únicos, H1, 1.500+ palabras, FAQ con `FAQPage`, CTA a `/app`, JSON-LD, enlaces internos; añadidas a sitemap, `netlify.toml`, `llms.txt` y la landing |
-| `7aa3eec` | Guía `/natacion-para-triatlon` (backlog) y enlace contextual desde las guías de triatlón |
+| `7aa3eec` | Guías `/natacion-para-triatlon` y `/plan-entrenamiento-5k` (backlog) y enlace contextual desde las guías de triatlón |
 | `b70f0c3` | Imagen Open Graph 1200×630 (`static/og-image.png`) y metas `og:image` / `twitter:card` en todas las páginas |
 
 Nota técnica: el `robots.txt`, el `llms.txt` y la clave IndexNow están en `static/` (no en `public/` como pedía el encargo) porque `public/` se publica bajo `/app/` y esos ficheros tienen que estar en la raíz del dominio. Si añades una guía nueva basta con crear `<slug>.html` en la raíz: el script de build la copia sola; después añádela a `sitemap.xml`, `netlify.toml` (copiar un par de bloques) y `static/llms.txt`.
@@ -110,4 +110,4 @@ Los presupuestos son una propuesta para probar, no una previsión de resultados.
 
 ## 8. Resumen
 
-Se ha corregido lo que más probablemente frenaba la indexación (guías de maratón inexistentes para Google, duplicados y canonical), se han añadido señales para Google, Bing y asistentes de IA (robots, sitemap con fecha, llms.txt, IndexNow, schema), se han publicado cuatro guías nuevas de intención alta y queda en el PR #7 la corrección de precios y el copy de conversión de la landing para tu revisión.
+Se ha corregido lo que más probablemente frenaba la indexación (guías de maratón inexistentes para Google, duplicados y canonical), se han añadido señales para Google, Bing y asistentes de IA (robots, sitemap con fecha, llms.txt, IndexNow, schema), se han publicado cinco guías nuevas de intención alta y queda en el PR #7 la corrección de precios y el copy de conversión de la landing para tu revisión.

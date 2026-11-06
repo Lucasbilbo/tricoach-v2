@@ -15,6 +15,7 @@
 - [Plan de entrenamiento de triatlón](https://getricoach.com/plan-entrenamiento-triatlon): sprint, olímpico y 70.3, periodización y semana tipo.
 - [Triatlón para principiantes: preparar tu primer triatlón](https://getricoach.com/preparar-primer-triatlon): distancias, equipamiento, entrenamiento y transiciones.
 - [Plan de entrenamiento para media maratón](https://getricoach.com/plan-media-maraton): del principiante al avanzado, sesiones y ritmo objetivo.
+- [Plan de entrenamiento 5K](https://getricoach.com/plan-entrenamiento-5k): 8 semanas de carrera y caminata para correr tu primer 5K.
 - [Plan de entrenamiento 10K](https://getricoach.com/plan-entrenamiento-10k): 8 semanas, sesiones, ritmos y estrategia de carrera.
 - [Maratón para principiantes](https://getricoach.com/plan-primer-maraton): plan de 16 a 20 semanas, tiradas largas, nutrición y ritmo.
 - [Calculadora de ritmo de maratón](https://getricoach.com/calculadora-ritmo-maraton): predice tu tiempo y calcula parciales.

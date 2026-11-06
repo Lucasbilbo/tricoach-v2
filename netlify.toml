@@ -187,6 +187,17 @@
   status = 200
 
 [[redirects]]
+  from = "/plan-entrenamiento-5k.html"
+  to = "/plan-entrenamiento-5k"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/plan-entrenamiento-5k"
+  to = "/plan-entrenamiento-5k.html"
+  status = 200
+
+[[redirects]]
   from = "/index.html"
   to = "/"
   status = 301
