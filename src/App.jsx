@@ -18,6 +18,7 @@ import SessionDetail from './components/SessionDetail'
 import ErrorBoundary from './components/ErrorBoundary'
 import WelcomeGuide from './components/WelcomeGuide'
 import { enPrueba, diasPruebaRestantes } from './lib/planEfectivo'
+import TrialBanner from './components/TrialBanner'
 import { track } from './lib/analytics'
 
 function App() {
@@ -398,6 +399,10 @@ function App() {
         }}>
           Actualizando tu plan con el nuevo formato...
         </div>
+      )}
+
+      {currentScreen === 'dashboard' && (
+        <TrialBanner profile={profile} onShowUpgrade={() => setShowUpgradeModal(true)} />
       )}
 
       {currentScreen === 'dashboard' && (
