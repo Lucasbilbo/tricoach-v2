@@ -10,6 +10,12 @@ const GoogleSVG = () => (
   </svg>
 )
 
+const PUNTOS = [
+  'Tu plan semanal a medida en unos minutos',
+  'Un coach que responde y ajusta el plan cuando lo necesitas',
+  'Running, triatlón y Hyrox, todo en español',
+]
+
 export default function Login() {
   const [hover, setHover] = useState(false)
 
@@ -70,11 +76,32 @@ export default function Login() {
         <p style={{
           color: 'var(--muted-foreground)',
           fontSize: 17,
-          marginBottom: 56,
+          marginBottom: 28,
           letterSpacing: '0.01em',
         }}>
           Tu entrenador personal con IA
         </p>
+
+        {/* Qué te llevas */}
+        <ul style={{
+          listStyle: 'none',
+          padding: 0,
+          margin: '0 auto 32px',
+          maxWidth: 300,
+          textAlign: 'left',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
+        }}>
+          {PUNTOS.map(texto => (
+            <li key={texto} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', color: 'var(--foreground)', fontSize: 15, lineHeight: 1.4 }}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }}>
+                <path d="M5 12.5l4.5 4.5L19 7.5" />
+              </svg>
+              {texto}
+            </li>
+          ))}
+        </ul>
 
         {/* Google button */}
         <button
@@ -106,6 +133,26 @@ export default function Login() {
           <GoogleSVG />
           Iniciar sesión con Google
         </button>
+
+        <p style={{
+          color: 'var(--foreground)',
+          fontSize: 14,
+          fontWeight: 600,
+          margin: '16px auto 0',
+          maxWidth: 280,
+          lineHeight: 1.5,
+        }}>
+          7 días de prueba Pro, sin tarjeta
+        </p>
+        <p style={{
+          color: 'var(--muted-foreground)',
+          fontSize: 13,
+          margin: '2px auto 0',
+          maxWidth: 280,
+          lineHeight: 1.5,
+        }}>
+          Después, plan gratuito para siempre
+        </p>
 
         {/* Legal */}
         <p style={{

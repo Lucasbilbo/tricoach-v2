@@ -388,6 +388,8 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
 
   const usadosHoy = mensajesHoy(profile, enviadosHoy)
   const esFree = planEfectivo(profile) === 'free'
+  // La oferta de Pro se enseña a todo el que no paga, también durante la prueba
+  const noPaga = profile?.plan !== 'pro'
   const limitAlcanzado = usadosHoy >= limiteDiario(profile)
   const nombreCoach = profile?.nombre_coach || 'Coach'
 
@@ -565,7 +567,7 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
                 {vozActiva ? '🔊' : '🔇'}
               </button>
             )}
-            {esFree && onShowUpgrade && (
+            {noPaga && onShowUpgrade && (
               <button
                 onClick={onShowUpgrade}
                 style={{
@@ -581,7 +583,7 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
                   whiteSpace: 'nowrap',
                 }}
               >
-                ✦ Hazte Pro
+                {enPrueba(profile) ? '✦ Seguir en Pro' : '✦ Hazte Pro'}
               </button>
             )}
             {onPersonalidadChange && (
@@ -783,7 +785,7 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
       </div>
 
       {/* Upgrade banner when limit reached */}
-      {limitAlcanzado && esFree && (
+      {limitAlcanzado && noPaga && (
         <div style={{
           background: 'oklch(0.7 0.18 45 / 0.08)',
           borderTop: '1px solid oklch(0.7 0.18 45 / 0.35)',

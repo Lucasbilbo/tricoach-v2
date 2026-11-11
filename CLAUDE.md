@@ -21,6 +21,13 @@ El coach no respondía desde el 15-jun-2026: `claude-sonnet-4-20250514` fue reti
 - **Fiabilidad (5-nov-2026)**: (1) `callClaude` se autocura: si el modelo devuelve 404 `not_found_error` (retirado), busca el más reciente de la misma familia en `GET /v1/models`, reintenta y deja `console.error`; el health-check llama con `sinFallback` y SIGUE avisando. Retiradas anunciadas: haiku-5-5 no antes del 7-oct-2027, sonnet-5-5 no antes del 28-sep-2027 (Anthropic avisa por email con ≥60 días a la cuenta de la API: que sea un buzón que se lee). (2) health-check también avisa si ≥3 mensajes y ≥30 % de los de las últimas 24 h no recibieron respuesta (`calcularSinRespuesta` en `lib/salud.js`, deducido de `messages`; excluye usuarios con ≥10 mensajes por el límite diario). (3) `stripe-webhook` usa `lib/stripe-eventos.js`: firma con tolerancia 5 min, `invoice.payment_failed` → alerta a ALERT_EMAIL (no baja a Free), `subscription.deleted/updated` terminal → solo baja a Free si en Stripe no queda ninguna suscripción viva (si Stripe no responde, NO baja y avisa), `subscription.updated` active/trialing → reactiva Pro. **El endpoint del webhook en Stripe debe estar suscrito a `invoice.payment_failed` y `customer.subscription.updated`.** (4) `validarDuracion` vive en `lib/duraciones.js`: a un principiante ya no se le suben las sesiones a los mínimos de fase (antes 80 min de bici) y se limita a 60 min, coherente con el prompt. Las alertas a Lucas usan `sendAlertEmail` (independiente de `EMAILS_ENABLED`); los emails a usuarios siguen apagados.
 - **Semana de diagnóstico (5-nov-2026)**: el primer plan de todo usuario sin ≥3 actividades de Strava es de diagnóstico (`buildDiagnosticoUserMessage`). Hasta hoy esa plantilla IGNORABA `disponibilidad`, `lesiones`, `contexto_semana` (lo que el usuario cuenta en la bienvenida) y `nivel`. Ahora `buildBloqueDiagnostico` los añade, pide rodajes suaves (Z1-Z2) en los días sin test (máx. 2 descansos reales) y a los principiantes les quita los tests a máximo esfuerzo. `Dashboard.esSesionTest` excluye las sesiones `suave`. La conversación de bienvenida ahora se guarda en `messages`. `profiles.contexto` tenía por defecto el texto `'null'` (migración 006 pendiente de aplicar); el código ya lo ignora.
 
+## 💶 EMBUDO DE PAGO (11 noviembre 2026) — plan completo en `tasks/plan-ventas.md`
+- **Checkout**: el navegador manda `plan: 'monthly' | 'annual'` y `create-checkout` elige el precio (`STRIPE_PRICE_MONTHLY/ANNUAL`). `VITE_STRIPE_PRICE_*` ya no se usan (se pueden borrar de Netlify). Tras pagar o cancelar se vuelve a `<origen>/app` (`?upgrade=success`), nunca a la raíz: la raíz es la landing y ahí no se medía `upgrade_success` ni se confirmaba la compra.
+- **Oferta de Pro**: se enseña a todo el que no paga (`profile.plan !== 'pro'`), también durante la prueba. `planEfectivo()` sigue decidiendo solo modelo y límite de mensajes.
+- **Fin de prueba**: `TrialBanner` en "Hoy" (`src/lib/estadoPrueba.js`): avisa los últimos 3 días y, al caducar, durante 14 días (se puede cerrar; `localStorage.trial_fin_visto`).
+- **Strava en el perfil**: solo `StravaConnect` (App.jsx). El formulario de credenciales por usuario de EditProfile se eliminó (modelo descartado).
+- `profiles.stripe_subscription_id` NO existe; solo `stripe_customer_id`.
+
 ## ⏸ PROYECTO EN PAUSA (29 octubre 2026)
 Lucas ha puesto el proyecto en pausa. Estado de las automatizaciones:
 - **Crons desactivados**: se han quitado de `netlify.toml` los schedules de `weekly-report` (dom 19:00 UTC), `thursday-reminder` (jue 17:00 UTC) y `auto-plans` (lun 03:00 UTC). Las funciones siguen existiendo, solo no se disparan solas.
@@ -38,7 +45,7 @@ Freemium: Free (10 msg/día, plan básico) / Pro (14,99€/mes o 119€/año, St
 - Frontend: React + Vite (JavaScript, NO TypeScript)
 - Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co) — RLS activado
 - Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
-- Tests: Vitest — **256 tests pasando** (32 archivos, cargan sin .env) + Playwright E2E (3 specs)
+- Tests: Vitest — **266 tests pasando** (33 archivos, cargan sin .env) + Playwright E2E (3 specs)
 - Deploy: Netlify (producción: https://tricoach-v2.netlify.app)
 - Pagos: Stripe (checkout + webhooks)
 - Email: Resend (coach@getricoach.com)
@@ -147,7 +154,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 
 ### Tests
 - Ejecutar `npm test` al terminar SIEMPRE
-- **256 tests deben pasar** (32 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
+- **266 tests deben pasar** (33 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
 - No borrar ni modificar tests existentes sin motivo explícito
 
 ## Estado del proyecto — Fases completadas
@@ -353,7 +360,7 @@ personalidad ('cercano'|'estricto'|'gracioso'|'motivador'|'cientifico'),
 contexto, nombre_coach,
 strava_token, strava_refresh_token, strava_token_expires_at,
 strava_client_id, strava_client_secret (migración 002 — OBSOLETAS, sin uso; per-user descartado),
-stripe_customer_id, stripe_subscription_id,
+stripe_customer_id,
 intervals_athlete_id, intervals_api_key,
 active_cycle_id (uuid fk → training_cycles),
 fc_maxima, pace_5k, ftp_bici, peso, edad,

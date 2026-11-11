@@ -8,7 +8,6 @@ const PRICES = [
     price: '14,99€',
     period: '/mes',
     popular: false,
-    priceId: import.meta.env.VITE_STRIPE_PRICE_MONTHLY,
   },
   {
     id: 'annual',
@@ -16,7 +15,6 @@ const PRICES = [
     price: '119€',
     period: '/año',
     popular: true,
-    priceId: import.meta.env.VITE_STRIPE_PRICE_ANNUAL,
     savings: 'Ahorras 61€',
   },
 ]
@@ -25,13 +23,13 @@ export default function UpgradeModal({ userId, onClose }) {
   const [loading, setLoading] = useState(null)
   const [errorToast, setErrorToast] = useState(false)
 
-  async function handleUpgrade(priceId, planId) {
-    if (!priceId) {
-      console.error(`[UpgradeModal] priceId no definido para plan ${planId}. Revisa VITE_STRIPE_PRICE_MONTHLY y VITE_STRIPE_PRICE_ANNUAL.`)
-      setErrorToast(true)
-      setTimeout(() => setErrorToast(false), 4000)
-      return
-    }
+  function mostrarError() {
+    setErrorToast(true)
+    setTimeout(() => setErrorToast(false), 6000)
+  }
+
+  // El precio lo decide el servidor a partir del plan: el navegador no necesita conocer los ids de Stripe.
+  async function handleUpgrade(planId) {
     setLoading(planId)
     track('begin_checkout', { plan: planId })
     try {
@@ -40,16 +38,18 @@ export default function UpgradeModal({ userId, onClose }) {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ userId, priceId })
+        body: JSON.stringify({ userId, plan: planId })
       })
-      const data = await res.json()
-      if (data.url) {
+      const data = await res.json().catch(() => null)
+      if (res.ok && data?.url) {
         window.location.href = data.url
+        return
       }
+      console.error('Error al crear checkout:', res.status, data?.error)
+      mostrarError()
     } catch (e) {
       console.error('Error al crear checkout:', e)
-      setErrorToast(true)
-      setTimeout(() => setErrorToast(false), 4000)
+      mostrarError()
     } finally {
       setLoading(null)
     }
@@ -92,7 +92,7 @@ export default function UpgradeModal({ userId, onClose }) {
             marginBottom: 16,
             textAlign: 'center',
           }}>
-            Error al iniciar el pago, contacta con soporte
+            No se ha podido abrir el pago. Inténtalo de nuevo o escribe a coach@getricoach.com
           </div>
         )}
 
@@ -110,7 +110,7 @@ export default function UpgradeModal({ userId, onClose }) {
           {PRICES.map(plan => (
             <button
               key={plan.id}
-              onClick={() => handleUpgrade(plan.priceId, plan.id)}
+              onClick={() => handleUpgrade(plan.id)}
               disabled={loading !== null}
               style={{
                 background: plan.popular ? 'var(--primary)' : 'var(--secondary)',
