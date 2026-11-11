@@ -1,59 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { enPrueba, diasPruebaRestantes } from '../lib/planEfectivo'
-
-function StravaDisconnect({ userId, onDisconnected }) {
-  const [disconnecting, setDisconnecting] = useState(false)
-  const [done, setDone] = useState(false)
-
-  async function handleDisconnect() {
-    setDisconnecting(true)
-    const { error } = await supabase
-      .from('profiles')
-      .update({ strava_token: null, strava_refresh_token: null, strava_token_expires_at: null })
-      .eq('id', userId)
-    setDisconnecting(false)
-    if (!error) {
-      setDone(true)
-      if (onDisconnected) onDisconnected()
-    }
-  }
-
-  return (
-    <div style={{
-      background: 'var(--card)',
-      border: '1px solid var(--border)',
-      borderRadius: 'var(--radius)',
-      padding: 16,
-      marginBottom: 12,
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    }}>
-      <span style={{ fontSize: 14, color: done ? 'var(--muted-foreground)' : '#fc4c02', fontWeight: 600 }}>
-        {done ? 'Strava desconectado' : '✓ Strava conectado'}
-      </span>
-      {!done && (
-        <button
-          onClick={handleDisconnect}
-          disabled={disconnecting}
-          style={{
-            background: 'none',
-            border: '1px solid var(--border)',
-            borderRadius: 6,
-            color: 'var(--muted-foreground)',
-            fontFamily: 'var(--font-sans)',
-            fontSize: 13,
-            padding: '6px 14px',
-            cursor: disconnecting ? 'not-allowed' : 'pointer',
-          }}
-        >
-          {disconnecting ? '...' : 'Desconectar Strava'}
-        </button>
-      )}
-    </div>
-  )
-}
+import { LIMITE_DIARIO } from '../lib/profiles'
 
 const inputStyle = {
   display: 'block',
@@ -132,11 +80,6 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade,
   const [intervalsConnected, setIntervalsConnected] = useState(!!(profile.intervals_athlete_id && profile.intervals_api_key))
   const [carreras, setCarreras] = useState(profile.carreras || [])
   const [nuevaCarrera, setNuevaCarrera] = useState({ nombre: '', fecha: '', tipo: 'running' })
-  // Strava per-user credentials
-  const [stravaClientId, setStravaClientId] = useState(profile.strava_client_id || '')
-  const [stravaClientSecret, setStravaClientSecret] = useState('')
-  const [savingStrava, setSavingStrava] = useState(false)
-  const [editingStravaCreds, setEditingStravaCreds] = useState(!profile.strava_client_id)
   const [saving, setSaving] = useState(false)
   const [savingRendimiento, setSavingRendimiento] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -146,23 +89,6 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade,
   function showToast(msg, type) {
     setToast({ msg, type })
     setTimeout(() => setToast(null), 3500)
-  }
-
-  async function handleSaveStravaCreds() {
-    if (!stravaClientId.trim() || !stravaClientSecret.trim()) return
-    setSavingStrava(true)
-    const { error } = await supabase
-      .from('profiles')
-      .update({ strava_client_id: stravaClientId.trim(), strava_client_secret: stravaClientSecret.trim() })
-      .eq('id', profile.id)
-    setSavingStrava(false)
-    if (error) {
-      showToast('Error al guardar. Inténtalo de nuevo.', 'error')
-      return
-    }
-    setEditingStravaCreds(false)
-    setStravaClientSecret('')
-    showToast('Credenciales de Strava guardadas', 'success')
   }
 
   async function handleSave() {
@@ -390,10 +316,14 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade,
           marginBottom: 12,
         }}>
           <p style={{ fontWeight: 700, fontSize: 14, color: 'var(--foreground)', marginBottom: 4 }}>
-            Estás en el plan gratuito
+            {enPrueba(profile)
+              ? `Estás en la prueba Pro · te quedan ${diasPruebaRestantes(profile)} ${diasPruebaRestantes(profile) === 1 ? 'día' : 'días'}`
+              : 'Estás en el plan gratuito'}
           </p>
           <p style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 14, lineHeight: 1.5 }}>
-            Hazte Pro y desbloquea planes adaptativos con Strava, 150 mensajes/día y mucho más
+            {enPrueba(profile)
+              ? `Al terminar pasarás al plan gratuito (${LIMITE_DIARIO.free} mensajes al día). Hazte Pro para mantener el coach avanzado, ${LIMITE_DIARIO.pro} mensajes al día y conectar Strava.`
+              : `Hazte Pro: coach avanzado, ${LIMITE_DIARIO.pro} mensajes al día y planes adaptados a tus datos de Strava.`}
           </p>
           <button
             onClick={onShowUpgrade}
@@ -868,127 +798,6 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade,
           </button>
         </div>
       </div>
-
-      {/* Strava — solo Pro */}
-      {!esFree && (
-        <div style={{
-          background: 'var(--card)',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius)',
-          padding: 16,
-          marginBottom: 12,
-        }}>
-          <p style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 14, fontWeight: 600 }}>
-            Strava
-          </p>
-
-          {/* Already connected */}
-          {profile.strava_token && (
-            <StravaDisconnect userId={profile.id} onDisconnected={() => {}} />
-          )}
-
-          {/* Credentials saved and not editing */}
-          {stravaClientId && !editingStravaCreds && (
-            <div style={{ marginTop: profile.strava_token ? 12 : 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <span style={{ fontSize: 13, color: '#10B981', fontWeight: 600 }}>
-                  ✓ Credenciales guardadas
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setEditingStravaCreds(true)}
-                  style={{
-                    background: 'none',
-                    border: '1px solid var(--border)',
-                    borderRadius: 6,
-                    color: 'var(--muted-foreground)',
-                    fontFamily: 'var(--font-sans)',
-                    fontSize: 12,
-                    padding: '4px 10px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Editar
-                </button>
-              </div>
-              {!profile.strava_token && (
-                <p style={{ fontSize: 12, color: 'var(--muted-foreground)', marginBottom: 10, lineHeight: 1.5 }}>
-                  Tienes credenciales guardadas pero Strava no está conectado todavía.
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Credentials form — show when editing or no creds */}
-          {(!stravaClientId || editingStravaCreds) && (
-            <>
-              {!stravaClientId && (
-                <p style={{ fontSize: 12, color: 'var(--muted-foreground)', marginBottom: 12, lineHeight: 1.5 }}>
-                  Crea tu app gratis en{' '}
-                  <span style={{ color: 'var(--foreground)', fontWeight: 600 }}>strava.com/settings/api</span>
-                  {' '}y pega aquí tus credenciales.
-                </p>
-              )}
-              <label style={labelStyle}>Client ID</label>
-              <input
-                style={inputStyle}
-                value={stravaClientId}
-                onChange={e => setStravaClientId(e.target.value)}
-                placeholder="Ej: 12345"
-                autoComplete="off"
-              />
-              <label style={labelStyle}>Client Secret</label>
-              <input
-                type="password"
-                style={{ ...inputStyle, marginBottom: 12 }}
-                value={stravaClientSecret}
-                onChange={e => setStravaClientSecret(e.target.value)}
-                placeholder={editingStravaCreds && stravaClientId ? 'Nuevo secret (dejar vacío para no cambiar)' : 'Tu client secret de Strava'}
-                autoComplete="off"
-              />
-              <div style={{ display: 'flex', gap: 8 }}>
-                {editingStravaCreds && stravaClientId && (
-                  <button
-                    type="button"
-                    onClick={() => { setEditingStravaCreds(false); setStravaClientSecret('') }}
-                    style={{
-                      background: 'var(--secondary)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 8,
-                      color: 'var(--foreground)',
-                      fontFamily: 'var(--font-sans)',
-                      fontSize: 13,
-                      padding: '7px 14px',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Cancelar
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={handleSaveStravaCreds}
-                  disabled={savingStrava || !stravaClientId.trim() || !stravaClientSecret.trim()}
-                  style={{
-                    background: 'var(--primary)',
-                    border: 'none',
-                    borderRadius: 8,
-                    color: 'var(--primary-foreground)',
-                    fontFamily: 'var(--font-sans)',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    padding: '7px 16px',
-                    cursor: (savingStrava || !stravaClientId.trim() || !stravaClientSecret.trim()) ? 'not-allowed' : 'pointer',
-                    opacity: (!stravaClientId.trim() || !stravaClientSecret.trim()) ? 0.5 : 1,
-                  }}
-                >
-                  {savingStrava ? 'Guardando...' : 'Guardar credenciales'}
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      )}
 
       {/* Intervals.icu — solo Pro */}
       {!esFree && (
