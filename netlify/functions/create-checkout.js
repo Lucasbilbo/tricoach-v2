@@ -1,4 +1,4 @@
-const { authenticate, corsHeaders } = require('./lib/auth');
+const { authenticate, corsHeaders, isAllowedOrigin } = require('./lib/auth');
 const https = require('https');
 
 let CORS = corsHeaders();
@@ -68,12 +68,15 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'JSON inválido' }) };
   }
 
-  const { priceId } = parsed;
+  // El navegador manda `plan` ('monthly' | 'annual') y el precio se decide aquí.
+  // `priceId` se sigue aceptando por compatibilidad con clientes en caché.
+  const PRECIOS = { monthly: process.env.STRIPE_PRICE_MONTHLY, annual: process.env.STRIPE_PRICE_ANNUAL };
+  const priceId = PRECIOS[parsed.plan] || parsed.priceId;
   const auth = await authenticate(event, { cors: CORS, bodyUserId: parsed.userId });
   if (!auth.ok) return auth.response;
   const userId = auth.userId;
   if (!userId || !priceId) {
-    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'userId y priceId son requeridos' }) };
+    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'Falta el plan o el precio no está configurado' }) };
   }
 
   const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -103,10 +106,15 @@ exports.handler = async (event) => {
   );
   const email = users?.email || null;
 
+  // Volver a la APP (no a la landing, que vive en la raíz) y al mismo origen desde el que
+  // se inició el pago: la sesión de Supabase se guarda por origen.
+  const origin = event.headers?.origin || event.headers?.Origin || '';
+  const appUrl = `${isAllowedOrigin(origin) ? origin : 'https://getricoach.com'}/app`;
+
   const params = {
     mode: 'subscription',
-    'success_url': 'https://www.getricoach.com/?upgrade=success',
-    'cancel_url': 'https://www.getricoach.com/',
+    'success_url': `${appUrl}?upgrade=success`,
+    'cancel_url': appUrl,
     'line_items[0][price]': priceId,
     'line_items[0][quantity]': '1',
     'metadata[userId]': userId,
