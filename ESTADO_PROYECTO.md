@@ -106,3 +106,9 @@ Si no responden antes del 12 de mayo → reenviar con vídeo demo.
 9. Comprobar que `app.getricoach.com` (callback de Strava) no crea cadenas de redirects hacia `getricoach.com/app`.
 
 **Cómo añadir una guía:** crear `<slug>.html` en la raíz (build-static.js la copia sola), y añadirla a `sitemap.xml`, `netlify.toml` (par de redirects) y `static/llms.txt`.
+
+## 💶 Ventas — estado a 11-nov-2026 (plan completo: `tasks/plan-ventas.md`)
+
+**Hecho (rama `ventas/embudo-pago`):** vuelta a la app tras pagar (antes iba a la landing y no se medía la venta), error visible si el checkout falla, oferta de Pro también durante la prueba, aviso de fin de prueba, login con propuesta de valor, textos falsos corregidos ("150 mensajes"), formulario obsoleto de credenciales de Strava eliminado. Con esto queda hecho el pendiente SEO nº 1 (Login.jsx).
+
+**Pendiente (requiere OK de Lucas):** Stripe Customer Portal, emails transaccionales (bienvenida Pro, fin de prueba), reactivar `auto-plans`, email de recuperación a las 27 altas con onboarding y sin plan, ampliación del límite de Strava (5 de 10 plazas ocupadas).
