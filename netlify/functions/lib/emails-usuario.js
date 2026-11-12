@@ -96,6 +96,21 @@ function buildDia3PruebaHtml(nombre, { tienePlan, sesionesMarcadas } = {}) {
   });
 }
 
+// Email único tras caducar la prueba Pro: sigue en Free, qué conserva y una sola oferta.
+// Sin descuentos inventados: el ahorro del anual es el que ya muestra el modal (119 € frente a 12 x 14,99 €).
+function buildReactivacionPruebaHtml(nombre) {
+  return layout({
+    titulo: `${esc(nombre) || 'Hola'}, tu prueba Pro terminó`,
+    parrafos: [
+      'Hace unos días terminó tu prueba de TriCoach AI Pro. Sigues con el plan gratuito: tu plan y tu historial están donde los dejaste, con 10 mensajes al día y 2 capturas de entreno por semana.',
+      'Si echas de menos el coach avanzado, las capturas sin tope, el plan nuevo cada lunes o la revisión semanal por email, Pro cuesta 14,99 € al mes, o 119 € al año si prefieres pagar de una vez (ahorras 61 €). Sin permanencia.',
+      'Si no te encaja, no pasa nada: el plan gratuito sigue siendo tuyo. Y si algo no te funcionó, responde a este email y lo miro.',
+    ],
+    boton: 'Volver a Pro →',
+    pie: `Te escribimos una sola vez por este motivo. ${PIE_BAJA}`,
+  });
+}
+
 // Recordatorio del día de la sesión. `sesion` sale del plan (tipo, subtipo, duracion_min).
 function descripcionSesion(sesion) {
   const partes = [sesion && sesion.tipo, sesion && sesion.subtipo]
@@ -124,4 +139,4 @@ function buildRecordatorioSesionHtml(nombre, sesion) {
   });
 }
 
-module.exports = { APP_URL, buildBienvenidaProHtml, buildFinPruebaHtml, buildRecuperacionHtml, buildDia3PruebaHtml, buildRecordatorioSesionHtml, asuntoRecordatorioSesion, descripcionSesion };
+module.exports = { APP_URL, buildBienvenidaProHtml, buildFinPruebaHtml, buildRecuperacionHtml, buildDia3PruebaHtml, buildReactivacionPruebaHtml, buildRecordatorioSesionHtml, asuntoRecordatorioSesion, descripcionSesion };
