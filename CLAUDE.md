@@ -67,14 +67,15 @@ Estado en que quedaron las automatizaciones durante la pausa:
 ## Qué es esto
 Entrenador IA conversacional para triatletas, runners y atletas de Hyrox hispanohablantes.
 App web React + Vite, backend Netlify Functions, base de datos Supabase.
-Freemium: Free (10 msg/día, plan básico) / Pro (14,99€/mes o 119€/año, Strava + plan adaptativo + macrociclos). Cuentas nuevas: 7 días de prueba Pro sin tarjeta.
+Freemium: Free (10 msg/día, 2 capturas de entreno por semana, plan que genera el propio usuario) / Pro (14,99€/mes o 119€/año: modelo avanzado, 20 msg/día, capturas sin tope semanal, plan nuevo cada lunes, revisión semanal por email). Cuentas nuevas: 7 días de prueba Pro sin tarjeta.
+El coach sabe lo que entrena el usuario por el check-in de la sesión (hecho, esfuerzo, notas) y por la captura del entreno (el usuario sube el pantallazo del reloj y Claude lee duración, distancia y pulso; la imagen no se guarda). Strava ya no admite conexiones nuevas ni se vende (ver sección del 12-nov-2026).
 
 ## Stack
 - Frontend: React + Vite (JavaScript, NO TypeScript)
 - Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co) — RLS activado
 - Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
 - Tests: Vitest — **309 tests pasando** (37 archivos, cargan sin .env) + Playwright E2E (3 specs)
-- Deploy: Netlify (producción: https://tricoach-v2.netlify.app)
+- Deploy: Netlify (producción: https://getricoach.com — la app vive en `/app`; `tricoach-v2.netlify.app` sigue como alias)
 - Pagos: Stripe (checkout + webhooks)
 - Email: Resend (coach@getricoach.com)
 
@@ -268,110 +269,98 @@ tricoach-v2/
 ├── DESIGN.md                  — sistema de diseño de referencia
 ├── ESTADO_PROYECTO.md         — estado detallado, pendientes y próximos sprints
 ├── tricoach_plan.md           — plan de producto v11.2
+├── README.md
+├── landing.html               — landing (raíz del dominio); scripts/build-static.js la copia al build
+├── <guía>.html                — guías SEO en la raíz (zona 2, planes 5K/10K/media/maratón, Hyrox, triatlón, natación, calculadora…);
+│                                cada una con su par de redirects en netlify.toml, entrada en sitemap.xml y static/llms.txt
 ├── tasks/
 │   ├── lessons.md             — lecciones aprendidas (leer siempre antes de empezar)
-│   └── PROMPTS_CLAUDE_CODE.md
+│   ├── plan-ventas.md         — auditoría del embudo de pago (11-nov-2026)
+│   ├── seo-informe-2026-11-06.md
+│   ├── analisis-flujo-datos.md, DESIGN-raycast.md, PROMPTS_CLAUDE_CODE.md
 ├── scripts/
-│   └── generate-icons.js
+│   ├── build-static.js        — copia landing, guías y ficheros estáticos al build
+│   ├── generate-icons.js
+│   ├── metricas-activacion.sql — meta de retorno (3 de 10 altas vuelven en 7 días), sin cookies
+│   └── purgar-cuentas-borradas.sql — borrado manual e irreversible de cuentas soft-deleted antiguas
+├── static/                    — robots.txt, llms.txt, og-image.png, verificación de Bing
+├── public/                    — manifest.json, sw.js, iconos
 ├── supabase/
-│   └── migrations/
-│       └── 001_training_cycles.sql
+│   └── migrations/            — 001_training_cycles, 002_strava_user_credentials (obsoleta), 003_unique_plan_semana,
+│                                004_contexto_proxima_semana, 005_trial_pro, 006_contexto_null, 007_emails_usuario,
+│                                008_capturas_semana. Las ejecuta Lucas a mano en Supabase.
 ├── src/
 │   ├── components/
-│   │   ├── Login.jsx
-│   │   ├── Onboarding.jsx
+│   │   ├── Login.jsx, Onboarding.jsx (3 pantallas), WelcomeGuide.jsx
 │   │   ├── Chat.jsx                  — chat con coach IA, rate limiting frontend
-│   │   ├── Dashboard.jsx             — pantalla "Hoy": sesión del día, Strava sync, auto-adjust
+│   │   ├── Dashboard.jsx             — pantalla "Hoy": sesión del día, auto-adjust, TrialBanner
 │   │   ├── WeeklyPlan.jsx            — plan semanal, modal completar, botones ajuste
 │   │   ├── Progress.jsx              — estadísticas, consistencia (historialPlanes), gráfico semana
-│   │   ├── EditProfile.jsx           — editar perfil, sección "Mis carreras", datos rendimiento
-│   │   ├── BottomNav.jsx
-│   │   ├── UpgradeModal.jsx
-│   │   ├── CookieBanner.jsx
-│   │   ├── ModalCompletarSesion.jsx  — modal RPE + tiempo real + distancia + FC + notas; integra Strava
+│   │   ├── EditProfile.jsx           — editar perfil, "Mis carreras", datos de rendimiento, portal de Stripe, borrar cuenta
+│   │   ├── ModalCompletarSesion.jsx  — RPE + tiempo real + distancia + FC + notas; "Subir captura del entreno"
+│   │   ├── SessionDetail.jsx, BottomNav.jsx, ErrorBoundary.jsx, CookieBanner.jsx
+│   │   ├── UpgradeModal.jsx          — oferta de Pro (checkout mensual/anual)
+│   │   ├── TrialBanner.jsx           — aviso de fin de prueba Pro en "Hoy"
 │   │   ├── AdjustmentBanner.jsx      — banner naranja tras ajuste automático (Fase 8)
-│   │   ├── CicloCompletadoBanner.jsx — banner cuando macrociclo termina
-│   │   ├── SessionDetail.jsx
-│   │   ├── StravaConnect.jsx         — 2 estados: conectado / no conectado; OAuth usa VITE_STRAVA_CLIENT_ID global; key={strava_token} fuerza remonte al conectar
-│   │   ├── ErrorBoundary.jsx
-│   │   └── WelcomeGuide.jsx
+│   │   ├── CicloCompletadoBanner.jsx — banner cuando el macrociclo termina
+│   │   └── StravaConnect.jsx         — solo pinta el estado conectado (+ desconectar); sin token devuelve null
 │   ├── lib/
-│   │   ├── supabase.js
-│   │   ├── profiles.js        — getProfile, updateProfile, canSendMessage, incrementMessageCount
-│   │   ├── messages.js
-│   │   ├── context.js
+│   │   ├── supabase.js, api.js (envuelve fetch y añade Authorization), analytics.js (track(), GA4 sin datos personales)
+│   │   ├── profiles.js        — getProfile, updateProfile, canSendMessage, LIMITE_DIARIO
+│   │   ├── messages.js, context.js
 │   │   ├── plans.js           — getPlan, generatePlan, completarSesion (función canónica), adjustPlan,
 │   │   │                        autoAdjustPlan, getHistorialPlanes, calcularConsistencia, analizarPlan
-│   │   ├── fechas.js          — getFechaSesion, getHoyMadrid, DIA_OFFSET_MAP (fuente única de fechas)
-│   │   ├── wellness.js        — UMBRALES_WELLNESS, evaluarWellness (espejo CJS en functions/lib)
-│   │   ├── volumen.js         — calcularVolumenReal (espejo CJS en functions/lib)
+│   │   ├── fechas.js          — getFechaSesion, getHoyMadrid, DIA_OFFSET_MAP, fechaCarreraISO (fuente única de fechas)
+│   │   ├── planEfectivo.js    — plan efectivo (pro / prueba / free), enPrueba, diasPruebaRestantes (espejo CJS en functions/lib)
+│   │   ├── estadoPrueba.js    — cuándo y qué avisar al acabar la prueba (TrialBanner)
+│   │   ├── captura.js         — reduce la imagen de la captura y LIMITE_SEMANAL_FREE (espejo CJS en functions/lib)
+│   │   ├── wellness.js        — UMBRALES_WELLNESS, evaluarWellness (espejo CJS)
+│   │   ├── volumen.js         — calcularVolumenReal (espejo CJS)
 │   │   ├── autoAdjust.js      — checkShouldAdjust(plan, profile) — función pura, sin efectos
 │   │   └── cycles.js          — calcularFases, getFaseActual, esSemanaDescarga, esCicloCompletado
 │   ├── pages/
-│   │   ├── Privacidad.jsx     — página política de privacidad
-│   │   └── Terminos.jsx       — página términos de servicio
+│   │   ├── Privacidad.jsx     — política de privacidad
+│   │   └── Terminos.jsx       — términos de uso
 │   ├── prompts/
 │   │   └── buildSystemPrompt.js
-│   ├── test/
-│   │   ├── setup.js
-│   │   ├── supabase.test.js           (2 tests)
-│   │   ├── netlify-functions.test.js  (5 tests)
-│   │   ├── profiles.test.js           (2 tests)
-│   │   ├── limits.test.js             (4 tests)
-│   │   ├── auth.test.jsx              (2 tests)
-│   │   ├── onboarding.test.jsx        (3 tests)
-│   │   ├── weeklyPlan.test.jsx        (5 tests)
-│   │   ├── systemPrompt.test.js       (32 tests)
-│   │   ├── strava-activities.test.js  (4 tests)
-│   │   ├── strava-match-activity.test.js (6 tests)
-│   │   ├── cycles.test.js             (30 tests)
-│   │   ├── recalculate-cycle.test.js  (4 tests)
-│   │   ├── ciclo-completado.test.js   (3 tests)
-│   │   ├── race-priority.test.js      (7 tests) — sistema A/B/C de carreras
-│   │   ├── autoRegenPlan.test.js      (8 tests)
-│   │   ├── autoAdjust.test.js         (11 tests) — checkShouldAdjust
-│   │   ├── chat.test.js               (14 tests) — Chat.jsx + claude.js
-│   │   ├── completarSesion.test.js    (14 tests) — completarSesion + fechas Madrid
-│   │   ├── wellness.test.js           (7 tests) — umbrales + paridad ESM↔CJS
-│   │   ├── volumen.test.js            (6 tests) — criterio volumen + paridad ESM↔CJS
-│   │   ├── planes-idempotencia.test.js (3 tests) — decidirAccionPlan
-│   │   ├── fechas-madrid.test.js      (6 tests) — lunes Madrid verano/invierno + bordes DST
-│   │   ├── auto-plans.test.js         (7 tests) — elegibles + body interno sin forzar
-│   │   ├── email-plan-listo.test.js   (3 tests) — HTML del email del cron
-│   │   ├── phase8.test.jsx            (4 tests)
-│   │   ├── phase10.test.jsx           (4 tests)
-│   │   ├── phase105.test.jsx          (5 tests)
-│   │   └── e2e/
-│   │       ├── auth.spec.js
-│   │       ├── audit.spec.js
-│   │       └── coach-calendar-sync.spec.js
+│   ├── test/                  — 37 archivos Vitest (ver sección Tests) + e2e/ con 3 specs Playwright
+│   │   └── e2e/ (auth.spec.js, audit.spec.js, coach-calendar-sync.spec.js)
 │   ├── index.css
 │   ├── App.jsx
 │   └── main.jsx
 ├── netlify/
 │   └── functions/
-│       ├── lib/                     — código compartido CJS (NO son functions): wellness.js, volumen.js, planes.js, fechas.js, email.js
-│       ├── auto-plans.js            — orquestador generación automática [SCHEDULED: lunes 03:00 UTC — PAUSADO]
+│       ├── lib/                     — código compartido CJS (NO son functions): auth.js (authenticate, corsHeaders, guardScheduled),
+│       │                              claude.js (modelos y callClaude), supa.js (REST de Supabase), email.js (Resend, EMAILS_ENABLED),
+│       │                              emails-usuario.js (plantillas), fechas.js, plan-efectivo.js, planes.js, captura.js, duraciones.js,
+│       │                              salud.js, stripe-eventos.js, volumen.js, wellness.js
 │       ├── claude.js                — chat Claude, rate limiting atómico (RPC)
-│       ├── adjust-plan.js           — ajusta plan (lesión/viaje/sobrecarga/sesiones_perdidas + signal)
+│       ├── analizar-captura.js      — lee la captura del entreno con Claude (imagen no guardada; cuenta como mensaje; tope semanal en Free)
 │       ├── generate-plan.js         — genera plan semanal (estructura real, macrociclo, idempotente + forzar)
+│       ├── adjust-plan.js           — ajusta plan (lesión/viaje/sobrecarga/sesiones_perdidas + signal)
 │       ├── create-cycle.js          — crea macrociclo de entrenamiento (idempotente)
 │       ├── recalculate-cycle.js     — recalcula fases del ciclo tras cambio de carrera
 │       ├── coach-intro.js           — mensaje de bienvenida del coach
-│       ├── strava-auth.js           — OAuth Strava (usa STRAVA_CLIENT_ID/SECRET globales, no per-user)
-│       ├── strava-activities.js     — actividades Strava + refresh token (credenciales globales)
+│       ├── auto-plans.js            — plan semanal automático [SCHEDULED: lunes 03:00 UTC — ACTIVO; Pro de pago y prueba Pro]
+│       ├── weekly-report.js         — revisión semanal por email [SCHEDULED: domingos 19:00 UTC — ACTIVO; Pro y prueba Pro]
+│       ├── trial-reminder.js        — aviso de fin de prueba [SCHEDULED: diario 08:23 UTC — ACTIVO]
+│       ├── recuperacion-altas.js    — email ÚNICO de recuperación [SCHEDULED: 13-nov-2026; caduca el 20-nov, luego borrar]
+│       ├── health-check.js          — prueba los modelos y avisa a ALERT_EMAIL [SCHEDULED: diario 07:13 UTC — ACTIVO]
+│       ├── thursday-reminder.js     — recordatorio semanal [jueves 17:00 UTC — PAUSADO, no activar]
+│       ├── claude-status.js         — prueba manual del coach (con x-internal-secret)
+│       ├── create-checkout.js       — Stripe Checkout Session (monthly | annual)
+│       ├── create-portal.js         — portal de cliente de Stripe
+│       ├── stripe-webhook.js        — webhook Stripe (activar/revocar Pro, alertas de cobro)
+│       ├── delete-account.js        — borrado real de la cuenta (cancela Stripe, revoca Strava)
+│       ├── strava-auth.js           — OAuth Strava (la UI ya no ofrece conectar; exige plan Pro de pago; credenciales globales STRAVA_CLIENT_ID/SECRET)
+│       ├── strava-activities.js     — actividades Strava + refresh token (solo cuentas ya conectadas)
 │       ├── strava-sync.js           — sync Strava → plan; exporta syncUsuario() reutilizable; recalcula volumen_real_min
 │       ├── strava-match-activity.js — match actividad Strava con sesión del plan
 │       ├── strava-feedback.js       — feedback automático post-entreno (Pro, fire-and-forget)
-│       ├── intervals.js             — integración Intervals.icu (GET/POST/DELETE)
-│       ├── weekly-report.js         — informe semanal [SCHEDULED: domingos 19h UTC — PAUSADO]
-│       ├── thursday-reminder.js     — recordatorio semanal [SCHEDULED: jueves 17h UTC — PAUSADO]
-│       ├── create-checkout.js       — Stripe Checkout Session
-│       ├── stripe-webhook.js        — webhook Stripe (activar/revocar Pro)
-│       └── delete-account.js        — soft delete: PATCH profiles SET deleted_at, borra messages/plans
+│       └── intervals.js             — integración Intervals.icu (GET/POST/DELETE)
 ├── index.html
 ├── netlify.toml
-├── vite.config.js
+├── vite.config.js, playwright.config.js, eslint.config.js
 └── package.json
 ```
 
@@ -471,14 +460,18 @@ Backend (solo en Netlify Functions):
 
 ## Diferenciación Free vs Pro
 
-| Feature | Free | Pro |
+| Feature | Free | Pro (de pago o en prueba de 7 días) |
 |---------|------|-----|
 | Mensajes/día | 10 | 20 |
-| Plan semanal | Básico | Con datos Strava |
+| Modelo de IA | Haiku | Sonnet (avanzado) |
+| Capturas de entreno | 2 por semana | Sin tope semanal |
+| Plan semanal | Lo genera el usuario | Llega solo cada lunes (`auto-plans`) |
+| Revisión semanal por email | No | Domingos 19:00 UTC (`weekly-report`) |
 | Macrociclo | Sí (genérico) | Sí (con carrera) |
 | Ajuste automático | Sí | Sí |
-| Strava sync | No | Sí |
-| Intervals.icu | No | Sí |
+| Recordatorios y emails de aviso | Según el email | Según el email |
+| Intervals.icu | No | Sí (solo Pro de pago) |
+| Strava (feedback post-entreno; solo cuentas ya conectadas) | No | Sí (solo Pro de pago); no hay conexiones nuevas |
 
 Validación Free/Pro siempre en **backend** (claude.js) — nunca confiar solo en el frontend.
 
@@ -544,20 +537,20 @@ Helpers canónicos en `src/lib/fechas.js` — usar SIEMPRE estos, no reimplement
 Usados en `WeeklyPlan.jsx` y `autoAdjust.js`. `buildSystemPrompt.js` mantiene su copia interna deliberadamente (cubierto por 32 tests, no tocar sin motivo).
 Al abrir `ModalCompletarSesion`, WeeklyPlan adjunta `fecha` a la sesión (`{ ...sesion, fecha: sesionFecha }`) — necesario para el auto-import de Strava del modal.
 
-## Tests — 201 pasando (27 archivos) + 3 specs E2E Playwright
+## Tests — 309 pasando (37 archivos) + 3 specs E2E Playwright
 
 Tests más pesados (referencia rápida):
 - `systemPrompt.test.js` — buildSystemPrompt (32 tests)
 - `cycles.test.js` — macrociclos (30 tests)
-- `chat.test.js` — Chat.jsx + claude.js integration (14 tests)
+- `reactivacion-coach.test.js` — modelos, auth y reactivación del coach (19 tests)
+- `salud-y-stripe.test.js` — health-check y webhook de Stripe (15 tests)
 - `completarSesion.test.js` — completarSesion + fechas Europe/Madrid (14 tests)
+- `chat.test.js` — Chat.jsx + claude.js integration (14 tests)
+- `pro-beneficios.test.js` — coherencia de lo que incluye cada plan (13 tests)
+- `captura.test.js` — captura del entreno y Strava cerrado (13 tests)
+- `emails-usuario.test.js` — plantillas y crons de email (11 tests)
 - `autoAdjust.test.js` — checkShouldAdjust (11 tests)
-- `autoRegenPlan.test.js` — auto-regeneración plan (8 tests)
-- `race-priority.test.js` — sistema A/B/C carreras (7 tests)
-- `strava-match-activity.test.js` (6 tests)
-- `netlify-functions.test.js` (5 tests)
-- `phase105.test.jsx` (5 tests)
-- `recalculate-cycle.test.js` (4 tests), `limits.test.js` (4 tests)
+- `trial-banner.test.jsx` (10 tests), `plan-efectivo.test.js` (9 tests), `autoRegenPlan.test.js` (8 tests)
 
 ## Workflow
 1. `netlify dev` para desarrollo local → http://localhost:8888
