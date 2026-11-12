@@ -74,7 +74,7 @@ El coach sabe lo que entrena el usuario por el check-in de la sesión (hecho, es
 - Frontend: React + Vite (JavaScript, NO TypeScript)
 - Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co) — RLS activado
 - Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
-- Tests: Vitest — **368 tests pasando** (41 archivos, cargan sin .env) + Playwright E2E (3 specs)
+- Tests: Vitest — **372 tests pasando** (42 archivos, cargan sin .env) + Playwright E2E (3 specs)
 - Deploy: Netlify (producción: https://getricoach.com — la app vive en `/app`; `tricoach-v2.netlify.app` sigue como alias)
 - Pagos: Stripe (checkout + webhooks)
 - Email: Resend (coach@getricoach.com)
@@ -183,7 +183,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 
 ### Tests
 - Ejecutar `npm test` al terminar SIEMPRE
-- **368 tests deben pasar** (41 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
+- **372 tests deben pasar** (42 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
 - No borrar ni modificar tests existentes sin motivo explícito
 
 ## Estado del proyecto — Fases completadas
@@ -324,7 +324,7 @@ tricoach-v2/
 │   │   └── Terminos.jsx       — términos de uso
 │   ├── prompts/
 │   │   └── buildSystemPrompt.js
-│   ├── test/                  — 41 archivos Vitest (ver sección Tests) + e2e/ con 3 specs Playwright
+│   ├── test/                  — 42 archivos Vitest (ver sección Tests) + e2e/ con 3 specs Playwright
 │   │   └── e2e/ (auth.spec.js, audit.spec.js, coach-calendar-sync.spec.js)
 │   ├── index.css
 │   ├── App.jsx
@@ -541,7 +541,7 @@ Helpers canónicos en `src/lib/fechas.js` — usar SIEMPRE estos, no reimplement
 Usados en `WeeklyPlan.jsx` y `autoAdjust.js`. `buildSystemPrompt.js` mantiene su copia interna deliberadamente (cubierto por 32 tests, no tocar sin motivo).
 Al abrir `ModalCompletarSesion`, WeeklyPlan adjunta `fecha` a la sesión (`{ ...sesion, fecha: sesionFecha }`) — necesario para el auto-import de Strava del modal.
 
-## Tests — 368 pasando (41 archivos) + 3 specs E2E Playwright
+## Tests — 372 pasando (42 archivos) + 3 specs E2E Playwright
 
 Tests más pesados (referencia rápida):
 - `systemPrompt.test.js` — buildSystemPrompt (32 tests)
@@ -553,6 +553,7 @@ Tests más pesados (referencia rápida):
 - `pro-beneficios.test.js` — coherencia de lo que incluye cada plan (13 tests)
 - `captura.test.js` — captura del entreno y Strava cerrado (13 tests)
 - `guias-seo.test.js` — cada guía tiene redirects, sitemap, llms.txt, canonical y no cita Strava (16 tests)
+- `landing-afirmaciones.test.js` — la landing no afirma Apple Health, descarga directa al reloj ni MTB, y enlaza todas las guías (4 tests)
 - `emails-usuario.test.js` — plantillas y crons de email (11 tests)
 - `session-reminder.test.js` — recordatorio de sesión: destinatarios, día en Madrid, una vez al día, baja (25 tests)
 - `autoAdjust.test.js` — checkShouldAdjust (11 tests)
