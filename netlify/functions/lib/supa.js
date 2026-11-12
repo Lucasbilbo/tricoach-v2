@@ -2,14 +2,15 @@
 // Nunca lanza: devuelve { ok, status, data }.
 const https = require('https');
 
-function supa(method, path, body) {
+// devolver: true → se pide el cuerpo de la respuesta también en POST/PATCH (p. ej. una RPC).
+function supa(method, path, body, { devolver = false } = {}) {
   const hostname = new URL(process.env.SUPABASE_URL).hostname;
   const key = process.env.SUPABASE_SERVICE_KEY;
   const bodyStr = body ? JSON.stringify(body) : null;
   return new Promise((resolve) => {
     const headers = { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' };
     if (bodyStr) headers['Content-Length'] = Buffer.byteLength(bodyStr);
-    if (method !== 'GET') headers.Prefer = 'return=minimal';
+    if (method !== 'GET' && !devolver) headers.Prefer = 'return=minimal';
     const req = https.request({ hostname, path: `/rest/v1/${path}`, method, headers }, (r) => {
       let d = '';
       r.on('data', c => d += c);
