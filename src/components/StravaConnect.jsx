@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
-export default function StravaConnect({ userId, plan, onConnected, onShowUpgrade }) {
+export default function StravaConnect({ userId }) {
   const [connected, setConnected] = useState(false)
   const [disconnecting, setDisconnecting] = useState(false)
   const [toast, setToast] = useState(null)
 
-  const esFree = !plan || plan === 'free'
 
   function showToast(msg) {
     setToast(msg)
@@ -37,17 +36,6 @@ export default function StravaConnect({ userId, plan, onConnected, onShowUpgrade
       })
   }, [userId])
 
-  function connectStrava() {
-    if (esFree) {
-      if (onShowUpgrade) onShowUpgrade()
-      return
-    }
-    const clientId = import.meta.env.VITE_STRAVA_CLIENT_ID
-    const redirectUri = import.meta.env.VITE_STRAVA_REDIRECT_URI || import.meta.env.VITE_APP_URL || window.location.origin
-    const url = `https://www.strava.com/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&approval_prompt=force&scope=read,activity:read&state=strava`
-    window.location.href = url
-  }
-
   if (connected) {
     return (
       <div>
@@ -77,67 +65,15 @@ export default function StravaConnect({ userId, plan, onConnected, onShowUpgrade
             {disconnecting ? '...' : 'Desconectar'}
           </button>
         </div>
-      </div>
-    )
-  }
-
-  if (esFree) {
-    return (
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-          <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--foreground)' }}>Strava</span>
-          <span style={{
-            background: 'var(--primary)',
-            color: 'var(--primary-foreground)',
-            borderRadius: 999,
-            padding: '2px 8px',
-            fontSize: 11,
-            fontWeight: 700,
-          }}>
-            Pro
-          </span>
-        </div>
-        <button
-          onClick={() => { if (onShowUpgrade) onShowUpgrade() }}
-          style={{
-            background: 'var(--secondary)',
-            color: 'var(--muted-foreground)',
-            border: '1px solid var(--border)',
-            padding: '8px 16px',
-            borderRadius: 6,
-            cursor: 'pointer',
-            fontWeight: 600,
-            fontSize: 14,
-            opacity: 0.8,
-          }}
-        >
-          Conectar Strava
-        </button>
-        <p style={{ fontSize: 12, color: 'var(--muted-foreground)', marginTop: 6 }}>
-          Disponible en Pro
+        <p style={{ fontSize: 11, color: 'var(--muted-foreground)', marginTop: 8, lineHeight: 1.4 }}>
+          Si desconectas no podrás volver a conectar: ya no admitimos conexiones nuevas con Strava.
         </p>
       </div>
     )
   }
 
-  // Pro user — not connected: show connect button
-  return (
-    <div>
-      <button
-        onClick={connectStrava}
-        style={{
-          background: '#fc4c02',
-          color: 'white',
-          border: 'none',
-          padding: '8px 16px',
-          borderRadius: 6,
-          cursor: 'pointer',
-          fontWeight: 600,
-          fontSize: 14,
-        }}
-      >
-        Conectar Strava
-      </button>
-    </div>
-  )
+  // Strava está cerrado a conexiones nuevas (nov-2026): su política de API prohíbe usar
+  // sus datos con IA y la app no puede crecer por ahí. Quien ya está conectado sigue igual;
+  // el resto no ve nada aquí y enseña su entreno con una captura (ModalCompletarSesion).
+  return null
 }
