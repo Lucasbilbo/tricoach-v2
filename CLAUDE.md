@@ -35,6 +35,14 @@ El coach no respondía desde el 15-jun-2026: `claude-sonnet-4-20250514` fue reti
 - **Portal de Stripe**: `create-portal.js` + botón "Gestionar suscripción" en EditProfile (solo `plan === 'pro'` con `stripe_customer_id`). Requiere activar el portal de clientes en Stripe.
 - **`lib/supa.js`**: cliente REST mínimo de Supabase para functions nuevas (`supa(method, path, body)` → `{ ok, status, data }`).
 
+## 📸 CAPTURA DEL ENTRENO Y STRAVA CERRADO A NUEVOS (12 noviembre 2026)
+- **Por qué**: la API Policy de Strava (1-jun-2026, §5.3) prohíbe usar sus datos con IA, incluido meterlos en el contexto de un modelo. La app no puede crecer por Strava ni pedir más plazas. **Decisión de Lucas**: quien ya está conectado sigue igual; no se admiten conexiones nuevas; Strava no se vende.
+- **Strava**: `StravaConnect` solo pinta el estado conectado (+ desconectar, con aviso de que no se puede reconectar); sin token devuelve `null` y App.jsx no enseña el bloque "Integraciones". No reintroducir el botón de conectar ni mencionar Strava en landing, guías, modal Pro, avisos o emails (lo comprueba `captura.test.js`). `strava-*` functions siguen vivas para los conectados.
+- **Captura**: en `ModalCompletarSesion`, "Subir captura del entreno" → `src/lib/captura.js` reduce la imagen (JPEG, lado máx. 1568) → `analizar-captura.js` → Claude lee duración, distancia y FC media y devuelve un comentario frente a lo planificado. Los campos se rellenan y **el usuario los revisa antes de guardar** (sigue pasando por `completarSesion`). Lógica pura y prompt en `functions/lib/captura.js` (valida rangos; el texto de la imagen son datos, no instrucciones).
+- Cada captura **cuenta como un mensaje del día** (misma RPC `increment_messages_today`; `DAILY_LIMIT` duplicado con test de paridad). La imagen no se guarda ni se registra. Evento GA4 `captura_leida`.
+- **Qué vende Pro ahora**: coach avanzado, 20 mensajes al día, plan nuevo cada lunes (auto-plans) e Intervals.icu. La captura está en Free y Pro.
+- **Siguiente fuente de datos automática**: app nativa con Apple Health / Health Connect. Garmin directo exige solicitar como organización; Intervals.icu ya no sirve de puente para datos de Garmin ni de Strava.
+
 ## ⏸ PAUSA DEL 29 octubre 2026 (parcialmente levantada el 12-nov: ver sección anterior)
 Estado en que quedaron las automatizaciones durante la pausa:
 - **Crons desactivados**: se han quitado de `netlify.toml` los schedules de `weekly-report` (dom 19:00 UTC), `thursday-reminder` (jue 17:00 UTC) y `auto-plans` (lun 03:00 UTC). Las funciones siguen existiendo, solo no se disparan solas.
@@ -52,7 +60,7 @@ Freemium: Free (10 msg/día, plan básico) / Pro (14,99€/mes o 119€/año, St
 - Frontend: React + Vite (JavaScript, NO TypeScript)
 - Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co) — RLS activado
 - Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
-- Tests: Vitest — **277 tests pasando** (34 archivos, cargan sin .env) + Playwright E2E (3 specs)
+- Tests: Vitest — **292 tests pasando** (36 archivos, cargan sin .env) + Playwright E2E (3 specs)
 - Deploy: Netlify (producción: https://tricoach-v2.netlify.app)
 - Pagos: Stripe (checkout + webhooks)
 - Email: Resend (coach@getricoach.com)
@@ -161,7 +169,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 
 ### Tests
 - Ejecutar `npm test` al terminar SIEMPRE
-- **277 tests deben pasar** (34 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
+- **292 tests deben pasar** (36 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
 - No borrar ni modificar tests existentes sin motivo explícito
 
 ## Estado del proyecto — Fases completadas
