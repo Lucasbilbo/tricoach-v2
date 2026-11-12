@@ -67,6 +67,11 @@
 [functions."weekly-report"]
   schedule = "0 19 * * 0"
 
+# Recordatorio el día de la sesión: todos los días 18:30 UTC (19:30/20:30 en Madrid). Free y Pro.
+# Un email por cuenta y día (profiles.recordatorio_enviado_el, migración 009). Con EMAILS_ENABLED=false no hace nada.
+[functions."session-reminder"]
+  schedule = "30 18 * * *"
+
 # Sigue PAUSADO (para reactivar, restaurar este bloque):
 #   [functions."thursday-reminder"] schedule = "0 17 * * 4"   (jueves 17:00 UTC)
 # ── Páginas SEO ──────────────────────────────────────────────────────────────

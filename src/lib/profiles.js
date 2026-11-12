@@ -56,3 +56,14 @@ export async function canSendMessage(profile, enviadosEnSesion = 0) {
   if (!profile) return true
   return mensajesHoy(profile, enviadosEnSesion) < limiteDiario(profile)
 }
+// Interruptor "Recordatorios por email" (columna profiles.recordatorios_email, migración 009).
+// Sin la columna (migración sin aplicar) `profile.recordatorios_email` es undefined → se considera activado.
+export function recordatoriosActivados(profile) {
+  return profile?.recordatorios_email !== false
+}
+
+// Campo a enviar en el update del perfil: SOLO si el usuario lo ha cambiado. Así, mientras la migración 009
+// no esté aplicada, guardar el perfil sin tocar el interruptor no manda una columna que no existe.
+export function cambioRecordatorios(profile, activado) {
+  return activado === recordatoriosActivados(profile) ? {} : { recordatorios_email: activado }
+}

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { enPrueba, diasPruebaRestantes } from '../lib/planEfectivo'
-import { LIMITE_DIARIO } from '../lib/profiles'
+import { LIMITE_DIARIO, recordatoriosActivados, cambioRecordatorios } from '../lib/profiles'
 
 const inputStyle = {
   display: 'block',
@@ -61,6 +61,7 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade,
   const [lesiones, setLesiones] = useState(profile.lesiones || '')
   const [disponibilidad, setDisponibilidad] = useState(profile.disponibilidad || '')
   const [personalidad, setPersonalidad] = useState(profile.personalidad || 'cercano')
+  const [recordatorios, setRecordatorios] = useState(recordatoriosActivados(profile))
   const [edad, setEdad] = useState(profile.edad || '')
   const [fcMaxima, setFcMaxima] = useState(profile.fc_maxima || '')
   // Nutrición
@@ -133,6 +134,7 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade,
         lesiones,
         disponibilidad,
         personalidad,
+        ...cambioRecordatorios(profile, recordatorios),
         edad: edad !== '' ? parseInt(edad) : null,
         fc_maxima: fcMaxima !== '' ? parseInt(fcMaxima) : null,
         peso: peso !== '' ? parseFloat(peso) : null,
@@ -514,6 +516,40 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade,
             </button>
           ))}
         </div>
+
+        <label style={labelStyle}>Recordatorios por email</label>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={recordatorios}
+          onClick={() => setRecordatorios(v => !v)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            width: '100%',
+            background: '#141414',
+            border: '1px solid #2a2a2a',
+            borderRadius: 10,
+            color: '#e0e0e0',
+            fontFamily: 'var(--font-sans)',
+            fontSize: 14,
+            padding: '12px 16px',
+            marginTop: 6,
+            marginBottom: 6,
+            cursor: 'pointer',
+            textAlign: 'left',
+          }}
+        >
+          <svg width="36" height="20" viewBox="0 0 36 20" aria-hidden="true" style={{ flexShrink: 0 }}>
+            <rect x="1" y="1" width="34" height="18" rx="9" fill={recordatorios ? '#FF6B35' : '#2a2a2a'} stroke={recordatorios ? '#FF6B35' : '#444'} strokeWidth="1" />
+            <circle cx={recordatorios ? 26 : 10} cy="10" r="7" fill="#f5f0e8" />
+          </svg>
+          <span>{recordatorios ? 'Activados' : 'Desactivados'}</span>
+        </button>
+        <p style={{ fontSize: 12, color: 'var(--muted-foreground)', marginBottom: 14 }}>
+          Un email por la tarde los días que tengas una sesión sin marcar. Se guarda al pulsar Guardar.
+        </p>
 
         <label style={labelStyle}>Historial deportivo</label>
         <textarea
