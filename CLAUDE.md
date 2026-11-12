@@ -282,6 +282,7 @@ tricoach-v2/
 │   ├── build-static.js        — copia landing, guías y ficheros estáticos al build
 │   ├── generate-icons.js
 │   ├── metricas-activacion.sql — meta de retorno (3 de 10 altas vuelven en 7 días), sin cookies
+│   ├── embudo-semanal.sql      — embudo por semana de alta (alta → onboarding → plan → sesión marcada → vuelve → Pro); solo lectura, sin datos personales
 │   └── purgar-cuentas-borradas.sql — borrado manual e irreversible de cuentas soft-deleted antiguas
 ├── static/                    — robots.txt, llms.txt, og-image.png, verificación de Bing
 ├── public/                    — manifest.json, sw.js, iconos
