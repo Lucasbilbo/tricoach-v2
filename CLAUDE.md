@@ -74,7 +74,7 @@ El coach sabe lo que entrena el usuario por el check-in de la sesión (hecho, es
 - Frontend: React + Vite (JavaScript, NO TypeScript)
 - Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co) — RLS activado
 - Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
-- Tests: Vitest — **334 tests pasando** (38 archivos, cargan sin .env) + Playwright E2E (3 specs)
+- Tests: Vitest — **344 tests pasando** (39 archivos, cargan sin .env) + Playwright E2E (3 specs)
 - Deploy: Netlify (producción: https://getricoach.com — la app vive en `/app`; `tricoach-v2.netlify.app` sigue como alias)
 - Pagos: Stripe (checkout + webhooks)
 - Email: Resend (coach@getricoach.com)
@@ -183,7 +183,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 
 ### Tests
 - Ejecutar `npm test` al terminar SIEMPRE
-- **334 tests deben pasar** (38 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
+- **344 tests deben pasar** (39 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
 - No borrar ni modificar tests existentes sin motivo explícito
 
 ## Estado del proyecto — Fases completadas
@@ -288,7 +288,7 @@ tricoach-v2/
 ├── supabase/
 │   └── migrations/            — 001_training_cycles, 002_strava_user_credentials (obsoleta), 003_unique_plan_semana,
 │                                004_contexto_proxima_semana, 005_trial_pro, 006_contexto_null, 007_emails_usuario,
-│                                008_capturas_semana, 009_recordatorio_sesion. Las ejecuta Lucas a mano en Supabase.
+│                                008_capturas_semana, 009_recordatorio_sesion, 010_trial_dia3. Las ejecuta Lucas a mano en Supabase.
 ├── src/
 │   ├── components/
 │   │   ├── Login.jsx, Onboarding.jsx (3 pantallas), WelcomeGuide.jsx
@@ -323,7 +323,7 @@ tricoach-v2/
 │   │   └── Terminos.jsx       — términos de uso
 │   ├── prompts/
 │   │   └── buildSystemPrompt.js
-│   ├── test/                  — 38 archivos Vitest (ver sección Tests) + e2e/ con 3 specs Playwright
+│   ├── test/                  — 39 archivos Vitest (ver sección Tests) + e2e/ con 3 specs Playwright
 │   │   └── e2e/ (auth.spec.js, audit.spec.js, coach-calendar-sync.spec.js)
 │   ├── index.css
 │   ├── App.jsx
@@ -344,6 +344,7 @@ tricoach-v2/
 │       ├── auto-plans.js            — plan semanal automático [SCHEDULED: lunes 03:00 UTC — ACTIVO; Pro de pago y prueba Pro]
 │       ├── weekly-report.js         — revisión semanal por email [SCHEDULED: domingos 19:00 UTC — ACTIVO; Pro y prueba Pro]
 │       ├── trial-reminder.js        — aviso de fin de prueba [SCHEDULED: diario 08:23 UTC — ACTIVO]
+│       ├── trial-dia3.js            — email del día 3 de la prueba Pro, un envío por cuenta [SCHEDULED: diario 09:12 UTC — ACTIVO tras aplicar migración 010]
 │       ├── session-reminder.js      — recordatorio el día de la sesión pendiente, Free y Pro [SCHEDULED: diario 18:30 UTC — ACTIVO]
 │       ├── recuperacion-altas.js    — email ÚNICO de recuperación [SCHEDULED: 13-nov-2026; caduca el 20-nov, luego borrar]
 │       ├── health-check.js          — prueba los modelos y avisa a ALERT_EMAIL [SCHEDULED: diario 07:13 UTC — ACTIVO]
@@ -538,7 +539,7 @@ Helpers canónicos en `src/lib/fechas.js` — usar SIEMPRE estos, no reimplement
 Usados en `WeeklyPlan.jsx` y `autoAdjust.js`. `buildSystemPrompt.js` mantiene su copia interna deliberadamente (cubierto por 32 tests, no tocar sin motivo).
 Al abrir `ModalCompletarSesion`, WeeklyPlan adjunta `fecha` a la sesión (`{ ...sesion, fecha: sesionFecha }`) — necesario para el auto-import de Strava del modal.
 
-## Tests — 334 pasando (38 archivos) + 3 specs E2E Playwright
+## Tests — 344 pasando (39 archivos) + 3 specs E2E Playwright
 
 Tests más pesados (referencia rápida):
 - `systemPrompt.test.js` — buildSystemPrompt (32 tests)
