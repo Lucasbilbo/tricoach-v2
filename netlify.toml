@@ -97,6 +97,28 @@
   status = 200
 
 [[redirects]]
+  from = "/bici-para-triatlon.html"
+  to = "/bici-para-triatlon"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/bici-para-triatlon"
+  to = "/bici-para-triatlon.html"
+  status = 200
+
+[[redirects]]
+  from = "/recuperacion-entrenamiento.html"
+  to = "/recuperacion-entrenamiento"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/recuperacion-entrenamiento"
+  to = "/recuperacion-entrenamiento.html"
+  status = 200
+
+[[redirects]]
   from = "/plan-media-maraton.html"
   to = "/plan-media-maraton"
   status = 301

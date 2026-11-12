@@ -74,7 +74,7 @@ El coach sabe lo que entrena el usuario por el check-in de la sesión (hecho, es
 - Frontend: React + Vite (JavaScript, NO TypeScript)
 - Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co) — RLS activado
 - Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
-- Tests: Vitest — **352 tests pasando** (40 archivos, cargan sin .env) + Playwright E2E (3 specs)
+- Tests: Vitest — **368 tests pasando** (41 archivos, cargan sin .env) + Playwright E2E (3 specs)
 - Deploy: Netlify (producción: https://getricoach.com — la app vive en `/app`; `tricoach-v2.netlify.app` sigue como alias)
 - Pagos: Stripe (checkout + webhooks)
 - Email: Resend (coach@getricoach.com)
@@ -183,7 +183,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 
 ### Tests
 - Ejecutar `npm test` al terminar SIEMPRE
-- **352 tests deben pasar** (40 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
+- **368 tests deben pasar** (41 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
 - No borrar ni modificar tests existentes sin motivo explícito
 
 ## Estado del proyecto — Fases completadas
@@ -271,7 +271,7 @@ tricoach-v2/
 ├── tricoach_plan.md           — plan de producto v11.2
 ├── README.md
 ├── landing.html               — landing (raíz del dominio); scripts/build-static.js la copia al build
-├── <guía>.html                — guías SEO en la raíz (zona 2, planes 5K/10K/media/maratón, Hyrox, triatlón, natación, calculadora…);
+├── <guía>.html                — guías SEO en la raíz (zona 2, planes 5K/10K/media/maratón, Hyrox, triatlón, natación, bici para triatlón, recuperación, calculadora…);
 │                                cada una con su par de redirects en netlify.toml, entrada en sitemap.xml y static/llms.txt
 ├── tasks/
 │   ├── lessons.md             — lecciones aprendidas (leer siempre antes de empezar)
@@ -282,6 +282,7 @@ tricoach-v2/
 │   ├── build-static.js        — copia landing, guías y ficheros estáticos al build
 │   ├── generate-icons.js
 │   ├── metricas-activacion.sql — meta de retorno (3 de 10 altas vuelven en 7 días), sin cookies
+│   ├── embudo-semanal.sql      — embudo por semana de alta (alta → onboarding → plan → sesión marcada → vuelve → Pro); solo lectura, sin datos personales
 │   └── purgar-cuentas-borradas.sql — borrado manual e irreversible de cuentas soft-deleted antiguas
 ├── static/                    — robots.txt, llms.txt, og-image.png, verificación de Bing
 ├── public/                    — manifest.json, sw.js, iconos
@@ -323,7 +324,7 @@ tricoach-v2/
 │   │   └── Terminos.jsx       — términos de uso
 │   ├── prompts/
 │   │   └── buildSystemPrompt.js
-│   ├── test/                  — 40 archivos Vitest (ver sección Tests) + e2e/ con 3 specs Playwright
+│   ├── test/                  — 41 archivos Vitest (ver sección Tests) + e2e/ con 3 specs Playwright
 │   │   └── e2e/ (auth.spec.js, audit.spec.js, coach-calendar-sync.spec.js)
 │   ├── index.css
 │   ├── App.jsx
@@ -540,7 +541,7 @@ Helpers canónicos en `src/lib/fechas.js` — usar SIEMPRE estos, no reimplement
 Usados en `WeeklyPlan.jsx` y `autoAdjust.js`. `buildSystemPrompt.js` mantiene su copia interna deliberadamente (cubierto por 32 tests, no tocar sin motivo).
 Al abrir `ModalCompletarSesion`, WeeklyPlan adjunta `fecha` a la sesión (`{ ...sesion, fecha: sesionFecha }`) — necesario para el auto-import de Strava del modal.
 
-## Tests — 352 pasando (40 archivos) + 3 specs E2E Playwright
+## Tests — 368 pasando (41 archivos) + 3 specs E2E Playwright
 
 Tests más pesados (referencia rápida):
 - `systemPrompt.test.js` — buildSystemPrompt (32 tests)
@@ -551,6 +552,7 @@ Tests más pesados (referencia rápida):
 - `chat.test.js` — Chat.jsx + claude.js integration (14 tests)
 - `pro-beneficios.test.js` — coherencia de lo que incluye cada plan (13 tests)
 - `captura.test.js` — captura del entreno y Strava cerrado (13 tests)
+- `guias-seo.test.js` — cada guía tiene redirects, sitemap, llms.txt, canonical y no cita Strava (16 tests)
 - `emails-usuario.test.js` — plantillas y crons de email (11 tests)
 - `session-reminder.test.js` — recordatorio de sesión: destinatarios, día en Madrid, una vez al día, baja (25 tests)
 - `autoAdjust.test.js` — checkShouldAdjust (11 tests)
