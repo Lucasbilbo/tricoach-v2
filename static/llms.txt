@@ -22,6 +22,8 @@
 - [Natación para triatlón](https://getricoach.com/natacion-para-triatlon): técnica de crol, test CSS y aguas abiertas.
 - [Entrenamiento en zona 2](https://getricoach.com/entrenamiento-zona-2): qué es, cómo calcular las zonas y cuánto entrenar.
 - [Plan de entrenamiento Hyrox](https://getricoach.com/plan-entrenamiento-hyrox): las 8 estaciones, running y fuerza funcional.
+- [Bici para triatlón](https://getricoach.com/bici-para-triatlon): sesiones por semana, test de FTP, bricks, reparto del esfuerzo y nutrición.
+- [Recuperación entre entrenamientos](https://getricoach.com/recuperacion-entrenamiento): sueño, nutrición, semanas de descarga y señales de fatiga.
 - [Maratón Valencia](https://getricoach.com/maraton-valencia): plan de 16 semanas y estrategia de carrera.
 - [Maratón Madrid](https://getricoach.com/maraton-madrid): plan de 16 semanas y recorrido.
 - [Maratón Barcelona](https://getricoach.com/maraton-barcelona): plan de 16 semanas y recorrido costero.
