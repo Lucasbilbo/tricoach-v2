@@ -111,4 +111,8 @@ Si no responden antes del 12 de mayo → reenviar con vídeo demo.
 
 **Hecho (rama `ventas/embudo-pago`):** vuelta a la app tras pagar (antes iba a la landing y no se medía la venta), error visible si el checkout falla, oferta de Pro también durante la prueba, aviso de fin de prueba, login con propuesta de valor, textos falsos corregidos ("150 mensajes"), formulario obsoleto de credenciales de Strava eliminado. Con esto queda hecho el pendiente SEO nº 1 (Login.jsx).
 
-**Pendiente (requiere OK de Lucas):** Stripe Customer Portal, emails transaccionales (bienvenida Pro, fin de prueba), reactivar `auto-plans`, email de recuperación a las 27 altas con onboarding y sin plan, ampliación del límite de Strava (5 de 10 plazas ocupadas).
+**Hecho (rama `ventas/emails-portal-cron`, 12-nov):** portal de Stripe en el perfil, emails de bienvenida Pro y fin de prueba, cron de planes semanales (Pro y prueba Pro), email único de recuperación a las 27 altas con onboarding y sin plan (13-nov), `trial_ends_at` protegido en base de datos.
+
+**Para que funcione hace falta (Lucas):** aplicar la migración 007 en Supabase, crear `EMAILS_ENABLED=true` y `CRONS_ENABLED=true` en Netlify, activar el portal de clientes en Stripe.
+
+**Pendiente:** ampliación del límite de Strava (5 de 10 plazas ocupadas), lanzar campañas y posts del informe SEO, borrar `recuperacion-altas` después del 20-nov.

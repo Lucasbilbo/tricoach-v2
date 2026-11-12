@@ -47,10 +47,25 @@
 [functions."health-check"]
   schedule = "13 7 * * *"
 
-# PAUSA (29-oct-2026): crons desactivados. Para reactivar, restaurar estos 3 bloques:
+# ── Crons de usuario (reactivados 12-nov-2026) ───────────────────────────────
+# Todos exigen CRONS_ENABLED=true en Netlify (lib/auth.js guardScheduled) y solo
+# envían email si EMAILS_ENABLED=true.
+# Plan semanal automático: lunes 03:00 UTC (fuera de la ventana DST). Pro y prueba Pro.
+[functions."auto-plans"]
+  schedule = "0 3 * * 1"
+
+# Aviso de fin de prueba Pro: un email por cuenta, 2 días antes de caducar.
+[functions."trial-reminder"]
+  schedule = "23 8 * * *"
+
+# Email ÚNICO de recuperación a las altas sin plan: 13-nov-2026, 09:30 y 10:30 UTC.
+# La función caduca sola el 20-nov-2026; después se pueden borrar ella y este bloque.
+[functions."recuperacion-altas"]
+  schedule = "30 9,10 13 11 *"
+
+# Siguen PAUSADOS (para reactivar, restaurar estos bloques):
 #   [functions."weekly-report"]    schedule = "0 19 * * 0"   (domingos 19:00 UTC)
 #   [functions."thursday-reminder"] schedule = "0 17 * * 4"   (jueves 17:00 UTC)
-#   [functions."auto-plans"]       schedule = "0 3 * * 1"    (lunes 03:00 UTC, fuera de ventana DST)
 # ── Páginas SEO ──────────────────────────────────────────────────────────────
 # /slug sirve /slug.html (200) y /slug.html redirige a /slug (301) para tener una sola URL canónica.
 # Al añadir una guía: copiar un par de bloques, añadirla a sitemap.xml y a llms.txt (static/).

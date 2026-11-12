@@ -1,5 +1,6 @@
 const https = require('https');
 const { emailsEnabled, sendAlertEmail } = require('./lib/email');
+const { buildBienvenidaProHtml } = require('./lib/emails-usuario');
 const { verificarFirma, decidirAccion, quedaSuscripcionViva } = require('./lib/stripe-eventos');
 
 const CORS = {
@@ -83,23 +84,11 @@ function suscripcionesDeCliente(customerId) {
 }
 
 function sendWelcomeEmail(resendKey, to, nombre) {
-  const nombreDisplay = nombre || 'atleta';
   const bodyStr = JSON.stringify({
     from: 'TriCoach <coach@getricoach.com>',
     to: [to],
-    subject: '¡Ya eres Pro en TriCoach AI! 🎉',
-    html: `
-      <h2>¡Hola, ${nombreDisplay}!</h2>
-      <p>Tu cuenta <strong>TriCoach AI Pro</strong> ya está activa. 🎉</p>
-      <p>A partir de ahora tienes:</p>
-      <ul>
-        <li>✅ 20 mensajes al día con tu coach IA (Sonnet)</li>
-        <li>✅ Planes adaptativos semanales</li>
-        <li>✅ Análisis de actividades de Strava</li>
-      </ul>
-      <p><a href="https://tricoach-v2.netlify.app" style="background:#e8a838;color:#1a1209;padding:12px 24px;border-radius:24px;text-decoration:none;font-weight:bold;display:inline-block;margin-top:8px;">Ir a TriCoach AI →</a></p>
-      <p style="color:#888;font-size:13px;margin-top:24px;">¡A entrenar!</p>
-    `
+    subject: 'Ya eres Pro en TriCoach AI',
+    html: buildBienvenidaProHtml(nombre),
   });
   return new Promise((resolve) => {
     const options = {

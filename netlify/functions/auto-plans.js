@@ -3,7 +3,7 @@ const { guardScheduled } = require('./lib/auth');
 // SCHEDULED: lunes 03:00 UTC (= 04:00/05:00 Madrid — fuera de la ventana de
 // peligro DST; ver tasks/analisis-flujo-datos.md §4). Config en netlify.toml.
 //
-// Flujo por usuario elegible (Pro + ciclo activo + no borrado):
+// Flujo por usuario elegible (Pro de pago o en prueba Pro + ciclo activo + no borrado):
 //   1. syncUsuario() de strava-sync — adherencia fresca ANTES de generar
 //   2. POST a generate-plan (camino interno, SIN forzar → idempotente):
 //      el email y la limpieza de contexto_proxima_semana van dentro de generate-plan
@@ -33,6 +33,14 @@ function supabaseGet(hostname, path, key) {
     req.on('error', () => resolve(null));
     req.end();
   });
+}
+
+/**
+ * Quién recibe plan automático: Pro de pago y cuentas dentro de su prueba Pro
+ * (desde nov-2026; antes solo Pro). Pura — testeada en auto-plans.test.js.
+ */
+function filtroPlan(ahora = Date.now()) {
+  return `or=(plan.eq.pro,trial_ends_at.gt.${encodeURIComponent(new Date(ahora).toISOString())})`;
 }
 
 /** Intersección Pro + ciclo activo. Pura — testeada en auto-plans.test.js. */
@@ -118,11 +126,11 @@ exports.handler = async (event) => {
   const cycles = await supabaseGet(hostname, '/rest/v1/training_cycles?estado=eq.active&select=user_id', supabaseKey);
   const cycleUserIds = Array.isArray(cycles) ? cycles.map(c => c.user_id) : [];
 
-  let profiles = await supabaseGet(hostname, '/rest/v1/profiles?plan=eq.pro&deleted_at=is.null&select=id,email,nombre,contexto_proxima_semana', supabaseKey);
+  let profiles = await supabaseGet(hostname, `/rest/v1/profiles?${filtroPlan()}&deleted_at=is.null&select=id,email,nombre,contexto_proxima_semana`, supabaseKey);
   if (profiles && profiles.code === '42703') {
     // Migración 004 aún no ejecutada — funcionar sin la columna de notas
     console.error('[auto-plans] columna contexto_proxima_semana no existe (migración 004 pendiente) — continuando sin notas');
-    profiles = await supabaseGet(hostname, '/rest/v1/profiles?plan=eq.pro&deleted_at=is.null&select=id,email,nombre', supabaseKey);
+    profiles = await supabaseGet(hostname, `/rest/v1/profiles?${filtroPlan()}&deleted_at=is.null&select=id,email,nombre`, supabaseKey);
   }
 
   const elegibles = filtrarElegibles(Array.isArray(profiles) ? profiles : [], cycleUserIds);
@@ -164,4 +172,5 @@ exports.handler = async (event) => {
 };
 
 exports.filtrarElegibles = filtrarElegibles;
+exports.filtroPlan = filtroPlan;
 exports.construirBodyGeneracion = construirBodyGeneracion;
