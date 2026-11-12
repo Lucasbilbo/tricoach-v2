@@ -62,6 +62,10 @@
 [functions."trial-dia3"]
   schedule = "12 9 * * *"
 
+# Email único tras caducar la prueba Pro, a los 3-4 días (profiles.trial_reactivacion_enviada_at, migración 011).
+[functions."trial-reactivacion"]
+  schedule = "42 9 * * *"
+
 # Email ÚNICO de recuperación a las altas sin plan: 13-nov-2026, 09:30 y 10:30 UTC.
 # La función caduca sola el 20-nov-2026; después se pueden borrar ella y este bloque.
 [functions."recuperacion-altas"]
