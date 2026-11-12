@@ -1,12 +1,12 @@
 # TriCoach AI
 
-> TriCoach AI (https://getricoach.com) es un entrenador personal con inteligencia artificial en español para corredores, triatletas y atletas de Hyrox. Crea un plan semanal personalizado, lo ajusta según cómo entrenas y responde dudas en un chat de coach. Se conecta con Strava (plan Pro).
+> TriCoach AI (https://getricoach.com) es un entrenador personal con inteligencia artificial en español para corredores, triatletas y atletas de Hyrox. Crea un plan semanal personalizado, lo ajusta según cómo entrenas y responde dudas en un chat de coach. El atleta enseña al coach cada entreno con una captura del resumen de su reloj.
 
 ## Datos del producto
 - Idioma: español (España y Latinoamérica).
 - Deportes: running (5K a maratón), triatlón (sprint a 70.3), Hyrox, natación y fuerza.
 - Plan Free: gratis, 10 mensajes al día con el coach, plan semanal básico.
-- Plan Pro: 14,99 €/mes o 119 €/año; 20 mensajes al día, Strava, Intervals.icu, plan adaptativo y feedback tras cada entreno.
+- Plan Pro: 14,99 €/mes o 119 €/año; 20 mensajes al día, modelo de IA más avanzado, plan nuevo cada lunes e Intervals.icu.
 - Las cuentas nuevas tienen 7 días de prueba Pro sin tarjeta.
 - Aplicación web: https://getricoach.com/app
 - Contacto: coach@getricoach.com

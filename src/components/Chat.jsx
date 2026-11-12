@@ -807,7 +807,7 @@ export default function Chat({ userId, profile, activeCycle, plan, planProximaSe
               cursor: 'pointer',
             }}
           >
-            Hazte Pro — Strava y {LIMITE_DIARIO.pro} mensajes al día
+            Hazte Pro — coach avanzado y {LIMITE_DIARIO.pro} mensajes al día
           </button>
         </div>
       )}

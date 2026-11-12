@@ -24,8 +24,8 @@ export default function TrialBanner({ profile, onShowUpgrade }) {
     ? `Te ${dias === 1 ? 'queda 1 día' : `quedan ${dias} días`} de prueba Pro`
     : 'Tu prueba Pro ha terminado'
   const texto = estado === 'aviso'
-    ? `Después pasarás al plan gratuito: ${LIMITE_DIARIO.free} mensajes al día y coach básico. Con Pro mantienes el coach avanzado, ${LIMITE_DIARIO.pro} mensajes al día y conectas Strava.`
-    : `Ahora estás en el plan gratuito: ${LIMITE_DIARIO.free} mensajes al día y coach básico. Tu plan y tu historial siguen aquí. Con Pro recuperas el coach avanzado, ${LIMITE_DIARIO.pro} mensajes al día y conectas Strava.`
+    ? `Después pasarás al plan gratuito: ${LIMITE_DIARIO.free} mensajes al día y coach básico. Con Pro mantienes el coach avanzado, ${LIMITE_DIARIO.pro} mensajes al día y un plan nuevo cada lunes.`
+    : `Ahora estás en el plan gratuito: ${LIMITE_DIARIO.free} mensajes al día y coach básico. Tu plan y tu historial siguen aquí. Con Pro recuperas el coach avanzado, ${LIMITE_DIARIO.pro} mensajes al día y un plan nuevo cada lunes.`
 
   function cerrar() {
     try { localStorage.setItem(CLAVE_VISTO, '1') } catch { /* sin localStorage */ }

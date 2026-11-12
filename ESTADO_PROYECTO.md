@@ -116,3 +116,9 @@ Si no responden antes del 12 de mayo → reenviar con vídeo demo.
 **Para que funcione hace falta (Lucas):** aplicar la migración 007 en Supabase, crear `EMAILS_ENABLED=true` y `CRONS_ENABLED=true` en Netlify, activar el portal de clientes en Stripe.
 
 **Pendiente:** ampliación del límite de Strava (5 de 10 plazas ocupadas), lanzar campañas y posts del informe SEO, borrar `recuperacion-altas` después del 20-nov.
+
+## 📸 Producto sin Strava — 12-nov-2026 (rama `producto/captura-sin-strava`)
+
+Strava prohíbe usar sus datos con IA (API Policy §5.3, jun-2026). Decisión: mantener a los conectados, cerrar conexiones nuevas y dejar de venderlo. El sustituto es la **captura del entreno** en "completar sesión" (el coach lee duración, distancia y pulso y comenta frente al plan). Landing, guías, modal Pro, avisos y emails reescritos sin Strava.
+
+**Pendiente:** probar la lectura con capturas reales de Garmin/COROS/Apple; recordatorio el día de la sesión (email o WhatsApp); app nativa con Apple Health / Health Connect como fuente automática.

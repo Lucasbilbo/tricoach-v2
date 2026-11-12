@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { analizarCaptura } from '../lib/captura'
+import { track } from '../lib/analytics'
 import { completarSesion } from '../lib/plans'
 
 const RPE_COLORS = {
@@ -21,6 +23,9 @@ export default function ModalCompletarSesion({ sesion, planId, profile, onClose,
   const [saving, setSaving] = useState(false)
   const [stravaLoading, setStravaLoading] = useState(false)
   const [stravaImportado, setStravaImportado] = useState(false)
+  // Captura del entreno: 'idle' | 'leyendo' | 'leida' | 'error'
+  const [captura, setCaptura] = useState({ estado: 'idle', mensaje: '' })
+  const inputCaptura = useRef(null)
 
   useEffect(() => {
     if (!profile?.strava_token || !sesion.fecha || !sesion.tipo) return
@@ -57,7 +62,26 @@ export default function ModalCompletarSesion({ sesion, planId, profile, onClose,
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const mostrarDistancia = !TIPOS_SIN_DISTANCIA.has(sesion.tipo)
-  const mostrarFc = !!profile?.fc_maxima
+  // Si la captura trae pulso se enseña el campo aunque el perfil no tenga FC máxima
+  const mostrarFc = !!profile?.fc_maxima || fcMedia !== ''
+
+  // El coach lee la captura y rellena los campos; el usuario los revisa antes de guardar.
+  async function handleCaptura(e) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file || !profile?.id) return
+    setCaptura({ estado: 'leyendo', mensaje: '' })
+    try {
+      const datos = await analizarCaptura(profile.id, file, sesion)
+      if (datos.duracion_min != null) setTiempoReal(datos.duracion_min)
+      if (datos.distancia_km != null) setDistanciaReal(datos.distancia_km)
+      if (datos.fc_media != null) setFcMedia(datos.fc_media)
+      setCaptura({ estado: 'leida', mensaje: datos.comentario || '' })
+      track('captura_leida')
+    } catch (err) {
+      setCaptura({ estado: 'error', mensaje: err?.message || 'No se ha podido leer la captura. Inténtalo de nuevo.' })
+    }
+  }
 
   async function guardar(soloMarcar) {
     setSaving(true)
@@ -136,6 +160,55 @@ export default function ModalCompletarSesion({ sesion, planId, profile, onClose,
             marginBottom: 16,
           }}>
             Datos importados de Strava 🟠
+          </div>
+        )}
+
+        {/* Captura del entreno */}
+        {!stravaImportado && (
+          <div style={{ marginBottom: 20 }}>
+            <input ref={inputCaptura} type="file" accept="image/*" onChange={handleCaptura} style={{ display: 'none' }} data-testid="input-captura" />
+            <button
+              onClick={() => inputCaptura.current?.click()}
+              disabled={captura.estado === 'leyendo'}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                background: 'var(--secondary)',
+                border: '1px dashed var(--border)',
+                borderRadius: 10,
+                color: 'var(--foreground)',
+                fontFamily: 'var(--font-sans)',
+                fontSize: 14,
+                fontWeight: 600,
+                padding: '11px 12px',
+                cursor: captura.estado === 'leyendo' ? 'not-allowed' : 'pointer',
+              }}
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M4 8h3l2-3h6l2 3h3v11H4z" />
+                <circle cx="12" cy="13" r="3.5" />
+              </svg>
+              {captura.estado === 'leyendo' ? 'Leyendo tu captura...' : captura.estado === 'leida' ? 'Subir otra captura' : 'Subir captura del entreno'}
+            </button>
+            {captura.estado === 'idle' && (
+              <p style={{ fontSize: 11, color: 'var(--muted-foreground)', marginTop: 6, textAlign: 'center' }}>
+                El resumen de tu reloj o de tu app. El coach rellena los datos por ti.
+              </p>
+            )}
+            {captura.estado === 'leida' && (
+              <div style={{ marginTop: 10, background: 'oklch(0.7 0.18 45 / 0.08)', border: '1px solid oklch(0.7 0.18 45 / 0.35)', borderRadius: 10, padding: '10px 12px' }}>
+                {captura.mensaje && (
+                  <p style={{ fontSize: 13, color: 'var(--foreground)', lineHeight: 1.5, marginBottom: 6 }}>{captura.mensaje}</p>
+                )}
+                <p style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>Datos leídos de tu captura. Revísalos antes de guardar.</p>
+              </div>
+            )}
+            {captura.estado === 'error' && (
+              <p role="alert" style={{ fontSize: 12, color: 'var(--destructive, #ef4444)', marginTop: 8, lineHeight: 1.4 }}>{captura.mensaje}</p>
+            )}
           </div>
         )}
 

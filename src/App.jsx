@@ -544,6 +544,8 @@ function App() {
               </div>
             </div>
 
+            {/* Solo para quien ya tiene Strava conectado: cerrado a conexiones nuevas */}
+            {profile?.strava_token && (
             <div style={{ marginBottom: 8 }}>
               <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted-foreground)', fontWeight: 600, marginBottom: 10, paddingLeft: 2 }}>
                 Integraciones
@@ -557,12 +559,10 @@ function App() {
                 <StravaConnect
                   key={profile?.strava_token ? 'strava-on' : 'strava-off'}
                   userId={session.user.id}
-                  plan={profile?.plan}
-                  onConnected={() => loadOrCreateProfile(session.user)}
-                  onShowUpgrade={() => setShowUpgradeModal(true)}
                 />
               </div>
             </div>
+            )}
           </div>
 
           <EditProfile
