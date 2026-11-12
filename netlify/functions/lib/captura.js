@@ -84,4 +84,19 @@ function interpretar(respuesta) {
   return datos;
 }
 
-module.exports = { SYSTEM, MAX_BASE64, validarImagen, sesionPlanificada, construirMensajes, interpretar };
+// Free: 2 capturas por semana (lunes a domingo, Madrid). Pro y prueba Pro: sin tope semanal.
+const LIMITE_SEMANAL_FREE = 2;
+
+// Capturas ya usadas en la semana de `lunes`. Si el contador es de otra semana, 0.
+function capturasUsadas(profile, lunes) {
+  if (!profile || profile.capturas_semana_inicio !== lunes) return 0;
+  return Number.isFinite(profile.capturas_semana) ? profile.capturas_semana : 0;
+}
+
+// null = sin tope (Pro). Para Free, las que le quedan esta semana.
+function capturasRestantes(plan, profile, lunes) {
+  if (plan === 'pro') return null;
+  return Math.max(0, LIMITE_SEMANAL_FREE - capturasUsadas(profile, lunes));
+}
+
+module.exports = { LIMITE_SEMANAL_FREE, capturasUsadas, capturasRestantes, SYSTEM, MAX_BASE64, validarImagen, sesionPlanificada, construirMensajes, interpretar };
