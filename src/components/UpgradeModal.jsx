@@ -102,7 +102,7 @@ export default function UpgradeModal({ userId, onClose }) {
             Hazte Pro
           </h2>
           <p style={{ color: 'var(--muted-foreground)', fontSize: 14 }}>
-            20 mensajes al día con el modelo más avanzado, análisis de Strava y planes adaptativos
+            20 mensajes al día con el modelo más avanzado y un plan nuevo cada lunes, sin pedirlo
           </p>
         </div>
 

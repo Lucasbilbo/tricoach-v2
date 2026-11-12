@@ -36,8 +36,8 @@ function buildBienvenidaProHtml(nombre) {
   return layout({
     titulo: `Ya eres Pro, ${esc(nombre) || 'atleta'}`,
     parrafos: [
-      'Tu cuenta <strong>TriCoach AI Pro</strong> está activa. Desde ahora tienes el coach avanzado, 20 mensajes al día, plan adaptativo cada semana y conexión con Strava.',
-      'El primer paso que más se nota: conecta Strava desde tu perfil para que el coach trabaje con tus entrenamientos reales.',
+      'Tu cuenta <strong>TriCoach AI Pro</strong> está activa. Desde ahora tienes el coach avanzado, 20 mensajes al día y un plan nuevo cada lunes, sin pedirlo.',
+      'Lo que más se nota: al terminar cada sesión, sube la captura del resumen de tu reloj. El coach lee los datos y ajusta el plan con lo que has hecho de verdad.',
       'Puedes gestionar o cancelar tu suscripción cuando quieras desde tu perfil.',
     ],
     boton: 'Abrir TriCoach AI →',
@@ -52,7 +52,7 @@ function buildFinPruebaHtml(nombre, dias) {
     parrafos: [
       `Hola, ${esc(nombre) || 'atleta'}. Tu prueba de TriCoach AI Pro está a punto de terminar.`,
       'Cuando acabe pasarás al plan gratuito: 10 mensajes al día y coach básico. Tu plan y tu historial se quedan donde están.',
-      'Si quieres seguir con el coach avanzado, 20 mensajes al día y Strava, Pro cuesta 14,99 € al mes o 119 € al año, sin permanencia.',
+      'Si quieres seguir con el coach avanzado, 20 mensajes al día y un plan nuevo cada lunes, Pro cuesta 14,99 € al mes o 119 € al año, sin permanencia.',
     ],
     boton: 'Seguir en Pro →',
     pie: PIE_BAJA,

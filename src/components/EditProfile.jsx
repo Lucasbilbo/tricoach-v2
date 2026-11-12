@@ -344,8 +344,8 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade,
           </p>
           <p style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 14, lineHeight: 1.5 }}>
             {enPrueba(profile)
-              ? `Al terminar pasarás al plan gratuito (${LIMITE_DIARIO.free} mensajes al día). Hazte Pro para mantener el coach avanzado, ${LIMITE_DIARIO.pro} mensajes al día y conectar Strava.`
-              : `Hazte Pro: coach avanzado, ${LIMITE_DIARIO.pro} mensajes al día y planes adaptados a tus datos de Strava.`}
+              ? `Al terminar pasarás al plan gratuito (${LIMITE_DIARIO.free} mensajes al día). Hazte Pro para mantener el coach avanzado, ${LIMITE_DIARIO.pro} mensajes al día y un plan nuevo cada lunes.`
+              : `Hazte Pro: coach avanzado, ${LIMITE_DIARIO.pro} mensajes al día y un plan nuevo cada lunes, sin pedirlo.`}
           </p>
           <button
             onClick={onShowUpgrade}
