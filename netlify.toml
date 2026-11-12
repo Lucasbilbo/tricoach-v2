@@ -58,6 +58,10 @@
 [functions."trial-reminder"]
   schedule = "23 8 * * *"
 
+# Email del día 3 de la prueba Pro: un email por cuenta (profiles.trial_dia3_enviado_at, migración 010).
+[functions."trial-dia3"]
+  schedule = "12 9 * * *"
+
 # Email ÚNICO de recuperación a las altas sin plan: 13-nov-2026, 09:30 y 10:30 UTC.
 # La función caduca sola el 20-nov-2026; después se pueden borrar ella y este bloque.
 [functions."recuperacion-altas"]

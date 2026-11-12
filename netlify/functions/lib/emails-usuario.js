@@ -72,6 +72,30 @@ function buildRecuperacionHtml(nombre) {
   });
 }
 
+// Email del día 3 de la prueba Pro. Usa un solo dato del propio usuario: si tiene plan y
+// cuántas sesiones lleva marcadas esta semana. Nada inventado ni comparaciones con otros.
+function buildDia3PruebaHtml(nombre, { tienePlan, sesionesMarcadas } = {}) {
+  const n = Number(sesionesMarcadas) || 0;
+  let situacion;
+  if (!tienePlan) {
+    situacion = 'Todavía no has generado tu plan. Entra, pulsa "Generar mi plan" y tendrás tu semana en un par de minutos.';
+  } else if (n > 0) {
+    situacion = `Esta semana llevas ${n} ${n === 1 ? 'sesión marcada' : 'sesiones marcadas'}. Cada vez que marcas una, el coach tiene datos reales para ajustar lo que viene.`;
+  } else {
+    situacion = 'Tu plan de esta semana ya está listo. Al terminar una sesión márcala (o sube la captura del reloj) y el coach ajustará lo que viene con lo que has hecho de verdad.';
+  }
+  return layout({
+    titulo: `${esc(nombre) || 'Hola'}, llevas 3 días de prueba Pro`,
+    parrafos: [
+      situacion,
+      'Durante la prueba tienes el modelo más avanzado, 20 mensajes al día, capturas de entreno sin tope semanal, plan nuevo cada lunes y revisión semanal los domingos.',
+      'Te quedan 4 días de prueba, sin tarjeta y sin compromiso.',
+    ],
+    boton: 'Abrir TriCoach AI →',
+    pie: PIE_BAJA,
+  });
+}
+
 // Recordatorio del día de la sesión. `sesion` sale del plan (tipo, subtipo, duracion_min).
 function descripcionSesion(sesion) {
   const partes = [sesion && sesion.tipo, sesion && sesion.subtipo]
@@ -100,4 +124,4 @@ function buildRecordatorioSesionHtml(nombre, sesion) {
   });
 }
 
-module.exports = { APP_URL, buildBienvenidaProHtml, buildFinPruebaHtml, buildRecuperacionHtml, buildRecordatorioSesionHtml, asuntoRecordatorioSesion, descripcionSesion };
+module.exports = { APP_URL, buildBienvenidaProHtml, buildFinPruebaHtml, buildRecuperacionHtml, buildDia3PruebaHtml, buildRecordatorioSesionHtml, asuntoRecordatorioSesion, descripcionSesion };
