@@ -28,8 +28,15 @@ El coach no respondía desde el 15-jun-2026: `claude-sonnet-4-20250514` fue reti
 - **Strava en el perfil**: solo `StravaConnect` (App.jsx). El formulario de credenciales por usuario de EditProfile se eliminó (modelo descartado).
 - `profiles.stripe_subscription_id` NO existe; solo `stripe_customer_id`.
 
-## ⏸ PROYECTO EN PAUSA (29 octubre 2026)
-Lucas ha puesto el proyecto en pausa. Estado de las automatizaciones:
+## ✉️ EMAILS, CRONS Y PORTAL (12 noviembre 2026)
+- **Variables necesarias en Netlify**: `EMAILS_ENABLED=true` (emails a usuarios) y `CRONS_ENABLED=true` (crons). Sin ellas las functions programadas no hacen nada. **Migración 007** obligatoria (marcas de envío + `trial_ends_at` protegido en el trigger `profiles_proteger_campos`); sin ella `trial-reminder` y `recuperacion-altas` fallan sin enviar nada.
+- **Crons activos**: `auto-plans` (lunes 03:00 UTC; ahora Pro de pago **y cuentas en prueba**, `filtroPlan()`), `trial-reminder` (diario 08:23 UTC; un email por cuenta cuando quedan <48 h de prueba; marca `trial_aviso_enviado_at`), `recuperacion-altas` (envío ÚNICO el 13-nov-2026; caduca el 20-nov; después borrar la función y su bloque en `netlify.toml`). `weekly-report` y `thursday-reminder` siguen pausados.
+- **Plantillas** de bienvenida Pro, fin de prueba y recuperación: `netlify/functions/lib/emails-usuario.js` (enlace siempre a `https://getricoach.com/app`, nombre escapado, pie con baja).
+- **Portal de Stripe**: `create-portal.js` + botón "Gestionar suscripción" en EditProfile (solo `plan === 'pro'` con `stripe_customer_id`). Requiere activar el portal de clientes en Stripe.
+- **`lib/supa.js`**: cliente REST mínimo de Supabase para functions nuevas (`supa(method, path, body)` → `{ ok, status, data }`).
+
+## ⏸ PAUSA DEL 29 octubre 2026 (parcialmente levantada el 12-nov: ver sección anterior)
+Estado en que quedaron las automatizaciones durante la pausa:
 - **Crons desactivados**: se han quitado de `netlify.toml` los schedules de `weekly-report` (dom 19:00 UTC), `thursday-reminder` (jue 17:00 UTC) y `auto-plans` (lun 03:00 UTC). Las funciones siguen existiendo, solo no se disparan solas.
 - **Emails desactivados por defecto** (Resend): interruptor `EMAILS_ENABLED` en `netlify/functions/lib/email.js`. Sin la variable `EMAILS_ENABLED=true` en Netlify no sale ningún email: informe semanal, recordatorio del jueves, "plan listo" y bienvenida de Stripe (el pago y la activación Pro siguen funcionando igual).
 - **Cómo reactivar**: (1) restaurar los 3 bloques `[functions."..."] schedule` (valores en el comentario de `netlify.toml`); (2) crear `EMAILS_ENABLED=true` en las variables de entorno de Netlify; (3) `git push origin main`.
@@ -45,7 +52,7 @@ Freemium: Free (10 msg/día, plan básico) / Pro (14,99€/mes o 119€/año, St
 - Frontend: React + Vite (JavaScript, NO TypeScript)
 - Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co) — RLS activado
 - Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
-- Tests: Vitest — **266 tests pasando** (33 archivos, cargan sin .env) + Playwright E2E (3 specs)
+- Tests: Vitest — **277 tests pasando** (34 archivos, cargan sin .env) + Playwright E2E (3 specs)
 - Deploy: Netlify (producción: https://tricoach-v2.netlify.app)
 - Pagos: Stripe (checkout + webhooks)
 - Email: Resend (coach@getricoach.com)
@@ -154,7 +161,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 
 ### Tests
 - Ejecutar `npm test` al terminar SIEMPRE
-- **266 tests deben pasar** (33 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
+- **277 tests deben pasar** (34 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
 - No borrar ni modificar tests existentes sin motivo explícito
 
 ## Estado del proyecto — Fases completadas
