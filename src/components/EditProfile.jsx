@@ -81,6 +81,7 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade,
   const [carreras, setCarreras] = useState(profile.carreras || [])
   const [nuevaCarrera, setNuevaCarrera] = useState({ nombre: '', fecha: '', tipo: 'running' })
   const [saving, setSaving] = useState(false)
+  const [abriendoPortal, setAbriendoPortal] = useState(false)
   const [savingRendimiento, setSavingRendimiento] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -89,6 +90,27 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade,
   function showToast(msg, type) {
     setToast({ msg, type })
     setTimeout(() => setToast(null), 3500)
+  }
+
+  // Portal de cliente de Stripe: tarjeta, facturas y cancelación
+  async function handlePortal() {
+    setAbriendoPortal(true)
+    try {
+      const res = await fetch('/.netlify/functions/create-portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: profile.id }),
+      })
+      const data = await res.json().catch(() => null)
+      if (res.ok && data?.url) {
+        window.location.href = data.url
+        return
+      }
+      showToast('No se pudo abrir la gestión de la suscripción. Escribe a coach@getricoach.com.', 'error')
+    } catch {
+      showToast('No se pudo abrir la gestión de la suscripción. Escribe a coach@getricoach.com.', 'error')
+    }
+    setAbriendoPortal(false)
   }
 
   async function handleSave() {
@@ -384,6 +406,31 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade,
           }}>
             ✦ Pro
           </span>
+        )}
+
+        {profile?.plan === 'pro' && profile?.stripe_customer_id && (
+          <div style={{ marginBottom: 14 }}>
+            <button
+              onClick={handlePortal}
+              disabled={abriendoPortal}
+              style={{
+                background: 'var(--secondary)',
+                color: 'var(--foreground)',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                padding: '8px 14px',
+                fontFamily: 'var(--font-sans)',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: abriendoPortal ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {abriendoPortal ? 'Abriendo...' : 'Gestionar suscripción'}
+            </button>
+            <p style={{ fontSize: 12, color: 'var(--muted-foreground)', marginTop: 6 }}>
+              Tarjeta, facturas y cancelación, en la página segura de Stripe.
+            </p>
+          </div>
         )}
 
         <label style={labelStyle}>Nombre</label>
