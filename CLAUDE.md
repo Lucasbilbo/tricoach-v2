@@ -323,7 +323,7 @@ tricoach-v2/
 │   │   └── Terminos.jsx       — términos de uso
 │   ├── prompts/
 │   │   └── buildSystemPrompt.js
-│   ├── test/                  — 38 archivos Vitest (ver sección Tests) + e2e/ con 3 specs Playwright
+│   ├── test/                  — 39 archivos Vitest (ver sección Tests) + e2e/ con 3 specs Playwright
 │   │   └── e2e/ (auth.spec.js, audit.spec.js, coach-calendar-sync.spec.js)
 │   ├── index.css
 │   ├── App.jsx
