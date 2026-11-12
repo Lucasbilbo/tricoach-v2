@@ -1,6 +1,9 @@
 // Captura de un entreno: reduce la imagen en el navegador y la manda a analizar-captura.
 // La imagen no se guarda en ningún sitio.
 
+import { getHoyMadrid } from './fechas'
+import { planEfectivo } from './planEfectivo'
+
 const LADO_MAX = 1568
 const CALIDAD = 0.85
 
@@ -35,6 +38,39 @@ export async function analizarCaptura(userId, file, sesion) {
     body: JSON.stringify({ userId, imagen, mediaType, sesion: resumenSesion(sesion) }),
   })
   const data = await res.json().catch(() => null)
-  if (!res.ok) throw new Error(data?.error || 'No se ha podido leer la captura. Inténtalo de nuevo.')
+  if (!res.ok) {
+    const error = new Error(data?.error || 'No se ha podido leer la captura. Inténtalo de nuevo.')
+    error.limiteSemanal = data?.limite_semanal === true
+    if (error.limiteSemanal) recordar(userId, 0)
+    throw error
+  }
+  if (data?.capturas_restantes != null) recordar(userId, data.capturas_restantes)
   return data
+}
+
+// Espejo de functions/lib/captura.js (test de paridad en captura.test.js)
+export const LIMITE_SEMANAL_FREE = 2
+
+// Lunes de la semana actual en Madrid (YYYY-MM-DD)
+export function lunesDeHoy(hoy = getHoyMadrid()) {
+  const d = new Date(`${hoy}T12:00:00Z`)
+  const dia = d.getUTCDay()
+  d.setUTCDate(d.getUTCDate() + (dia === 0 ? -6 : 1 - dia))
+  return d.toISOString().slice(0, 10)
+}
+
+// Lo último que dijo el servidor en esta sesión: el perfil en memoria no se recarga tras cada captura.
+let ultimo = null
+function recordar(userId, restantes) {
+  ultimo = { userId, lunes: lunesDeHoy(), restantes }
+}
+export function olvidarCapturas() { ultimo = null }
+
+// null = sin tope (Pro o prueba Pro). Para Free, las capturas que le quedan esta semana.
+export function capturasRestantes(profile, hoy = getHoyMadrid()) {
+  if (planEfectivo(profile) === 'pro') return null
+  const usadas = profile?.capturas_semana_inicio === lunesDeHoy(hoy) && Number.isFinite(profile?.capturas_semana) ? profile.capturas_semana : 0
+  const segunPerfil = Math.max(0, LIMITE_SEMANAL_FREE - usadas)
+  if (ultimo && ultimo.userId === profile?.id && ultimo.lunes === lunesDeHoy(hoy)) return Math.min(segunPerfil, ultimo.restantes)
+  return segunPerfil
 }

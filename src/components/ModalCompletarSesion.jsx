@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { analizarCaptura } from '../lib/captura'
+import { analizarCaptura, capturasRestantes, LIMITE_SEMANAL_FREE } from '../lib/captura'
 import { track } from '../lib/analytics'
 import { completarSesion } from '../lib/plans'
 
@@ -12,7 +12,7 @@ const RPE_COLORS = {
 
 const TIPOS_SIN_DISTANCIA = new Set(['Fuerza', 'Descanso'])
 
-export default function ModalCompletarSesion({ sesion, planId, profile, onClose, onComplete }) {
+export default function ModalCompletarSesion({ sesion, planId, profile, onClose, onComplete, onShowUpgrade }) {
   const [rpe, setRpe] = useState(sesion.estructura?.rpe_objetivo
     ? parseInt(sesion.estructura.rpe_objetivo.split('-')[0], 10) || 6
     : 6)
@@ -25,6 +25,8 @@ export default function ModalCompletarSesion({ sesion, planId, profile, onClose,
   const [stravaImportado, setStravaImportado] = useState(false)
   // Captura del entreno: 'idle' | 'leyendo' | 'leida' | 'error'
   const [captura, setCaptura] = useState({ estado: 'idle', mensaje: '' })
+  // Capturas que le quedan esta semana a un Free; null = sin tope (Pro)
+  const [restantes, setRestantes] = useState(() => capturasRestantes(profile))
   const inputCaptura = useRef(null)
 
   useEffect(() => {
@@ -77,9 +79,15 @@ export default function ModalCompletarSesion({ sesion, planId, profile, onClose,
       if (datos.distancia_km != null) setDistanciaReal(datos.distancia_km)
       if (datos.fc_media != null) setFcMedia(datos.fc_media)
       setCaptura({ estado: 'leida', mensaje: datos.comentario || '' })
+      if (datos.capturas_restantes != null) setRestantes(datos.capturas_restantes)
       track('captura_leida')
     } catch (err) {
-      setCaptura({ estado: 'error', mensaje: err?.message || 'No se ha podido leer la captura. Inténtalo de nuevo.' })
+      if (err?.limiteSemanal) {
+        setRestantes(0)
+        setCaptura({ estado: 'idle', mensaje: '' })
+      } else {
+        setCaptura({ estado: 'error', mensaje: err?.message || 'No se ha podido leer la captura. Inténtalo de nuevo.' })
+      }
     }
   }
 
@@ -169,7 +177,7 @@ export default function ModalCompletarSesion({ sesion, planId, profile, onClose,
             <input ref={inputCaptura} type="file" accept="image/*" onChange={handleCaptura} style={{ display: 'none' }} data-testid="input-captura" />
             <button
               onClick={() => inputCaptura.current?.click()}
-              disabled={captura.estado === 'leyendo'}
+              disabled={captura.estado === 'leyendo' || restantes === 0}
               style={{
                 width: '100%',
                 display: 'flex',
@@ -184,7 +192,8 @@ export default function ModalCompletarSesion({ sesion, planId, profile, onClose,
                 fontSize: 14,
                 fontWeight: 600,
                 padding: '11px 12px',
-                cursor: captura.estado === 'leyendo' ? 'not-allowed' : 'pointer',
+                opacity: restantes === 0 ? 0.5 : 1,
+                cursor: captura.estado === 'leyendo' || restantes === 0 ? 'not-allowed' : 'pointer',
               }}
             >
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -193,10 +202,26 @@ export default function ModalCompletarSesion({ sesion, planId, profile, onClose,
               </svg>
               {captura.estado === 'leyendo' ? 'Leyendo tu captura...' : captura.estado === 'leida' ? 'Subir otra captura' : 'Subir captura del entreno'}
             </button>
-            {captura.estado === 'idle' && (
+            {captura.estado === 'idle' && restantes !== 0 && (
               <p style={{ fontSize: 11, color: 'var(--muted-foreground)', marginTop: 6, textAlign: 'center' }}>
                 El resumen de tu reloj o de tu app. El coach rellena los datos por ti.
+                {restantes != null && ` Te ${restantes === 1 ? 'queda 1 captura' : `quedan ${restantes} capturas`} esta semana.`}
               </p>
+            )}
+            {restantes === 0 && (
+              <div style={{ marginTop: 10, background: 'oklch(0.7 0.18 45 / 0.08)', border: '1px solid oklch(0.7 0.18 45 / 0.35)', borderRadius: 10, padding: '10px 12px' }}>
+                <p style={{ fontSize: 13, color: 'var(--foreground)', lineHeight: 1.5, marginBottom: onShowUpgrade ? 8 : 0 }}>
+                  Has usado tus {LIMITE_SEMANAL_FREE} capturas de esta semana. Con Pro el coach lee todos tus entrenos y ajusta el plan con ellos.
+                </p>
+                {onShowUpgrade && (
+                  <button
+                    onClick={() => { onClose(); onShowUpgrade() }}
+                    style={{ background: 'var(--primary)', color: 'var(--primary-foreground)', border: 'none', borderRadius: 24, padding: '7px 16px', fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    Hazte Pro
+                  </button>
+                )}
+              </div>
             )}
             {captura.estado === 'leida' && (
               <div style={{ marginTop: 10, background: 'oklch(0.7 0.18 45 / 0.08)', border: '1px solid oklch(0.7 0.18 45 / 0.35)', borderRadius: 10, padding: '10px 12px' }}>
