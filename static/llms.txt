@@ -6,7 +6,7 @@
 - Idioma: español (España y Latinoamérica).
 - Deportes: running (5K a maratón), triatlón (sprint a 70.3), Hyrox, natación y fuerza.
 - Plan Free: gratis, 10 mensajes al día con el coach, plan semanal básico.
-- Plan Pro: 14,99 €/mes o 119 €/año; 20 mensajes al día, modelo de IA más avanzado, plan nuevo cada lunes e Intervals.icu.
+- Plan Pro: 14,99 €/mes o 119 €/año; capturas de entreno sin tope semanal (2 por semana en el plan gratuito), plan nuevo cada lunes, revisión semanal, modelo de IA más avanzado, 20 mensajes al día e Intervals.icu.
 - Las cuentas nuevas tienen 7 días de prueba Pro sin tarjeta.
 - Aplicación web: https://getricoach.com/app
 - Contacto: coach@getricoach.com

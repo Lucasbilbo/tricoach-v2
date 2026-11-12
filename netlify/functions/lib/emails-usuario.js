@@ -36,7 +36,7 @@ function buildBienvenidaProHtml(nombre) {
   return layout({
     titulo: `Ya eres Pro, ${esc(nombre) || 'atleta'}`,
     parrafos: [
-      'Tu cuenta <strong>TriCoach AI Pro</strong> está activa. Desde ahora tienes el coach avanzado, 20 mensajes al día y un plan nuevo cada lunes, sin pedirlo.',
+      'Tu cuenta <strong>TriCoach AI Pro</strong> está activa. Desde ahora el coach lee todos tus entrenos, sin tope semanal de capturas, y ajusta el plan con ellos. Además: plan nuevo cada lunes, revisión semanal los domingos, el modelo más avanzado y 20 mensajes al día.',
       'Lo que más se nota: al terminar cada sesión, sube la captura del resumen de tu reloj. El coach lee los datos y ajusta el plan con lo que has hecho de verdad.',
       'Puedes gestionar o cancelar tu suscripción cuando quieras desde tu perfil.',
     ],
@@ -51,8 +51,8 @@ function buildFinPruebaHtml(nombre, dias) {
     titulo: `${quedan} de prueba Pro`,
     parrafos: [
       `Hola, ${esc(nombre) || 'atleta'}. Tu prueba de TriCoach AI Pro está a punto de terminar.`,
-      'Cuando acabe pasarás al plan gratuito: 10 mensajes al día y coach básico. Tu plan y tu historial se quedan donde están.',
-      'Si quieres seguir con el coach avanzado, 20 mensajes al día y un plan nuevo cada lunes, Pro cuesta 14,99 € al mes o 119 € al año, sin permanencia.',
+      'Cuando acabe pasarás al plan gratuito: 10 mensajes al día, coach básico y 2 capturas de entreno por semana. Tu plan y tu historial se quedan donde están.',
+      'Si quieres que el coach siga leyendo todos tus entrenos, con plan nuevo cada lunes y revisión semanal, Pro cuesta 14,99 € al mes o 119 € al año, sin permanencia.',
     ],
     boton: 'Seguir en Pro →',
     pie: PIE_BAJA,
