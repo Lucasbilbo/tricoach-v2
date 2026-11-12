@@ -1,5 +1,5 @@
 // Plantillas de los emails a usuarios que no dependen de un plan semanal (CJS):
-// bienvenida Pro, aviso de fin de prueba y recuperación de altas sin plan.
+// bienvenida Pro, aviso de fin de prueba, recuperación de altas sin plan y recordatorio de sesión.
 // El envío va por lib/email.js (respeta EMAILS_ENABLED).
 
 const APP_URL = 'https://getricoach.com/app';
@@ -72,4 +72,32 @@ function buildRecuperacionHtml(nombre) {
   });
 }
 
-module.exports = { APP_URL, buildBienvenidaProHtml, buildFinPruebaHtml, buildRecuperacionHtml };
+// Recordatorio del día de la sesión. `sesion` sale del plan (tipo, subtipo, duracion_min).
+function descripcionSesion(sesion) {
+  const partes = [sesion && sesion.tipo, sesion && sesion.subtipo]
+    .map(x => String(x == null ? '' : x).trim())
+    .filter((x, i, a) => x && a.findIndex(y => y.toLowerCase() === x.toLowerCase()) === i);
+  const dur = Number(sesion && sesion.duracion_min);
+  const base = partes.join(', ') || 'Entrenamiento';
+  return Number.isFinite(dur) && dur > 0 ? `${base} (${Math.round(dur)} min)` : base;
+}
+
+function asuntoRecordatorioSesion(sesion) {
+  return `Hoy te toca: ${descripcionSesion(sesion)}`.replace(/[\r\n]+/g, ' ').slice(0, 120);
+}
+
+const PIE_RECORDATORIO = 'Si no quieres estos recordatorios, desactívalos en tu perfil (Recordatorios por email) o responde a este email y te damos de baja.';
+
+function buildRecordatorioSesionHtml(nombre, sesion) {
+  return layout({
+    titulo: `Hoy toca entrenar, ${esc(nombre) || 'atleta'}`,
+    parrafos: [
+      `Tu sesión de hoy: <strong>${esc(descripcionSesion(sesion))}</strong>.`,
+      'Cuando termines, márcala como hecha y sube la captura del resumen de tu reloj. El coach lee los datos y ajusta tu plan con lo que has hecho de verdad.',
+    ],
+    boton: 'Abrir mi sesión de hoy →',
+    pie: PIE_RECORDATORIO,
+  });
+}
+
+module.exports = { APP_URL, buildBienvenidaProHtml, buildFinPruebaHtml, buildRecuperacionHtml, buildRecordatorioSesionHtml, asuntoRecordatorioSesion, descripcionSesion };
