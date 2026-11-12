@@ -43,6 +43,19 @@ El coach no respondía desde el 15-jun-2026: `claude-sonnet-4-20250514` fue reti
 - **Qué vende Pro ahora**: coach avanzado, 20 mensajes al día, plan nuevo cada lunes (auto-plans) e Intervals.icu. La captura está en Free y Pro.
 - **Siguiente fuente de datos automática**: app nativa con Apple Health / Health Connect. Garmin directo exige solicitar como organización; Intervals.icu ya no sirve de puente para datos de Garmin ni de Strava.
 
+## ⭐ QUÉ GANA PRO (12 noviembre 2026) — "en Free el coach te dice qué hacer; en Pro además mira lo que haces"
+| | Free | Pro (de pago o en prueba) |
+|---|---|---|
+| Capturas de entreno | 2 por semana | Sin tope semanal |
+| Plan semanal | Lo genera el usuario | Llega solo cada lunes (`auto-plans`) |
+| Revisión semanal por email | No | Domingos 19:00 UTC (`weekly-report`) |
+| Modelo / mensajes al día | Haiku / 10 | Sonnet / 20 |
+| Intervals.icu | No | Sí (solo Pro de pago) |
+- **Tope semanal de capturas**: `LIMITE_SEMANAL_FREE = 2` en `functions/lib/captura.js` (espejo en `src/lib/captura.js`, test de paridad). Semana = lunes a domingo en Madrid. **Migración 008**: columnas `capturas_semana` / `capturas_semana_inicio`, RPC `registrar_captura` y campos protegidos en el trigger. `analizar-captura` corta ANTES de llamar a Claude y suma solo si la lectura sale bien; sin la migración funciona sin tope semanal (deja `console.error`). Cada captura sigue contando como mensaje del día.
+- **Modal**: enseña las capturas que quedan; a 0, oferta de Pro (cierra el modal antes de abrir `UpgradeModal`, que tiene z-index menor).
+- **`weekly-report`**: solo Pro y prueba Pro; ya no existe la versión Free ni se registran emails en los logs. `thursday-reminder` sigue pausado.
+- Al tocar lo que incluye cada plan, actualizar a la vez: landing (listas, nota y FAQ + JSON-LD), `llms.txt`, `UpgradeModal`, `TrialBanner`, `EditProfile`, `Chat` y `lib/emails-usuario.js` (`pro-beneficios.test.js` lo comprueba).
+
 ## ⏸ PAUSA DEL 29 octubre 2026 (parcialmente levantada el 12-nov: ver sección anterior)
 Estado en que quedaron las automatizaciones durante la pausa:
 - **Crons desactivados**: se han quitado de `netlify.toml` los schedules de `weekly-report` (dom 19:00 UTC), `thursday-reminder` (jue 17:00 UTC) y `auto-plans` (lun 03:00 UTC). Las funciones siguen existiendo, solo no se disparan solas.
@@ -60,7 +73,7 @@ Freemium: Free (10 msg/día, plan básico) / Pro (14,99€/mes o 119€/año, St
 - Frontend: React + Vite (JavaScript, NO TypeScript)
 - Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co) — RLS activado
 - Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
-- Tests: Vitest — **292 tests pasando** (36 archivos, cargan sin .env) + Playwright E2E (3 specs)
+- Tests: Vitest — **309 tests pasando** (37 archivos, cargan sin .env) + Playwright E2E (3 specs)
 - Deploy: Netlify (producción: https://tricoach-v2.netlify.app)
 - Pagos: Stripe (checkout + webhooks)
 - Email: Resend (coach@getricoach.com)
@@ -169,7 +182,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 
 ### Tests
 - Ejecutar `npm test` al terminar SIEMPRE
-- **292 tests deben pasar** (36 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
+- **309 tests deben pasar** (37 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
 - No borrar ni modificar tests existentes sin motivo explícito
 
 ## Estado del proyecto — Fases completadas

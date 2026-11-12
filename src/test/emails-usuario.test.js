@@ -89,12 +89,12 @@ describe('auto-plans', () => {
 })
 
 describe('crons y portal', () => {
-  it('netlify.toml: activos auto-plans, trial-reminder y recuperación; el resto sigue pausado', () => {
+  it('netlify.toml: activos auto-plans, trial-reminder, recuperación y revisión semanal; el recordatorio del jueves sigue pausado', () => {
     const activos = leer('netlify.toml').split('\n').filter(l => !l.trim().startsWith('#')).join('\n')
     expect(activos).toContain('[functions."auto-plans"]')
     expect(activos).toContain('[functions."trial-reminder"]')
     expect(activos).toContain('schedule = "30 9,10 13 11 *"')
-    expect(activos).not.toContain('weekly-report')
+    expect(activos).toContain('[functions."weekly-report"]')
     expect(activos).not.toContain('thursday-reminder')
   })
 
