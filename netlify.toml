@@ -63,8 +63,11 @@
 [functions."recuperacion-altas"]
   schedule = "30 9,10 13 11 *"
 
-# Siguen PAUSADOS (para reactivar, restaurar estos bloques):
-#   [functions."weekly-report"]    schedule = "0 19 * * 0"   (domingos 19:00 UTC)
+# Revisión semanal por email: domingos 19:00 UTC. Solo Pro y prueba Pro.
+[functions."weekly-report"]
+  schedule = "0 19 * * 0"
+
+# Sigue PAUSADO (para reactivar, restaurar este bloque):
 #   [functions."thursday-reminder"] schedule = "0 17 * * 4"   (jueves 17:00 UTC)
 # ── Páginas SEO ──────────────────────────────────────────────────────────────
 # /slug sirve /slug.html (200) y /slug.html redirige a /slug (301) para tener una sola URL canónica.

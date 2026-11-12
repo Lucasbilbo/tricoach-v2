@@ -452,6 +452,7 @@ function App() {
             onPlanProximaSemanaUpdate={setPlanProximaSemana}
             planActualizadoPorCoach={planActualizadoPorCoach}
             planProximaSemana={planProximaSemana}
+            onShowUpgrade={() => setShowUpgradeModal(true)}
           />
         </ErrorBoundary>
       )}

@@ -344,8 +344,8 @@ export default function EditProfile({ profile, onUpdate, onClose, onShowUpgrade,
           </p>
           <p style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 14, lineHeight: 1.5 }}>
             {enPrueba(profile)
-              ? `Al terminar pasarás al plan gratuito (${LIMITE_DIARIO.free} mensajes al día). Hazte Pro para mantener el coach avanzado, ${LIMITE_DIARIO.pro} mensajes al día y un plan nuevo cada lunes.`
-              : `Hazte Pro: coach avanzado, ${LIMITE_DIARIO.pro} mensajes al día y un plan nuevo cada lunes, sin pedirlo.`}
+              ? `Al terminar pasarás al plan gratuito (${LIMITE_DIARIO.free} mensajes al día). Hazte Pro para que el coach siga leyendo todos tus entrenos, con plan nuevo cada lunes y revisión semanal.`
+              : `Hazte Pro: el coach lee todos tus entrenos y ajusta el plan con ellos. Plan nuevo cada lunes, revisión semanal y ${LIMITE_DIARIO.pro} mensajes al día.`}
           </p>
           <button
             onClick={onShowUpgrade}

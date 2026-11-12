@@ -102,7 +102,7 @@ export default function UpgradeModal({ userId, onClose }) {
             Hazte Pro
           </h2>
           <p style={{ color: 'var(--muted-foreground)', fontSize: 14 }}>
-            20 mensajes al día con el modelo más avanzado y un plan nuevo cada lunes, sin pedirlo
+            El coach lee todos tus entrenos y ajusta el plan con ellos. Plan nuevo cada lunes, revisión semanal y 20 mensajes al día con el modelo más avanzado
           </p>
         </div>
 

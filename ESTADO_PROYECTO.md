@@ -122,3 +122,9 @@ Si no responden antes del 12 de mayo → reenviar con vídeo demo.
 Strava prohíbe usar sus datos con IA (API Policy §5.3, jun-2026). Decisión: mantener a los conectados, cerrar conexiones nuevas y dejar de venderlo. El sustituto es la **captura del entreno** en "completar sesión" (el coach lee duración, distancia y pulso y comenta frente al plan). Landing, guías, modal Pro, avisos y emails reescritos sin Strava.
 
 **Pendiente:** probar la lectura con capturas reales de Garmin/COROS/Apple; recordatorio el día de la sesión (email o WhatsApp); app nativa con Apple Health / Health Connect como fuente automática.
+
+## ⭐ Pro con beneficios — 12-nov-2026 (rama `producto/pro-con-beneficios`)
+
+Free: 2 capturas de entreno por semana. Pro (y prueba): capturas sin tope semanal, plan nuevo cada lunes, revisión semanal los domingos, modelo avanzado y 20 mensajes. Requiere aplicar la migración 008 en Supabase.
+
+**Pendiente:** revisar el número de capturas de Free cuando haya volumen; recordatorio el día de la sesión.

@@ -39,7 +39,7 @@ function formatDateLong(dateStr) {
   })
 }
 
-export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSessionDetail, onNavigate, onPlanProximaSemanaUpdate, planActualizadoPorCoach, planProximaSemana }) {
+export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSessionDetail, onNavigate, onPlanProximaSemanaUpdate, planActualizadoPorCoach, planProximaSemana, onShowUpgrade }) {
   const _todayDate = new Date()
   const [generando, setGenerando] = useState(false)
   const [viendoProxima, setViendoProxima] = useState(false)
@@ -1259,6 +1259,7 @@ export default function WeeklyPlan({ userId, profile, plan, onPlanUpdate, onSess
           sesion={sesionParaCompletar}
           planId={displayedPlan.id}
           profile={profile}
+          onShowUpgrade={onShowUpgrade}
           onClose={() => setSesionParaCompletar(null)}
           onComplete={async (updatedPlan) => {
             if (updatedPlan) {
