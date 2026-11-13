@@ -192,7 +192,7 @@ describe('plantilla del recordatorio', () => {
     expect(html).not.toContain('<i>Z2</i>')
     expect(html).toContain('Correr, &lt;i&gt;Z2&lt;/i&gt; (45 min)')
     expect(html).toContain('href="https://getricoach.com/app"')
-    expect(html).toContain('te damos de baja')
+    expect(html).toContain('{{BAJA_URL}}')
     expect(html).toContain('Recordatorios por email')
     expect(html).not.toContain('netlify.app')
   })

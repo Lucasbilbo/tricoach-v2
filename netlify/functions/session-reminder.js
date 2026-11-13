@@ -70,7 +70,7 @@ function seleccionarDestinatarios(perfiles, planes, { hoy, lunes }) {
 }
 
 function consultaPerfiles(hoy) {
-  return 'profiles?deleted_at=is.null&email=not.is.null&recordatorios_email=eq.true'
+  return 'profiles?deleted_at=is.null&email=not.is.null&recordatorios_email=eq.true&emails_baja_at=is.null'
     + `&or=(recordatorio_enviado_el.is.null,recordatorio_enviado_el.lt.${hoy})`
     + '&select=id,email,nombre,recordatorios_email,recordatorio_enviado_el,deleted_at&limit=1000';
 }
@@ -92,7 +92,7 @@ async function procesar({ supa, enviar, hoy, lunes, esperar = ms => new Promise(
   let enviados = 0, fallos = 0, pendientes = 0;
   for (const { perfil, sesion } of destinatarios) {
     if (reloj() - inicio > presupuestoMs) { pendientes++; continue; }
-    const envio = await enviar(perfil.email, asuntoRecordatorioSesion(sesion), buildRecordatorioSesionHtml(perfil.nombre, sesion));
+    const envio = await enviar(perfil.email, asuntoRecordatorioSesion(sesion), buildRecordatorioSesionHtml(perfil.nombre, sesion), { bajaUserId: perfil.id });
     if (envio.status >= 200 && envio.status < 300) {
       // Solo se marca si el envío salió bien; si falla, se reintentará en la siguiente ejecución del día.
       await supa('PATCH', `profiles?id=eq.${perfil.id}`, { recordatorio_enviado_el: hoy });

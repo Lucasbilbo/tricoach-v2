@@ -2,6 +2,7 @@
 // Patrón de envío idéntico a weekly-report.js (consolidación futura anotada en CLAUDE.md).
 
 const https = require('https');
+const { urlBaja } = require('./baja');
 
 // PAUSA (29-oct-2026): los emails están desactivados por defecto.
 // Para reactivarlos, crear en Netlify la variable EMAILS_ENABLED=true.
@@ -9,14 +10,21 @@ function emailsEnabled() {
   return process.env.EMAILS_ENABLED === 'true';
 }
 
-function sendEmail(to, subject, html, { force = false } = {}) {
+const MAILTO_BAJA = 'mailto:coach@getricoach.com?subject=Baja';
+
+// bajaUserId → el pie lleva el enlace de baja firmado y el email lleva las cabeceras List-Unsubscribe.
+// Sin él (o sin INTERNAL_API_SECRET) el enlace cae a un mailto, nunca queda el marcador sin sustituir.
+function sendEmail(to, subject, html, { force = false, bajaUserId = null } = {}) {
   if (!force && !emailsEnabled()) return Promise.resolve({ status: 200, body: 'emails pausados' });
-  const bodyStr = JSON.stringify({
+  const url = bajaUserId ? urlBaja(bajaUserId) : null;
+  const payload = {
     from: 'TriCoach <coach@getricoach.com>',
     to: [to],
     subject,
-    html,
-  });
+    html: String(html).split('{{BAJA_URL}}').join(url || MAILTO_BAJA),
+  };
+  if (url) payload.headers = { 'List-Unsubscribe': `<${url}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' };
+  const bodyStr = JSON.stringify(payload);
   return new Promise((resolve) => {
     const options = {
       hostname: 'api.resend.com',
@@ -79,6 +87,9 @@ function buildPlanListoHtml(nombre, sesiones, volumenMin) {
           Abres la app y sabes exactamente qué entrenar hoy.<br/>
           — Tu coach de TriCoach AI
         </p>
+        <p style="color:#555;font-size:12px;text-align:center;">
+          <a href="{{BAJA_URL}}" style="color:#555;">Date de baja de estos emails</a>
+        </p>
       </div>
     </body>
     </html>`;
@@ -96,4 +107,5 @@ function sendAlertEmail(subject, html) {
   return sendEmail(to, subject, html, { force: true });
 }
 
-module.exports = { sendEmail, sendAlertEmail, buildPlanListoHtml, emailsEnabled };
+module.exports = {
+  MAILTO_BAJA, sendEmail, sendAlertEmail, buildPlanListoHtml, emailsEnabled };

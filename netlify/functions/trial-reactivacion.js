@@ -18,7 +18,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 function consultaPerfiles(ahora = Date.now()) {
   const desde = encodeURIComponent(new Date(ahora - 96 * HORA_MS).toISOString());
   const hasta = encodeURIComponent(new Date(ahora - 72 * HORA_MS).toISOString());
-  return `profiles?plan=neq.pro&deleted_at=is.null&trial_reactivacion_enviada_at=is.null&email=not.is.null`
+  return `profiles?plan=neq.pro&deleted_at=is.null&trial_reactivacion_enviada_at=is.null&emails_baja_at=is.null&email=not.is.null`
     + `&trial_ends_at=gt.${desde}&trial_ends_at=lt.${hasta}&select=id,email,nombre&limit=200`;
 }
 
@@ -31,7 +31,7 @@ async function procesar({ supa: db, enviar, ahora = Date.now(), esperar = ms => 
   for (let i = 0; i < perfiles.length; i++) {
     if (reloj() - inicio > presupuestoMs) { pendientes = perfiles.length - i; break; }
     const p = perfiles[i];
-    const envio = await enviar(p.email, 'Tu prueba Pro de TriCoach AI terminó', buildReactivacionPruebaHtml(p.nombre));
+    const envio = await enviar(p.email, 'Tu prueba Pro de TriCoach AI terminó', buildReactivacionPruebaHtml(p.nombre), { bajaUserId: p.id });
     if (envio.status >= 200 && envio.status < 300) {
       await db('PATCH', `profiles?id=eq.${p.id}`, { trial_reactivacion_enviada_at: new Date(ahora).toISOString() });
       enviados++;
