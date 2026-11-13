@@ -80,7 +80,7 @@ describe('revisión semanal — solo Pro', () => {
     const { buildEmailHtml } = require('../../netlify/functions/weekly-report.js')
     const html = buildEmailHtml('Ana', [{ dia: 'Lunes', tipo: 'Correr', completada: true, rpe: 6 }, { dia: 'Martes', tipo: 'Descanso' }])
     expect(html).toContain('Completada (RPE 6)')
-    expect(html).toContain('te damos de baja')
+    expect(html).toContain('{{BAJA_URL}}')
   })
 })
 

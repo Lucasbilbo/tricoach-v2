@@ -43,6 +43,12 @@ El coach no respondía desde el 15-jun-2026: `claude-sonnet-4-20250514` fue reti
 - **Qué vende Pro ahora**: coach avanzado, 20 mensajes al día, plan nuevo cada lunes (auto-plans) e Intervals.icu. La captura está en Free y Pro.
 - **Siguiente fuente de datos automática**: app nativa con Apple Health / Health Connect. Garmin directo exige solicitar como organización; Intervals.icu ya no sirve de puente para datos de Garmin ni de Strava.
 
+## 🚫 BAJA DE EMAILS (13 noviembre 2026)
+- **Por qué**: el pie decía "responde y te damos de baja", pero la baja era manual y solo `session-reminder` respetaba una marca. Una persona respondió "no quiero más correos" al email de recuperación.
+- **Cómo**: `profiles.emails_baja_at` (**migración 012, aplicar ANTES de fusionar**: las consultas de los crons usan la columna). Enlace firmado (HMAC del userId con `INTERNAL_API_SECRET`, `lib/baja.js`) → `baja-emails.js` (GET enseña botón; POST aplica; también vale el "un clic" de `List-Unsubscribe-Post`). Aplica `emails_baja_at` y `recordatorios_email=false`.
+- **Emails**: los pies llevan el marcador `{{BAJA_URL}}`; `sendEmail(..., { bajaUserId })` lo sustituye y añade las cabeceras `List-Unsubscribe`. Sin secreto o sin userId cae a `mailto:`. Al crear un email nuevo a usuarios: pasar `bajaUserId`, filtrar `emails_baja_at=is.null` y usar `PIE_BAJA`. Los de Stripe (pago) quedan fuera.
+- **Filtran**: trial-dia3, trial-reminder, trial-reactivacion, session-reminder, weekly-report y el "plan listo" de generate-plan (si no puede comprobarlo, NO envía). Test: `baja-emails.test.js`.
+
 ## ⭐ QUÉ GANA PRO (12 noviembre 2026) — "en Free el coach te dice qué hacer; en Pro además mira lo que haces"
 | | Free | Pro (de pago o en prueba) |
 |---|---|---|
@@ -74,7 +80,7 @@ El coach sabe lo que entrena el usuario por el check-in de la sesión (hecho, es
 - Frontend: React + Vite (JavaScript, NO TypeScript)
 - Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co) — RLS activado
 - Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
-- Tests: Vitest — **372 tests pasando** (42 archivos, cargan sin .env) + Playwright E2E (3 specs)
+- Tests: Vitest — **384 tests pasando** (43 archivos, cargan sin .env) + Playwright E2E (3 specs)
 - Deploy: Netlify (producción: https://getricoach.com — la app vive en `/app`; `tricoach-v2.netlify.app` sigue como alias)
 - Pagos: Stripe (checkout + webhooks)
 - Email: Resend (coach@getricoach.com)
@@ -183,7 +189,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 
 ### Tests
 - Ejecutar `npm test` al terminar SIEMPRE
-- **372 tests deben pasar** (42 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
+- **384 tests deben pasar** (43 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
 - No borrar ni modificar tests existentes sin motivo explícito
 
 ## Estado del proyecto — Fases completadas
@@ -289,7 +295,7 @@ tricoach-v2/
 ├── supabase/
 │   └── migrations/            — 001_training_cycles, 002_strava_user_credentials (obsoleta), 003_unique_plan_semana,
 │                                004_contexto_proxima_semana, 005_trial_pro, 006_contexto_null, 007_emails_usuario,
-│                                008_capturas_semana, 009_recordatorio_sesion, 010_trial_dia3, 011_trial_reactivacion. Las ejecuta Lucas a mano en Supabase.
+│                                008_capturas_semana, 009_recordatorio_sesion, 010_trial_dia3, 011_trial_reactivacion, 012_baja_emails. Las ejecuta Lucas a mano en Supabase.
 ├── src/
 │   ├── components/
 │   │   ├── Login.jsx, Onboarding.jsx (3 pantallas), WelcomeGuide.jsx
@@ -324,7 +330,7 @@ tricoach-v2/
 │   │   └── Terminos.jsx       — términos de uso
 │   ├── prompts/
 │   │   └── buildSystemPrompt.js
-│   ├── test/                  — 42 archivos Vitest (ver sección Tests) + e2e/ con 3 specs Playwright
+│   ├── test/                  — 43 archivos Vitest (ver sección Tests) + e2e/ con 3 specs Playwright
 │   │   └── e2e/ (auth.spec.js, audit.spec.js, coach-calendar-sync.spec.js)
 │   ├── index.css
 │   ├── App.jsx
@@ -335,6 +341,7 @@ tricoach-v2/
 │       │                              claude.js (modelos y callClaude), supa.js (REST de Supabase), email.js (Resend, EMAILS_ENABLED),
 │       │                              emails-usuario.js (plantillas), fechas.js, plan-efectivo.js, planes.js, captura.js, duraciones.js,
 │       │                              salud.js, stripe-eventos.js, volumen.js, wellness.js
+│       ├── baja-emails.js           — baja de emails con enlace firmado (GET botón, POST aplica)
 │       ├── claude.js                — chat Claude, rate limiting atómico (RPC)
 │       ├── analizar-captura.js      — lee la captura del entreno con Claude (imagen no guardada; cuenta como mensaje; tope semanal en Free)
 │       ├── generate-plan.js         — genera plan semanal (estructura real, macrociclo, idempotente + forzar)
@@ -541,7 +548,7 @@ Helpers canónicos en `src/lib/fechas.js` — usar SIEMPRE estos, no reimplement
 Usados en `WeeklyPlan.jsx` y `autoAdjust.js`. `buildSystemPrompt.js` mantiene su copia interna deliberadamente (cubierto por 32 tests, no tocar sin motivo).
 Al abrir `ModalCompletarSesion`, WeeklyPlan adjunta `fecha` a la sesión (`{ ...sesion, fecha: sesionFecha }`) — necesario para el auto-import de Strava del modal.
 
-## Tests — 372 pasando (42 archivos) + 3 specs E2E Playwright
+## Tests — 372 pasando (43 archivos) + 3 specs E2E Playwright
 
 Tests más pesados (referencia rápida):
 - `systemPrompt.test.js` — buildSystemPrompt (32 tests)
@@ -554,6 +561,7 @@ Tests más pesados (referencia rápida):
 - `captura.test.js` — captura del entreno y Strava cerrado (13 tests)
 - `guias-seo.test.js` — cada guía tiene redirects, sitemap, llms.txt, canonical y no cita Strava (16 tests)
 - `landing-afirmaciones.test.js` — la landing no afirma Apple Health, descarga directa al reloj ni MTB, y enlaza todas las guías (4 tests)
+- `baja-emails.test.js` — enlace de baja firmado, filtro `emails_baja_at` en todos los envíos y pies sin "responde para darte de baja" (8 tests)
 - `emails-usuario.test.js` — plantillas y crons de email (11 tests)
 - `session-reminder.test.js` — recordatorio de sesión: destinatarios, día en Madrid, una vez al día, baja (25 tests)
 - `autoAdjust.test.js` — checkShouldAdjust (11 tests)

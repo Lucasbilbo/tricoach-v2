@@ -33,8 +33,8 @@ describe('plantillas', () => {
   })
 
   it('los emails no solicitados explican cómo darse de baja', () => {
-    expect(plantillas.buildFinPruebaHtml('Ana', 2)).toContain('te damos de baja')
-    expect(plantillas.buildRecuperacionHtml('Ana')).toContain('te damos de baja')
+    expect(plantillas.buildFinPruebaHtml('Ana', 2)).toContain('{{BAJA_URL}}')
+    expect(plantillas.buildRecuperacionHtml('Ana')).toContain('{{BAJA_URL}}')
   })
 })
 
