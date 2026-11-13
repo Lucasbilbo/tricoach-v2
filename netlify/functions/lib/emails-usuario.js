@@ -30,7 +30,7 @@ function layout({ titulo, parrafos, boton, pie }) {
     </html>`;
 }
 
-const PIE_BAJA = 'Si no quieres recibir más correos de TriCoach AI, responde a este email y te damos de baja.';
+const PIE_BAJA = 'Si no quieres recibir más correos de TriCoach AI, <a href="{{BAJA_URL}}" style="color:#888;">date de baja aquí</a>.';
 
 function buildBienvenidaProHtml(nombre) {
   return layout({
@@ -125,7 +125,7 @@ function asuntoRecordatorioSesion(sesion) {
   return `Hoy te toca: ${descripcionSesion(sesion)}`.replace(/[\r\n]+/g, ' ').slice(0, 120);
 }
 
-const PIE_RECORDATORIO = 'Si no quieres estos recordatorios, desactívalos en tu perfil (Recordatorios por email) o responde a este email y te damos de baja.';
+const PIE_RECORDATORIO = 'Si no quieres estos recordatorios, desactívalos en tu perfil (Recordatorios por email) o <a href="{{BAJA_URL}}" style="color:#888;">date de baja de todos los emails</a>.';
 
 function buildRecordatorioSesionHtml(nombre, sesion) {
   return layout({

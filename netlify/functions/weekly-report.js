@@ -5,6 +5,7 @@ const { guardScheduled } = require('./lib/auth');
  */
 const https = require('https')
 const { emailsEnabled } = require('./lib/email')
+const { urlBaja } = require('./lib/baja')
 
 const SUPABASE_URL = 'luqpjgzpydquqturgjmt.supabase.co'
 
@@ -38,13 +39,11 @@ function getMondayOfCurrentWeek() {
   return monday.toISOString().split('T')[0]
 }
 
-function sendEmail(to, subject, html) {
-  const bodyStr = JSON.stringify({
-    from: 'TriCoach <coach@getricoach.com>',
-    to: [to],
-    subject,
-    html,
-  })
+function sendEmail(to, subject, html, userId) {
+  const url = urlBaja(userId) || 'mailto:coach@getricoach.com?subject=Baja'
+  const payload = { from: 'TriCoach <coach@getricoach.com>', to: [to], subject, html: String(html).split('{{BAJA_URL}}').join(url) }
+  if (urlBaja(userId)) payload.headers = { 'List-Unsubscribe': `<${url}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' }
+  const bodyStr = JSON.stringify(payload)
   return new Promise((resolve) => {
     const options = {
       hostname: 'api.resend.com',
@@ -142,7 +141,7 @@ function buildEmailHtml(nombre, sesiones) {
         </div>
 
         <p style="color:#555;font-size:12px;text-align:center;">
-          © TriCoach AI · <a href="https://getricoach.com/privacidad" style="color:#555;">Privacidad</a><br/>Si no quieres recibir esta revisión, responde a este email y te damos de baja.
+          © TriCoach AI · <a href="https://getricoach.com/privacidad" style="color:#555;">Privacidad</a><br/>Si no quieres recibir esta revisión, <a href="{{BAJA_URL}}" style="color:#555;">date de baja aquí</a>.
         </p>
       </div>
     </body>
@@ -167,7 +166,7 @@ exports.handler = async (event) => {
   let profiles
   try {
     const ahora = encodeURIComponent(new Date().toISOString())
-    profiles = await supabaseGet(`profiles?or=(plan.eq.pro,trial_ends_at.gt.${ahora})&deleted_at=is.null&select=id,email,nombre,plan`)
+    profiles = await supabaseGet(`profiles?or=(plan.eq.pro,trial_ends_at.gt.${ahora})&deleted_at=is.null&emails_baja_at=is.null&select=id,email,nombre,plan`)
   } catch (e) {
     console.error('[weekly-report] Error obteniendo perfiles:', e.message)
     return { statusCode: 500, body: 'Error fetching profiles' }
@@ -194,7 +193,8 @@ exports.handler = async (event) => {
       const result = await sendEmail(
         profile.email,
         'Tu revisión semanal de TriCoach AI',
-        html
+        html,
+        profile.id
       )
 
       if (result.status >= 200 && result.status < 300) {

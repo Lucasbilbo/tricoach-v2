@@ -6,6 +6,7 @@ const { evaluarWellness } = require('./lib/wellness');
 const { decidirAccionPlan } = require('./lib/planes');
 const { getMondayOfCurrentWeek, getHoyMadrid } = require('./lib/fechas');
 const { sendEmail, buildPlanListoHtml } = require('./lib/email');
+const { supa } = require('./lib/supa');
 
 let CORS = corsHeaders();
 
@@ -1030,11 +1031,17 @@ IMPORTANTE: El campo contexto puede contener información de semanas anteriores 
     if (parsed.limpiar_contexto === true) {
       await supabasePatch(hostname, `/rest/v1/profiles?id=eq.${userId}`, supabaseKey, { contexto_proxima_semana: null });
     }
-    if (parsed.notificar === true && profile.email) {
+    // Baja de emails: si no se puede comprobar (p. ej. migración 012 sin aplicar) NO se envía.
+    const bajaRes = parsed.notificar === true && profile.email
+      ? await supa('GET', `profiles?id=eq.${userId}&select=emails_baja_at`)
+      : null;
+    const puedeEmail = Boolean(bajaRes && bajaRes.ok && Array.isArray(bajaRes.data) && bajaRes.data[0] && !bajaRes.data[0].emails_baja_at);
+    if (puedeEmail) {
       const emailResult = await sendEmail(
         profile.email,
         'Tu plan de esta semana está listo 🏃',
-        buildPlanListoHtml(profile.nombre, planData.sesiones, volumenPlanificado)
+        buildPlanListoHtml(profile.nombre, planData.sesiones, volumenPlanificado),
+        { bajaUserId: userId }
       );
       if (emailResult.status >= 300) {
         console.error(`[generate-plan] email plan-listo falló (status ${emailResult.status}) para user ${userId}`);

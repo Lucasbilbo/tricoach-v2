@@ -19,7 +19,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 function consultaPerfiles(ahora = Date.now()) {
   const desde = encodeURIComponent(new Date(ahora + 72 * HORA_MS).toISOString());
   const hasta = encodeURIComponent(new Date(ahora + 96 * HORA_MS).toISOString());
-  return `profiles?plan=neq.pro&deleted_at=is.null&trial_dia3_enviado_at=is.null&email=not.is.null`
+  return `profiles?plan=neq.pro&deleted_at=is.null&trial_dia3_enviado_at=is.null&emails_baja_at=is.null&email=not.is.null`
     + `&trial_ends_at=gt.${desde}&trial_ends_at=lt.${hasta}&select=id,email,nombre&limit=200`;
 }
 
@@ -54,7 +54,7 @@ async function procesar({ supa: db, enviar, ahora = Date.now(), lunes, esperar =
     const p = perfiles[i];
     const plan = planPorUsuario[p.id];
     const html = buildDia3PruebaHtml(p.nombre, { tienePlan: !!plan, sesionesMarcadas: plan ? contarMarcadas(plan.sesiones) : 0 });
-    const envio = await enviar(p.email, 'Llevas 3 días de prueba Pro en TriCoach AI', html);
+    const envio = await enviar(p.email, 'Llevas 3 días de prueba Pro en TriCoach AI', html, { bajaUserId: p.id });
     if (envio.status >= 200 && envio.status < 300) {
       await db('PATCH', `profiles?id=eq.${p.id}`, { trial_dia3_enviado_at: new Date(ahora).toISOString() });
       enviados++;

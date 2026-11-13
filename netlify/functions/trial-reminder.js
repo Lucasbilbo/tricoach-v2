@@ -17,7 +17,7 @@ const DIA_MS = 24 * 60 * 60 * 1000;
 function consultaAvisos(ahora = Date.now()) {
   const desde = encodeURIComponent(new Date(ahora).toISOString());
   const hasta = encodeURIComponent(new Date(ahora + HORAS_AVISO * 60 * 60 * 1000).toISOString());
-  return `profiles?plan=neq.pro&deleted_at=is.null&trial_aviso_enviado_at=is.null&email=not.is.null`
+  return `profiles?plan=neq.pro&deleted_at=is.null&trial_aviso_enviado_at=is.null&emails_baja_at=is.null&email=not.is.null`
     + `&trial_ends_at=gt.${desde}&trial_ends_at=lt.${hasta}&select=id,email,nombre,trial_ends_at&limit=200`;
 }
 
@@ -40,7 +40,7 @@ exports.handler = async (event) => {
   let enviados = 0, fallos = 0;
   for (const p of res.data) {
     const dias = diasRestantes(p.trial_ends_at, ahora);
-    const envio = await sendEmail(p.email, `${dias <= 1 ? 'Te queda 1 día' : `Te quedan ${dias} días`} de prueba Pro en TriCoach AI`, buildFinPruebaHtml(p.nombre, dias));
+    const envio = await sendEmail(p.email, `${dias <= 1 ? 'Te queda 1 día' : `Te quedan ${dias} días`} de prueba Pro en TriCoach AI`, buildFinPruebaHtml(p.nombre, dias), { bajaUserId: p.id });
     if (envio.status >= 200 && envio.status < 300) {
       await supa('PATCH', `profiles?id=eq.${p.id}`, { trial_aviso_enviado_at: new Date().toISOString() });
       enviados++;
