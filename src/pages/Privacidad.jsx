@@ -3,10 +3,10 @@ export default function Privacidad() {
   return (
     <div style={{ maxWidth: 700, margin: '0 auto', padding: '40px 24px' }}>
       <h1>Política de Privacidad</h1>
-      <p><em>Última actualización: 12 de noviembre de 2026</em></p>
+      <p><em>Última actualización: 16 de noviembre de 2026</em></p>
 
       <h2>1. Responsable del tratamiento</h2>
-      <p>TriCoach AI es responsable del tratamiento de tus datos personales. Contacto: tricoach@email.com</p>
+      <p>TriCoach AI es responsable del tratamiento de tus datos personales. Contacto: coach@getricoach.com</p>
 
       <h2>2. Datos que recogemos</h2>
       <ul>
@@ -53,7 +53,7 @@ export default function Privacidad() {
       <p>Conservamos tus datos mientras tengas cuenta activa. Puedes eliminar tu cuenta desde tu perfil: se borran tus mensajes, planes, ciclos de entrenamiento, perfil y usuario, se cancela tu suscripción y se revoca la conexión con Strava si la tenías. También puedes pedir el borrado escribiéndonos.</p>
 
       <h2>10. Tus derechos</h2>
-      <p>Tienes derecho a acceder, rectificar, suprimir, oponerte y portabilidad de tus datos. Escríbenos a tricoach@email.com para ejercerlos.</p>
+      <p>Tienes derecho a acceder, rectificar, suprimir, oponerte y portabilidad de tus datos. Escríbenos a coach@getricoach.com para ejercerlos.</p>
 
       <h2>11. Cookies</h2>
       <p>Usamos cookies esenciales para el funcionamiento de la app y cookies analíticas para mejorar el servicio. Puedes rechazar las cookies analíticas sin afectar al funcionamiento.</p>
