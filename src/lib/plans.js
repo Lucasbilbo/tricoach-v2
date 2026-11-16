@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { calcularVolumenReal } from './volumen'
+import { track } from './analytics'
 
 export function esFormatoAntiguo(sesiones) {
   if (!sesiones || !sesiones.length) return false
@@ -158,7 +159,23 @@ export async function completarSesion(planId, dia, campos = {}) {
     .select()
     .maybeSingle()
 
+  if (data) registrarSesionCompletada(plan.sesiones)
+
   return data
+}
+
+// Medición de activación (GA4, sin datos personales): `session_completed` en cada sesión marcada y
+// `first_session_completed` una sola vez por navegador, si el plan aún no tenía ninguna hecha.
+function registrarSesionCompletada(sesionesAntes) {
+  track('session_completed')
+  try {
+    const yaTenia = Array.isArray(sesionesAntes) && sesionesAntes.some(s => s && s.completada)
+    if (yaTenia || localStorage.getItem('primera_sesion_medida')) return
+    localStorage.setItem('primera_sesion_medida', '1')
+    track('first_session_completed')
+  } catch {
+    /* sin localStorage: la medición nunca debe romper el guardado */
+  }
 }
 
 export async function adjustPlan(userId, planId, motivo, descripcion) {
