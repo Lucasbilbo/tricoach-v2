@@ -63,7 +63,7 @@ El coach no respondía desde el 15-jun-2026: `claude-sonnet-4-20250514` fue reti
 - Al tocar lo que incluye cada plan, actualizar a la vez: landing (listas, nota y FAQ + JSON-LD), `llms.txt`, `UpgradeModal`, `TrialBanner`, `EditProfile`, `Chat` y `lib/emails-usuario.js` (`pro-beneficios.test.js` lo comprueba).
 
 ## 📈 PLAN DE VENTAS nov-2026 → feb-2027 (16 noviembre 2026) — lo ejecuta Claude
-- **Plan vigente**: doc `claude/plan-ventas-2026-11-16.md` del Project "Tricoach AI" (leerlo con la herramienta Projects antes de trabajar en ventas). `tasks/plan-ventas.md` es solo el histórico del embudo de pago.
+- **Plan vigente**: `tasks/plan-ventas-2026-11-16.md` (copia en el Project "Tricoach AI"). **Bitácora**: `tasks/ventas-bitacora.md` — leerla al empezar y apuntar al terminar cada sesión de ventas. `tasks/plan-ventas.md` es solo el histórico del embudo de pago.
 - **Marco decidido por Lucas**: 0 € de presupuesto (solo orgánico); autonomía total de Claude sobre repo, Netlify y Supabase con informe semanal; canales: web/SEO, emails a usuarios, redes de la marca y emails a clubes y entrenadores (foros y Reddit no); mercado: contenido evergreen, herramientas y redes para todo el español (España + Latinoamérica), guías por carrera y clubes España primero; precios sin tocar.
 - **Cómo se trabaja**: rama → `npm test && npm run build` en verde → PR → fusionar (Netlify despliega solo). Un cambio por commit. Sin cifras de usuarios, testimonios ni afirmaciones de producto inventadas. Fechas de carreras siempre verificadas en la web oficial; títulos sin año.
 - **Guía nueva**: `<slug>.html` en la raíz + par de redirects en `netlify.toml` + `sitemap.xml` + `static/llms.txt` + enlace desde la landing (`guias-seo.test.js` y `landing-afirmaciones.test.js` lo comprueban). Vocabulario neutro (vale para España y Latinoamérica); no marcar el contenido evergreen como solo España.
@@ -297,6 +297,8 @@ tricoach-v2/
 ├── tasks/
 │   ├── lessons.md             — lecciones aprendidas (leer siempre antes de empezar)
 │   ├── plan-ventas.md         — auditoría del embudo de pago (11-nov-2026)
+│   ├── plan-ventas-2026-11-16.md — plan de ventas vigente (nov-2026 → feb-2027), lo ejecuta Claude
+│   ├── ventas-bitacora.md     — registro de cada sesión de ventas (leer al empezar, apuntar al terminar)
 │   ├── seo-informe-2026-11-06.md
 │   ├── analisis-flujo-datos.md, DESIGN-raycast.md, PROMPTS_CLAUDE_CODE.md
 ├── scripts/
