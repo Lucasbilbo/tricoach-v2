@@ -107,12 +107,13 @@ describe('seleccionarDestinatarios', () => {
 })
 
 describe('procesar (envío, marcas, ritmo y presupuesto)', () => {
-  const montar = ({ perfiles, planes, estados = {}, reloj }) => {
+  const montar = ({ perfiles, planes, estados = {}, reloj, mensajes = [] }) => {
     const parches = []
     const enviados = []
     const supa = vi.fn(async (metodo, ruta, cuerpo) => {
       if (metodo === 'PATCH') { parches.push({ ruta, cuerpo }); return { ok: true, status: 204, data: null } }
       if (ruta.startsWith('profiles?')) return { ok: true, status: 200, data: perfiles }
+      if (ruta.startsWith('messages?')) return { ok: true, status: 200, data: mensajes }
       return { ok: true, status: 200, data: planes }
     })
     const enviar = vi.fn(async (para, asunto) => { enviados.push({ para, asunto }); return { status: estados[para] ?? 200 } })
@@ -231,5 +232,64 @@ describe('baja desde el perfil (migración 009)', () => {
     for (const campo of ['plan', 'stripe_customer_id', 'trial_ends_at', 'trial_aviso_enviado_at', 'recuperacion_enviada_at', 'capturas_semana', 'capturas_semana_inicio']) {
       expect(sql).toContain(`NEW.${campo} := OLD.${campo}`)
     }
+  })
+})
+
+describe('solo cuentas con actividad reciente', () => {
+  const dormido = { created_at: '2026-06-01T10:00:00Z' }
+  const sinHacer = () => sesiones().map(s => ({ ...s, completada: false }))
+
+  it('una cuenta antigua con plan generado por el cron y sin tocar la app no recibe nada', () => {
+    const r = sr.seleccionarDestinatarios([perfil('a', dormido)], [plan('a', sinHacer())], ctx)
+    expect(r).toEqual([])
+  })
+
+  it('cuenta como actividad: alta reciente, haber escrito al coach o una sesión hecha esta semana o la anterior', () => {
+    const planes = [plan('alta', sinHacer()), plan('chat', sinHacer()), plan('hecha'), plan('previa', sinHacer()), plan('previa', sesiones(), '2026-11-02'), plan('vieja', sinHacer())]
+    const perfiles = [
+      perfil('alta', { created_at: '2026-11-05T10:00:00Z' }),
+      perfil('chat', dormido), perfil('hecha', dormido), perfil('previa', dormido), perfil('vieja', dormido),
+    ]
+    const r = sr.seleccionarDestinatarios(perfiles, planes, { ...ctx, conMensajes: new Set(['chat']) })
+    expect(r.map(x => x.perfil.id).sort()).toEqual(['alta', 'chat', 'hecha', 'previa'])
+  })
+
+  it('un descanso marcado no cuenta como sesión hecha, y el alta de hace más de 14 días tampoco', () => {
+    const soloDescanso = [{ dia: 'Lunes', tipo: 'Descanso', completada: true }, { dia: 'Jueves', tipo: 'Correr', completada: false }]
+    expect(sr.seleccionarDestinatarios([perfil('a', dormido)], [plan('a', soloDescanso)], ctx)).toEqual([])
+    expect(sr.seleccionarDestinatarios([perfil('a', { created_at: '2026-10-28T10:00:00Z' })], [plan('a', sinHacer())], ctx)).toEqual([])
+    expect(sr.seleccionarDestinatarios([perfil('a', { created_at: '2026-10-30T10:00:00Z' })], [plan('a', sinHacer())], ctx)).toHaveLength(1)
+  })
+
+  it('lee los planes de esta semana y la anterior, y los mensajes de usuario de los últimos 14 días', () => {
+    expect(sr.lunesAnterior(LUNES)).toBe('2026-11-02')
+    expect(sr.consultaPlanes(LUNES)).toContain('semana=in.(2026-11-09,2026-11-02)')
+    const q = decodeURIComponent(sr.consultaMensajes(HOY))
+    expect(q).toContain('role=eq.user')
+    expect(q).toContain('created_at=gt.2026-10-29T12:00:00.000Z')
+  })
+
+  it('procesar: el dormido no recibe email aunque tenga sesión hoy; el que escribió al coach sí', async () => {
+    const supa = vi.fn(async (metodo, ruta) => {
+      if (metodo === 'PATCH') return { ok: true, status: 204, data: null }
+      if (ruta.startsWith('profiles?')) return { ok: true, status: 200, data: [perfil('dormido', dormido), perfil('activo', dormido)] }
+      if (ruta.startsWith('messages?')) return { ok: true, status: 200, data: [{ user_id: 'activo' }, { user_id: 'activo' }] }
+      return { ok: true, status: 200, data: [plan('dormido', sinHacer()), plan('activo', sinHacer())] }
+    })
+    const enviar = vi.fn(async () => ({ status: 200 }))
+    const r = await sr.procesar({ supa, enviar, esperar: async () => {}, hoy: HOY, lunes: LUNES })
+    expect(r.enviados).toBe(1)
+    expect(enviar.mock.calls[0][0]).toBe('activo@x.test')
+  })
+
+  it('si no puede leer la actividad no envía nada', async () => {
+    const supa = vi.fn(async (metodo, ruta) => ruta.startsWith('messages?')
+      ? { ok: false, status: 500, data: null }
+      : { ok: true, status: 200, data: ruta.startsWith('profiles?') ? [perfil('a')] : [plan('a')] })
+    const enviar = vi.fn()
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const r = await sr.procesar({ supa, enviar, hoy: HOY, lunes: LUNES })
+    expect(r.error).toBe(true)
+    expect(enviar).not.toHaveBeenCalled()
   })
 })
