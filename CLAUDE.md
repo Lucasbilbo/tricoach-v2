@@ -62,6 +62,12 @@ El coach no respondía desde el 15-jun-2026: `claude-sonnet-4-20250514` fue reti
 - **`weekly-report`**: solo Pro y prueba Pro; ya no existe la versión Free ni se registran emails en los logs. `thursday-reminder` sigue pausado.
 - Al tocar lo que incluye cada plan, actualizar a la vez: landing (listas, nota y FAQ + JSON-LD), `llms.txt`, `UpgradeModal`, `TrialBanner`, `EditProfile`, `Chat` y `lib/emails-usuario.js` (`pro-beneficios.test.js` lo comprueba).
 
+## 🔕 RECORDATORIO SOLO A CUENTAS ACTIVAS (16 noviembre 2026)
+- **Qué pasó**: el email de recuperación dio 7 días de prueba a 27 cuentas dormidas; `auto-plans` (que incluye cuentas en prueba) les generó plan el lunes, y con plan pasaban a recibir `session-reminder` cada día sin haber vuelto a la app.
+- **Regla**: `session-reminder` solo escribe a cuentas con actividad en los últimos 14 días (`cuentaActiva`): alta reciente, haber escrito al coach, o alguna sesión marcada como hecha en el plan de esta semana o la anterior. **Tener plan no cuenta como actividad**: lo genera el cron. Si no puede leer la actividad, no envía nada.
+- **Lección**: antes de añadir o ampliar un email automático, comprobar a quién le llega sumando TODOS los crons (plan automático → plan listo → recordatorio diario → secuencia de prueba). Conceder una prueba a una cuenta la mete en toda la secuencia.
+- Pendiente de decidir: aplicar la misma regla a `trial-dia3`, `trial-reminder` y `trial-reactivacion`, y a quién genera plan `auto-plans`.
+
 ## ⏸ PAUSA DEL 29 octubre 2026 (parcialmente levantada el 12-nov: ver sección anterior)
 Estado en que quedaron las automatizaciones durante la pausa:
 - **Crons desactivados**: se han quitado de `netlify.toml` los schedules de `weekly-report` (dom 19:00 UTC), `thursday-reminder` (jue 17:00 UTC) y `auto-plans` (lun 03:00 UTC). Las funciones siguen existiendo, solo no se disparan solas.
@@ -80,7 +86,7 @@ El coach sabe lo que entrena el usuario por el check-in de la sesión (hecho, es
 - Frontend: React + Vite (JavaScript, NO TypeScript)
 - Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co) — RLS activado
 - Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
-- Tests: Vitest — **384 tests pasando** (43 archivos, cargan sin .env) + Playwright E2E (3 specs)
+- Tests: Vitest — **390 tests pasando** (43 archivos, cargan sin .env) + Playwright E2E (3 specs)
 - Deploy: Netlify (producción: https://getricoach.com — la app vive en `/app`; `tricoach-v2.netlify.app` sigue como alias)
 - Pagos: Stripe (checkout + webhooks)
 - Email: Resend (coach@getricoach.com)
@@ -189,7 +195,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 
 ### Tests
 - Ejecutar `npm test` al terminar SIEMPRE
-- **384 tests deben pasar** (43 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
+- **390 tests deben pasar** (43 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
 - No borrar ni modificar tests existentes sin motivo explícito
 
 ## Estado del proyecto — Fases completadas
