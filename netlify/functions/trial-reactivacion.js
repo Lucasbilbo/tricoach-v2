@@ -8,6 +8,7 @@ const { guardScheduled } = require('./lib/auth');
 const { sendEmail, emailsEnabled } = require('./lib/email');
 const { buildReactivacionPruebaHtml } = require('./lib/emails-usuario');
 const { supa } = require('./lib/supa');
+const { cuentasActivas } = require('./lib/actividad');
 
 const HORA_MS = 60 * 60 * 1000;
 const PRESUPUESTO_MS = 22000;
@@ -19,14 +20,17 @@ function consultaPerfiles(ahora = Date.now()) {
   const desde = encodeURIComponent(new Date(ahora - 96 * HORA_MS).toISOString());
   const hasta = encodeURIComponent(new Date(ahora - 72 * HORA_MS).toISOString());
   return `profiles?plan=neq.pro&deleted_at=is.null&trial_reactivacion_enviada_at=is.null&emails_baja_at=is.null&email=not.is.null`
-    + `&trial_ends_at=gt.${desde}&trial_ends_at=lt.${hasta}&select=id,email,nombre&limit=200`;
+    + `&trial_ends_at=gt.${desde}&trial_ends_at=lt.${hasta}&select=id,email,nombre,created_at&limit=200`;
 }
 
 async function procesar({ supa: db, enviar, ahora = Date.now(), esperar = ms => new Promise(r => setTimeout(r, ms)), reloj = Date.now, presupuestoMs = PRESUPUESTO_MS }) {
   const inicio = reloj();
   const res = await db('GET', consultaPerfiles(ahora));
   if (!res.ok || !Array.isArray(res.data)) return { error: true, status: res.status };
-  const perfiles = res.data.filter(p => UUID_REGEX.test(p.id));
+  // Solo cuentas con actividad reciente (lib/actividad.js). Si no se puede comprobar, no se envía nada.
+  const actividad = await cuentasActivas(db, res.data, { ahora });
+  if (!actividad.ok) return { error: true, status: actividad.status };
+  const perfiles = res.data.filter(p => UUID_REGEX.test(p.id) && actividad.ids.has(p.id));
   let enviados = 0, fallos = 0, pendientes = 0;
   for (let i = 0; i < perfiles.length; i++) {
     if (reloj() - inicio > presupuestoMs) { pendientes = perfiles.length - i; break; }
@@ -42,7 +46,7 @@ async function procesar({ supa: db, enviar, ahora = Date.now(), esperar = ms => 
     await esperar(PAUSA_RESEND_MS);
   }
   if (fallos > 0 || pendientes > 0) console.error(`[trial-reactivacion] candidatos=${perfiles.length} enviados=${enviados} fallos=${fallos} pendientes=${pendientes}`);
-  return { candidatos: perfiles.length, enviados, fallos, pendientes };
+  return { candidatos: perfiles.length, sin_actividad: res.data.length - perfiles.length, enviados, fallos, pendientes };
 }
 
 exports.handler = async (event) => {
@@ -51,7 +55,7 @@ exports.handler = async (event) => {
   if (!emailsEnabled()) return { statusCode: 200, body: JSON.stringify({ pausado: true }) };
   const r = await procesar({ supa, enviar: sendEmail });
   if (r.error) {
-    console.error('[trial-reactivacion] no se pudo leer profiles — status:', r.status);
+    console.error('[trial-reactivacion] lectura incompleta — no se envía nada — status:', r.status);
     return { statusCode: 500, body: JSON.stringify({ error: 'Supabase' }) };
   }
   return { statusCode: 200, body: JSON.stringify(r) };

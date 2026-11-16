@@ -14,6 +14,7 @@ const leer = ruta => readFileSync(join(__dirname, '../../', ruta), 'utf8')
 const ID1 = '11111111-1111-4111-8111-111111111111'
 const ID2 = '22222222-2222-4222-8222-222222222222'
 const AHORA = Date.parse('2026-11-20T09:42:00Z')
+const RECIENTE = new Date(AHORA - 5 * 86400000).toISOString() // alta de hace 5 días: cuenta activa
 
 describe('consulta', () => {
   it('pide cuentas no Pro, sin email previo, con prueba acabada hace entre 3 y 4 días', () => {
@@ -31,7 +32,7 @@ describe('procesar', () => {
     const llamadas = []
     const db = vi.fn(async (metodo, ruta, cuerpo) => {
       llamadas.push([metodo, ruta, cuerpo])
-      if (metodo === 'GET') return { ok: true, data: [{ id: ID1, email: 'a@x.com', nombre: 'Ana' }, { id: ID2, email: 'b@x.com', nombre: 'Beto' }, { id: 'no-uuid', email: 'c@x.com' }] }
+      if (metodo === 'GET') return { ok: true, data: [{ id: ID1, email: 'a@x.com', nombre: 'Ana', created_at: RECIENTE }, { id: ID2, email: 'b@x.com', nombre: 'Beto', created_at: RECIENTE }, { id: 'no-uuid', email: 'c@x.com' }] }
       return { ok: true, status: 204 }
     })
     return { db, llamadas }
