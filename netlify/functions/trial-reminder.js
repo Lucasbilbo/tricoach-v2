@@ -9,6 +9,7 @@ const { guardScheduled } = require('./lib/auth');
 const { sendEmail, emailsEnabled } = require('./lib/email');
 const { buildFinPruebaHtml } = require('./lib/emails-usuario');
 const { supa } = require('./lib/supa');
+const { cuentasActivas } = require('./lib/actividad');
 
 const HORAS_AVISO = 48;
 const DIA_MS = 24 * 60 * 60 * 1000;
@@ -18,7 +19,7 @@ function consultaAvisos(ahora = Date.now()) {
   const desde = encodeURIComponent(new Date(ahora).toISOString());
   const hasta = encodeURIComponent(new Date(ahora + HORAS_AVISO * 60 * 60 * 1000).toISOString());
   return `profiles?plan=neq.pro&deleted_at=is.null&trial_aviso_enviado_at=is.null&emails_baja_at=is.null&email=not.is.null`
-    + `&trial_ends_at=gt.${desde}&trial_ends_at=lt.${hasta}&select=id,email,nombre,trial_ends_at&limit=200`;
+    + `&trial_ends_at=gt.${desde}&trial_ends_at=lt.${hasta}&select=id,email,nombre,trial_ends_at,created_at&limit=200`;
 }
 
 function diasRestantes(trialEndsAt, ahora = Date.now()) {
@@ -37,8 +38,16 @@ exports.handler = async (event) => {
     return { statusCode: 500, body: JSON.stringify({ error: 'Supabase' }) };
   }
 
+  // Solo cuentas con actividad reciente (lib/actividad.js). Si no se puede comprobar, no se envía nada.
+  const actividad = await cuentasActivas(supa, res.data, { ahora });
+  if (!actividad.ok) {
+    console.error('[trial-reminder] no se pudo leer la actividad — no se envía nada — status:', actividad.status);
+    return { statusCode: 500, body: JSON.stringify({ error: 'Supabase' }) };
+  }
+  const destinatarios = res.data.filter(p => actividad.ids.has(p.id));
+
   let enviados = 0, fallos = 0;
-  for (const p of res.data) {
+  for (const p of destinatarios) {
     const dias = diasRestantes(p.trial_ends_at, ahora);
     const envio = await sendEmail(p.email, `${dias <= 1 ? 'Te queda 1 día' : `Te quedan ${dias} días`} de prueba Pro en TriCoach AI`, buildFinPruebaHtml(p.nombre, dias), { bajaUserId: p.id });
     if (envio.status >= 200 && envio.status < 300) {
@@ -50,8 +59,8 @@ exports.handler = async (event) => {
     }
     await new Promise(r => setTimeout(r, 600)); // Resend: 2 peticiones/segundo
   }
-  if (fallos > 0) console.error(`[trial-reminder] candidatos=${res.data.length} enviados=${enviados} fallos=${fallos}`);
-  return { statusCode: 200, body: JSON.stringify({ candidatos: res.data.length, enviados, fallos }) };
+  if (fallos > 0) console.error(`[trial-reminder] candidatos=${destinatarios.length} enviados=${enviados} fallos=${fallos}`);
+  return { statusCode: 200, body: JSON.stringify({ candidatos: destinatarios.length, sin_actividad: res.data.length - destinatarios.length, enviados, fallos }) };
 };
 
 exports.consultaAvisos = consultaAvisos;
