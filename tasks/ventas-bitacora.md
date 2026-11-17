@@ -2,6 +2,20 @@
 
 Registro de lo que se hace en cada sesión del plan `tasks/plan-ventas-2026-11-16.md`. Lo más reciente, arriba. Cada entrada: fecha, qué se hizo (con PR), qué quedó a medias y qué toca después. Solo agregados, sin datos personales.
 
+## 2026-11-17 (martes) — guías y calculadora
+**Hecho**
+- #27: 3 guías evergreen (`entrenamiento-fuerza-corredores`, `nutricion-carrera-larga`, `volver-a-entrenar-tras-parar`) y herramienta `calculadora-zonas-pulso` (porcentaje de FC máx. o Karvonen, en el navegador, sin guardar datos). Redirects, sitemap, `llms.txt` y landing al día; 403 tests y build en verde; calculadora probada en navegador.
+- Sin PRs abiertos al empezar.
+
+**A medias**
+- Calendario de carreras españolas verificado (`tasks/carreras-espana.md`): la búsqueda web solo devolvió listados de terceros, sin fechas de la web oficial. No se apunta ninguna fecha sin verificar; reintentar leyendo las webs oficiales (Valencia, Sevilla, Barcelona, Madrid).
+- Borrar `recuperacion-altas` el 20-nov (tarea programada aparte).
+
+**Siguiente (jueves 19)**
+- 3 guías evergreen más + 1 herramienta (ideas: ritmo de series, ritmo de natación CSS, cuenta atrás hasta tu carrera; guías: primer Hyrox en pareja/individual no repetir, brick, descarga).
+- Calendario de carreras con fechas oficiales.
+- Aún no hay IndexNow ni captura de email (semana 2).
+
 ## 2026-11-16 (lunes) — arranque
 **Hecho**
 - Plan de ventas acordado con Lucas y guardado (repo y Project).

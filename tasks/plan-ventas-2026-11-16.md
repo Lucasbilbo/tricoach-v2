@@ -76,7 +76,7 @@ Sin presupuesto, el SEO tarda 6-10 semanas en notarse. Enero es el pico en Espa�
 - [x] Contacto legal real en Privacidad.
 - [x] Eventos de sesión completada.
 - [x] Tareas programadas creadas.
-- [ ] 3 guías evergreen + calculadora de zonas en página propia.
+- [x] 3 guías evergreen + calculadora de zonas en página propia (#27, 17-nov).
 - [ ] Calendario de carreras españolas verificado.
 - [ ] 20-nov: borrar `recuperacion-altas`.
 

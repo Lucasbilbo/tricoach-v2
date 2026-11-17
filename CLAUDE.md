@@ -66,6 +66,7 @@ El coach no respondía desde el 15-jun-2026: `claude-sonnet-4-20250514` fue reti
 - **Plan vigente**: `tasks/plan-ventas-2026-11-16.md` (copia en el Project "Tricoach AI"). **Bitácora**: `tasks/ventas-bitacora.md` — leerla al empezar y apuntar al terminar cada sesión de ventas. `tasks/plan-ventas.md` es solo el histórico del embudo de pago.
 - **Marco decidido por Lucas**: 0 € de presupuesto (solo orgánico); autonomía total de Claude sobre repo, Netlify y Supabase con informe semanal; canales: web/SEO, emails a usuarios, redes de la marca y emails a clubes y entrenadores (foros y Reddit no); mercado: contenido evergreen, herramientas y redes para todo el español (España + Latinoamérica), guías por carrera y clubes España primero; precios sin tocar.
 - **Cómo se trabaja**: rama → `npm test && npm run build` en verde → PR → fusionar (Netlify despliega solo). Un cambio por commit. Sin cifras de usuarios, testimonios ni afirmaciones de producto inventadas. Fechas de carreras siempre verificadas en la web oficial; títulos sin año.
+- **Herramienta gratuita**: `calculadora-zonas-pulso.html` (17-nov) es una página como las guías, con JS inline; se cuenta como guía en los tests. Evento GA4 `herramienta_usada`.
 - **Guía nueva**: `<slug>.html` en la raíz + par de redirects en `netlify.toml` + `sitemap.xml` + `static/llms.txt` + enlace desde la landing (`guias-seo.test.js` y `landing-afirmaciones.test.js` lo comprueban). Vocabulario neutro (vale para España y Latinoamérica); no marcar el contenido evergreen como solo España.
 - **Emails**: antes de crear o ampliar uno, contar a quién llega sumando todos los crons y usar `cuentasActivas` (`lib/actividad.js`), `bajaUserId` y `emails_baja_at=is.null`.
 - **Informes**: solo agregados, nunca emails ni nombres.
@@ -95,7 +96,7 @@ El coach sabe lo que entrena el usuario por el check-in de la sesión (hecho, es
 - Frontend: React + Vite (JavaScript, NO TypeScript)
 - Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co) — RLS activado
 - Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
-- Tests: Vitest — **399 tests pasando** (44 archivos, cargan sin .env) + Playwright E2E (3 specs)
+- Tests: Vitest — **403 tests pasando** (44 archivos, cargan sin .env) + Playwright E2E (3 specs)
 - Deploy: Netlify (producción: https://getricoach.com — la app vive en `/app`; `tricoach-v2.netlify.app` sigue como alias)
 - Pagos: Stripe (checkout + webhooks)
 - Email: Resend (coach@getricoach.com)
@@ -204,7 +205,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 
 ### Tests
 - Ejecutar `npm test` al terminar SIEMPRE
-- **399 tests deben pasar** (44 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
+- **403 tests deben pasar** (44 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
 - No borrar ni modificar tests existentes sin motivo explícito
 
 ## Estado del proyecto — Fases completadas
@@ -565,7 +566,7 @@ Helpers canónicos en `src/lib/fechas.js` — usar SIEMPRE estos, no reimplement
 Usados en `WeeklyPlan.jsx` y `autoAdjust.js`. `buildSystemPrompt.js` mantiene su copia interna deliberadamente (cubierto por 32 tests, no tocar sin motivo).
 Al abrir `ModalCompletarSesion`, WeeklyPlan adjunta `fecha` a la sesión (`{ ...sesion, fecha: sesionFecha }`) — necesario para el auto-import de Strava del modal.
 
-## Tests — 399 pasando (44 archivos) + 3 specs E2E Playwright
+## Tests — 403 pasando (44 archivos) + 3 specs E2E Playwright
 
 Tests más pesados (referencia rápida):
 - `systemPrompt.test.js` — buildSystemPrompt (32 tests)
