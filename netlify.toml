@@ -108,6 +108,50 @@
   status = 200
 
 [[redirects]]
+  from = "/entrenamiento-fuerza-corredores.html"
+  to = "/entrenamiento-fuerza-corredores"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/entrenamiento-fuerza-corredores"
+  to = "/entrenamiento-fuerza-corredores.html"
+  status = 200
+
+[[redirects]]
+  from = "/nutricion-carrera-larga.html"
+  to = "/nutricion-carrera-larga"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/nutricion-carrera-larga"
+  to = "/nutricion-carrera-larga.html"
+  status = 200
+
+[[redirects]]
+  from = "/volver-a-entrenar-tras-parar.html"
+  to = "/volver-a-entrenar-tras-parar"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/volver-a-entrenar-tras-parar"
+  to = "/volver-a-entrenar-tras-parar.html"
+  status = 200
+
+[[redirects]]
+  from = "/calculadora-zonas-pulso.html"
+  to = "/calculadora-zonas-pulso"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/calculadora-zonas-pulso"
+  to = "/calculadora-zonas-pulso.html"
+  status = 200
+
+[[redirects]]
   from = "/recuperacion-entrenamiento.html"
   to = "/recuperacion-entrenamiento"
   status = 301
