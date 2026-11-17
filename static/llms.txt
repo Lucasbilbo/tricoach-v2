@@ -27,3 +27,7 @@
 - [Maratón Valencia](https://getricoach.com/maraton-valencia): plan de 16 semanas y estrategia de carrera.
 - [Maratón Madrid](https://getricoach.com/maraton-madrid): plan de 16 semanas y recorrido.
 - [Maratón Barcelona](https://getricoach.com/maraton-barcelona): plan de 16 semanas y recorrido costero.
+- [Fuerza para corredores](https://getricoach.com/entrenamiento-fuerza-corredores): sesiones, ejercicios clave y cómo encajarla en la semana.
+- [Nutrición en carreras largas](https://getricoach.com/nutricion-carrera-larga): hidratos por hora, geles, hidratación y cómo ensayar tu estrategia antes de un maratón o triatlón.
+- [Volver a entrenar tras un parón](https://getricoach.com/volver-a-entrenar-tras-parar): cuánto volumen retomar, cómo subir la carga y plan de 6 semanas para volver a correr.
+- [Calculadora de zonas de pulso](https://getricoach.com/calculadora-zonas-pulso): calcula tus 5 zonas de frecuencia cardíaca por porcentaje o Karvonen.
