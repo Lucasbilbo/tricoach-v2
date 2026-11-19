@@ -2,6 +2,22 @@
 
 Registro de lo que se hace en cada sesión del plan `tasks/plan-ventas-2026-11-16.md`. Lo más reciente, arriba. Cada entrada: fecha, qué se hizo (con PR), qué quedó a medias y qué toca después. Solo agregados, sin datos personales.
 
+## 2026-11-19 (jueves) — guías, calculadora y calendario
+**Hecho**
+- #28: 3 guías evergreen (`entrenamiento-brick-triatlon`, `entrenamiento-series-running`, `semana-de-descarga-entrenamiento`, todas 1.500+ palabras con FAQ y JSON-LD) y herramienta `calculadora-ritmo-natacion-css` (400 m + 200 m, en el navegador, evento `herramienta_usada`, probada en navegador). Redirects, sitemap, `llms.txt` y landing al día; 407 tests y build en verde.
+- `tasks/carreras-espana.md`: Sevilla (21-feb-2027) y Barcelona (14-mar-2027) verificadas en su web oficial.
+- Sin PRs abiertos al empezar.
+
+**A medias**
+- Valencia y Madrid sin fecha verificada (ver `tasks/carreras-espana.md`).
+- La tarea del 20-nov (borrar `recuperacion-altas`) sigue programada aparte.
+- Aún no hay IndexNow.
+
+**Siguiente (martes 24 / semana 2)**
+- Captura de email en guías + secuencia (motor B) y primer arreglo de activación (motor C).
+- `/precios`; 3 guías + 1 herramienta (ideas: ritmo de series, cuenta atrás hasta tu carrera; guías de Sevilla y Barcelona con fecha verificada, primer 10K en 8 semanas).
+- Decidir `auto-plans` + `cuentasActivas` antes del lunes 23.
+
 ## 2026-11-17 (martes) — guías y calculadora
 **Hecho**
 - #27: 3 guías evergreen (`entrenamiento-fuerza-corredores`, `nutricion-carrera-larga`, `volver-a-entrenar-tras-parar`) y herramienta `calculadora-zonas-pulso` (porcentaje de FC máx. o Karvonen, en el navegador, sin guardar datos). Redirects, sitemap, `llms.txt` y landing al día; 403 tests y build en verde; calculadora probada en navegador.

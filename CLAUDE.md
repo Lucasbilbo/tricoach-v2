@@ -96,7 +96,7 @@ El coach sabe lo que entrena el usuario por el check-in de la sesión (hecho, es
 - Frontend: React + Vite (JavaScript, NO TypeScript)
 - Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co) — RLS activado
 - Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
-- Tests: Vitest — **403 tests pasando** (44 archivos, cargan sin .env) + Playwright E2E (3 specs)
+- Tests: Vitest — **407 tests pasando** (44 archivos, cargan sin .env) + Playwright E2E (3 specs)
 - Deploy: Netlify (producción: https://getricoach.com — la app vive en `/app`; `tricoach-v2.netlify.app` sigue como alias)
 - Pagos: Stripe (checkout + webhooks)
 - Email: Resend (coach@getricoach.com)
@@ -205,7 +205,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 
 ### Tests
 - Ejecutar `npm test` al terminar SIEMPRE
-- **403 tests deben pasar** (44 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
+- **407 tests deben pasar** (44 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
 - No borrar ni modificar tests existentes sin motivo explícito
 
 ## Estado del proyecto — Fases completadas
@@ -566,7 +566,7 @@ Helpers canónicos en `src/lib/fechas.js` — usar SIEMPRE estos, no reimplement
 Usados en `WeeklyPlan.jsx` y `autoAdjust.js`. `buildSystemPrompt.js` mantiene su copia interna deliberadamente (cubierto por 32 tests, no tocar sin motivo).
 Al abrir `ModalCompletarSesion`, WeeklyPlan adjunta `fecha` a la sesión (`{ ...sesion, fecha: sesionFecha }`) — necesario para el auto-import de Strava del modal.
 
-## Tests — 403 pasando (44 archivos) + 3 specs E2E Playwright
+## Tests — 407 pasando (44 archivos) + 3 specs E2E Playwright
 
 Tests más pesados (referencia rápida):
 - `systemPrompt.test.js` — buildSystemPrompt (32 tests)

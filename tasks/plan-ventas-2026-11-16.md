@@ -77,7 +77,8 @@ Sin presupuesto, el SEO tarda 6-10 semanas en notarse. Enero es el pico en Espa�
 - [x] Eventos de sesión completada.
 - [x] Tareas programadas creadas.
 - [x] 3 guías evergreen + calculadora de zonas en página propia (#27, 17-nov).
-- [ ] Calendario de carreras españolas verificado.
+- [x] Calendario de carreras españolas verificado (parcial: Sevilla y Barcelona; Valencia y Madrid pendientes, `tasks/carreras-espana.md`).
+- [x] 3 guías (brick, series, descarga) + calculadora de ritmo de natación (#28, 19-nov).
 - [ ] 20-nov: borrar `recuperacion-altas`.
 
 **Semana 2 (23-29 nov)**
