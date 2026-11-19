@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora de ritmo de natación (CSS) | TriCoach AI</title>
+  <meta name="description" content="Calcula tu velocidad crítica de natación (CSS) con un 400 m y un 200 m y obtén ritmos por 100 m para tus series. Gratis, sin registro." />
+  <meta name="keywords" content="calculadora css natacion, velocidad critica natacion, ritmo por 100 metros, test 400 200 natacion, ritmos de natacion" />
+  <link rel="canonical" href="https://getricoach.com/calculadora-ritmo-natacion-css" />
+  <link rel="alternate" hreflang="es" href="https://getricoach.com/calculadora-ritmo-natacion-css" />
+  <link rel="alternate" hreflang="x-default" href="https://getricoach.com/calculadora-ritmo-natacion-css" />
+  <meta property="og:title" content="Calculadora de ritmo de natación (CSS)" />
+  <meta property="og:description" content="Calcula tu velocidad crítica de natación (CSS) con un 400 m y un 200 m y obtén ritmos por 100 m para tus series. Gratis, sin registro." />
+  <meta property="og:url" content="https://getricoach.com/calculadora-ritmo-natacion-css" />
+  <meta property="og:image" content="https://getricoach.com/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:locale" content="es_ES" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://getricoach.com/og-image.png" />
+  <meta property="og:type" content="article" />
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HKG9V6M7KF"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HKG9V6M7KF');
+  </script>
+
+  <script type="application/ld+json">
+  {"@context": "https://schema.org", "@type": "Article", "headline": "Calculadora de ritmo de natación (CSS)", "description": "Calcula tu velocidad crítica de natación (CSS) con un 400 m y un 200 m y obtén ritmos por 100 m para tus series. Gratis, sin registro.", "url": "https://getricoach.com/calculadora-ritmo-natacion-css", "inLanguage": "es", "dateModified": "2026-11-19", "author": {"@type": "Organization", "name": "TriCoach AI", "url": "https://getricoach.com"}, "publisher": {"@type": "Organization", "name": "TriCoach AI", "url": "https://getricoach.com"}}
+  </script>
+  <script type="application/ld+json">
+  {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "TriCoach AI", "item": "https://getricoach.com/"}, {"@type": "ListItem", "position": 2, "name": "Calculadora de ritmo de natación (CSS)", "item": "https://getricoach.com/calculadora-ritmo-natacion-css"}]}
+  </script>
+  <script type="application/ld+json">
+  {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Qué es la CSS en natación?", "acceptedAnswer": {"@type": "Answer", "text": "Es la velocidad crítica de natación: un ritmo por cada 100 metros, calculado con un 400 m y un 200 m a tope, que sirve de referencia para fijar los ritmos de las series."}}, {"@type": "Question", "name": "¿Puedo calcularla con otras distancias?", "acceptedAnswer": {"@type": "Answer", "text": "Sí, hay variantes con 200 m y 100 m o con 800 m y 400 m, pero esta calculadora usa 400 m y 200 m, la combinación más habitual."}}, {"@type": "Question", "name": "¿Cómo sé si el test salió bien?", "acceptedAnswer": {"@type": "Answer", "text": "Si el 200 m es claramente más rápido por 100 m que el 400 m, y la diferencia entre ambos tiene sentido, el resultado suele ser coherente. Si no, repite con más descanso."}}, {"@type": "Question", "name": "¿Sirve para aguas abiertas?", "acceptedAnswer": {"@type": "Answer", "text": "Es una referencia para piscina. En aguas abiertas los ritmos cambian por el oleaje, la corriente, la ropa y la orientación."}}, {"@type": "Question", "name": "¿Cada cuánto repito el test?", "acceptedAnswer": {"@type": "Answer", "text": "Cada 6 a 8 semanas o al acabar un bloque, en condiciones parecidas y con descanso."}}, {"@type": "Question", "name": "¿Necesito pulsómetro?", "acceptedAnswer": {"@type": "Answer", "text": "No. Es una de las ventajas del método: solo necesitas una piscina y un cronómetro."}}]}
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #080808; --bg-2: #0d0d0d; --bg-3: #131313; --bg-4: #191919;
+      --orange: #FF6B2B; --orange-dim: rgba(255,107,43,0.12); --orange-border: rgba(255,107,43,0.25);
+      --white: #fff; --white-80: rgba(255,255,255,0.8); --white-60: rgba(255,255,255,0.6);
+      --white-40: rgba(255,255,255,0.4); --white-20: rgba(255,255,255,0.2);
+      --border: rgba(255,255,255,0.08); --border-2: rgba(255,255,255,0.12);
+      --green: #22c55e;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Source Sans 3', sans-serif; background: var(--bg); color: var(--white); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 clamp(20px,5vw,80px); height: 64px;
+      background: rgba(8,8,8,0.92); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .logo { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: var(--white); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+    .logo-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--orange); animation: pulse 2.5s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.35); } }
+    .nav-cta { padding: 8px 20px; background: var(--orange); color: white; border-radius: 6px; font-size: .86rem; font-weight: 600; text-decoration: none; transition: opacity .2s; }
+    .nav-cta:hover { opacity: .88; }
+
+    .hero-article {
+      padding: clamp(60px,8vw,100px) clamp(20px,5vw,80px) clamp(48px,6vw,72px);
+      max-width: 860px; margin: 0 auto; text-align: center;
+    }
+    .breadcrumb { font-size: .78rem; color: var(--white-40); margin-bottom: 20px; }
+    .breadcrumb a { color: var(--orange); text-decoration: none; }
+    .label { font-size: .72rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--orange); margin-bottom: 16px; }
+
+    h1 { font-family: 'Playfair Display', serif; font-size: clamp(2.2rem,5vw,3.8rem); font-weight: 900; line-height: 1.08; letter-spacing: -0.02em; margin-bottom: 20px; }
+    h1 em { font-style: italic; color: var(--orange); }
+
+    .hero-article p { font-size: 1.1rem; color: var(--white-60); line-height: 1.75; max-width: 640px; margin: 0 auto 36px; }
+
+    .article-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: .8rem; color: var(--white-40); flex-wrap: wrap; }
+    .meta-sep { width: 3px; height: 3px; border-radius: 50%; background: var(--white-20); }
+
+    .content { max-width: 760px; margin: 0 auto; padding: 0 clamp(20px,5vw,80px) clamp(72px,10vw,120px); }
+
+    h2 { font-family: 'Playfair Display', serif; font-size: clamp(1.6rem,3vw,2.2rem); font-weight: 900; line-height: 1.15; letter-spacing: -0.02em; margin: 56px 0 16px; }
+    h2 em { font-style: italic; color: var(--orange); }
+    h3 { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: 700; margin: 32px 0 10px; }
+
+    p { font-size: 1rem; color: var(--white-60); line-height: 1.8; margin-bottom: 18px; }
+    strong { color: var(--white-80); font-weight: 600; }
+
+    .info-box {
+      border: 1px solid var(--orange-border); border-radius: 12px;
+      background: var(--orange-dim); padding: 24px 28px; margin: 32px 0;
+    }
+    .info-box-label { font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--orange); margin-bottom: 10px; }
+    .info-box p { color: var(--white-80); margin: 0; font-size: .95rem; }
+
+    .zones-table { width: 100%; border-collapse: collapse; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); margin: 28px 0; }
+    .zones-table th { padding: 13px 18px; background: var(--bg-4); font-size: .8rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--white-40); text-align: left; }
+    .zones-table td { padding: 13px 18px; font-size: .9rem; color: var(--white-60); border-top: 1px solid var(--border); }
+    .zones-table tr.highlight td { background: var(--orange-dim); color: var(--white-80); font-weight: 500; }
+    .zone-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: .75rem; font-weight: 700; }
+    .z1 { background: rgba(34,197,94,.15); color: #22c55e; }
+    .z2 { background: var(--orange-dim); color: var(--orange); }
+    .z3 { background: rgba(234,179,8,.15); color: #eab308; }
+    .z4 { background: rgba(239,68,68,.15); color: #ef4444; }
+    .z5 { background: rgba(168,85,247,.15); color: #a855f7; }
+
+    .calculator {
+      border: 1px solid var(--border-2); border-radius: 16px;
+      background: var(--bg-2); padding: 32px; margin: 36px 0;
+    }
+    .calculator h3 { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; margin: 0 0 8px; }
+    .calc-sub { font-size: .88rem; color: var(--white-40); margin-bottom: 24px !important; }
+
+    .calc-row { display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 20px; }
+    .calc-field { flex: 1; min-width: 140px; }
+    .calc-field label { display: block; font-size: .8rem; font-weight: 600; color: var(--white-40); margin-bottom: 8px; letter-spacing: .06em; text-transform: uppercase; }
+    .calc-field input {
+      width: 100%; padding: 12px 16px;
+      background: var(--bg-3); border: 1px solid var(--border-2);
+      border-radius: 8px; color: var(--white);
+      font-family: 'Source Sans 3', sans-serif; font-size: 1rem;
+      outline: none; transition: border-color .2s;
+    }
+    .calc-field input:focus { border-color: var(--orange); }
+    .calc-field select {
+      width: 100%; padding: 12px 16px;
+      background: var(--bg-3); border: 1px solid var(--border-2);
+      border-radius: 8px; color: var(--white);
+      font-family: 'Source Sans 3', sans-serif; font-size: 1rem;
+      outline: none; cursor: pointer;
+    }
+
+    .btn-calc {
+      padding: 12px 28px; background: var(--orange); color: white;
+      border: none; border-radius: 8px;
+      font-family: 'Source Sans 3', sans-serif; font-size: .95rem; font-weight: 600;
+      cursor: pointer; transition: opacity .2s; white-space: nowrap;
+    }
+    .btn-calc:hover { opacity: .88; }
+
+    .calc-results { display: none; margin-top: 20px; }
+    .calc-results.show { display: block; }
+    .result-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; }
+    @media (max-width: 600px) { .result-grid { grid-template-columns: repeat(2,1fr); } }
+    .result-zone {
+      padding: 14px 12px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--bg-3);
+      text-align: center;
+    }
+    .result-zone.active { border-color: var(--orange); background: var(--orange-dim); }
+    .result-zone-label { font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--white-40); margin-bottom: 6px; }
+    .result-zone-range { font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 700; color: var(--white); }
+    .result-zone-name { font-size: .72rem; color: var(--white-40); margin-top: 4px; }
+    .result-zone.active .result-zone-label { color: var(--orange); }
+    .result-zone.active .result-zone-range { color: var(--white); }
+
+    .week-example {
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--bg-2); overflow: hidden; margin: 28px 0;
+    }
+    .week-header { padding: 14px 20px; background: var(--bg-4); border-bottom: 1px solid var(--border); font-size: .8rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--white-40); }
+    .week-row { display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-top: 1px solid var(--border); }
+    .week-row:first-of-type { border-top: none; }
+    .week-day { font-size: .82rem; font-weight: 600; color: var(--white-40); width: 80px; flex-shrink: 0; }
+    .week-session { flex: 1; }
+    .week-session-name { font-size: .9rem; font-weight: 500; margin-bottom: 2px; }
+    .week-session-desc { font-size: .78rem; color: var(--white-40); }
+    .week-badge { padding: 3px 9px; border-radius: 4px; font-size: .72rem; font-weight: 600; }
+
+    .cta-box {
+      border: 1px solid var(--orange-border); border-radius: 16px;
+      background: var(--orange-dim); padding: 36px; margin: 48px 0;
+      text-align: center;
+    }
+    .cta-box h3 { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 900; margin-bottom: 10px; }
+    .cta-box p { font-size: .95rem; color: var(--white-60); margin-bottom: 24px; line-height: 1.65; }
+    .btn-primary { padding: 14px 32px; background: var(--orange); color: white; border-radius: 8px; font-size: 1rem; font-weight: 600; text-decoration: none; box-shadow: 0 0 32px rgba(255,107,43,.28); transition: all .2s; display: inline-block; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 48px rgba(255,107,43,.4); }
+    .cta-note { font-size: .78rem; color: var(--white-40); margin-top: 12px !important; }
+
+    .related { border-top: 1px solid var(--border); padding: clamp(48px,8vw,80px) clamp(20px,5vw,80px); }
+    .related-inner { max-width: 760px; margin: 0 auto; }
+    .related h3 { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; margin-bottom: 20px; }
+    .related-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+    @media (max-width: 640px) { .related-grid { grid-template-columns: 1fr; } }
+    .related-card { padding: 20px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-2); text-decoration: none; transition: border-color .2s, transform .2s; }
+    .related-card:hover { border-color: var(--border-2); transform: translateY(-2px); }
+    .related-card-label { font-size: .7rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--orange); margin-bottom: 8px; }
+    .related-card h4 { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; color: var(--white); line-height: 1.3; }
+
+    footer { border-top: 1px solid var(--border); padding: 24px clamp(20px,5vw,80px); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: var(--bg); }
+    .footer-logo { font-family: 'Playfair Display', serif; font-size: .95rem; font-weight: 700; color: var(--white); display: flex; align-items: center; gap: 7px; }
+    .footer-links { display: flex; gap: 18px; }
+    .footer-link { font-size: .78rem; color: var(--white-40); text-decoration: none; transition: color .2s; }
+    .footer-link:hover { color: var(--white-60); }
+    .footer-note { font-size: .74rem; color: var(--white-40); }
+
+    #beta-badge { position: fixed; bottom: 80px; right: 20px; z-index: 9999; background: rgba(255,107,43,.12); border: 1px solid rgba(255,107,43,.35); color: var(--orange); padding: 8px 14px; border-radius: 100px; font-size: .74rem; font-weight: 600; letter-spacing: .07em; cursor: pointer; backdrop-filter: blur(8px); display: flex; align-items: center; gap: 6px; transition: all .2s; font-family: 'Source Sans 3', sans-serif; }
+    #beta-badge:hover { background: rgba(255,107,43,.22); }
+
+    .reveal { opacity: 0; transform: translateY(20px); transition: opacity .6s ease, transform .6s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+  
+    ul.lista { margin: 0 0 18px 22px; color: var(--white-60); line-height: 1.8; } ul.lista li { margin-bottom: 6px; } ul.lista strong { color: var(--white-80); }
+    .calc-note { font-size: .8rem; color: var(--white-40); margin-top: 14px; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="logo"><span class="logo-dot"></span>TriCoach AI</a>
+  <a href="https://getricoach.com/app" class="nav-cta">Empezar gratis →</a>
+</nav>
+
+<div class="hero-article">
+  <div class="breadcrumb"><a href="/">TriCoach AI</a> → Guías de entrenamiento</div>
+  <div class="label">Guía completa</div>
+  <h1>Calculadora de <em>ritmo de natación</em> (CSS)</h1>
+  <p>Con un 400 m y un 200 m obtienes tu velocidad crítica y los ritmos por 100 metros para tus series. En tu navegador, sin registro.</p>
+  <div class="article-meta">
+    <span>TriCoach AI</span>
+    <span class="meta-sep"></span>
+    <span>Actualizado 2026</span>
+    <span class="meta-sep"></span>
+    <span>7 min de lectura</span>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="info-box reveal">
+    <div class="info-box-label">Resumen rápido</div>
+    <p>La velocidad crítica de natación (CSS, por sus siglas en inglés) es un ritmo de referencia por cada 100 metros que puedes calcular con dos pruebas: un 400 m y un 200 m a tope. Con ella fijas los ritmos de tus series en la piscina. Introduce tus dos tiempos y la calculadora te da tu CSS y ritmos orientativos para cada tipo de sesión.</p>
+  </div>
+
+  <div class="calculator reveal" id="calc-css">
+    <h3>Calcula tu ritmo de natación (CSS)</h3>
+    <p class="calc-sub">Introduce el tiempo de tus dos pruebas en minutos y segundos. Todo se calcula en tu navegador; no guardamos ningún dato.</p>
+    <div class="calc-row">
+      <div class="calc-field"><label for="t400m">400 m · minutos</label><input id="t400m" type="number" inputmode="numeric" min="3" max="20" placeholder="Ej. 6" /></div>
+      <div class="calc-field"><label for="t400s">400 m · segundos</label><input id="t400s" type="number" inputmode="numeric" min="0" max="59" placeholder="Ej. 30" /></div>
+    </div>
+    <div class="calc-row">
+      <div class="calc-field"><label for="t200m">200 m · minutos</label><input id="t200m" type="number" inputmode="numeric" min="1" max="10" placeholder="Ej. 2" /></div>
+      <div class="calc-field"><label for="t200s">200 m · segundos</label><input id="t200s" type="number" inputmode="numeric" min="0" max="59" placeholder="Ej. 50" /></div>
+      <button class="btn-calc" id="btn-css" type="button">Calcular CSS</button>
+    </div>
+    <div class="calc-results" id="res-css" aria-live="polite">
+      <div class="result-grid" id="grid-css" style="grid-template-columns:repeat(3,1fr)"></div>
+      <p class="calc-note" id="nota-css"></p>
+    </div>
+  </div>
+
+  <h2>Qué es <em>la velocidad crítica</em></h2>
+  <p>La CSS es el ritmo más rápido que, en teoría, podrías mantener durante mucho tiempo sin que el cansancio se dispare. En la práctica funciona como una aproximación a tu umbral en el agua y sirve para dar ritmo a las series: ni tan fácil que no aporte nada, ni tan duro que no puedas repetirlo. Se mide por cada 100 metros, que es como se piensa en la piscina.</p>
+  <p>La ventaja de este método es que no necesitas pulsómetro (en el agua es poco práctico) ni material especial: solo una piscina, un cronómetro y ganas de hacer dos esfuerzos fuertes. Es una de las formas más extendidas de dar ritmo a los entrenamientos de natación de triatletas.</p>
+
+  <h2>Cómo hacer <em>el test</em></h2>
+  <p>Hazlo en una piscina de 25 o 50 metros, con el mismo tipo de salida en ambas pruebas (desde el borde o empujándote en la pared). Haz el test descansado, no el día después de una sesión dura.</p>
+  <ul class="lista">
+    <li><strong>Calentamiento (unos 10 a 15 minutos).</strong> Nada suave con algunos tramos progresivos de 50 m y ejercicios de técnica.</li>
+    <li><strong>400 m a tu máximo ritmo sostenido.</strong> Apunta el tiempo. Intenta repartir bien el esfuerzo: no salgas a tope para morirte en los últimos 100.</li>
+    <li><strong>Recuperación de unos 10 a 15 minutos.</strong> Nada suave y descanso, para que el segundo esfuerzo no salga penalizado por el primero.</li>
+    <li><strong>200 m a tu máximo ritmo sostenido.</strong> Apunta el tiempo.</li>
+    <li><strong>Vuelta a la calma.</strong> Unos 200 a 300 m muy suaves.</li>
+  </ul>
+  <div class="info-box reveal">
+    <div class="info-box-label">Ten en cuenta</div>
+    <p>El test es un esfuerzo exigente. Si tienes dudas de salud, llevas tiempo sin entrenar o sientes mareo o dolor en el pecho con el ejercicio, consulta antes con tu médico. Y nunca hagas el test sin supervisión si no te sientes cómodo nadando 400 m seguidos.</p>
+  </div>
+
+  <h2>Cómo <em>se calcula</em></h2>
+  <p>La fórmula es sencilla: la velocidad crítica es la diferencia de distancia dividida por la diferencia de tiempo entre las dos pruebas.</p>
+  <p><strong>CSS (m/s) = (400 − 200) ÷ (T400 − T200)</strong>, y el ritmo por 100 m, en segundos, es <strong>100 ÷ CSS</strong>. Por ejemplo, con 6:30 en el 400 m (390 s) y 2:50 en el 200 m (170 s): 200 ÷ 220 = 0,909 m/s, es decir, unos 110 segundos por 100 m, o 1:50 por 100 m.</p>
+  <p>Si los tiempos no son coherentes (por ejemplo, un 200 m demasiado lento comparado con el 400 m), el resultado saldrá extraño. La calculadora avisa en esos casos; repite el test con más descanso entre pruebas.</p>
+
+  <h2>Cómo <em>usar tu CSS</em> en las sesiones</h2>
+  <p>Estos ritmos son una orientación general; ajústalos con tu sensación y con lo que te marque tu plan.</p>
+  <table class="zones-table">
+    <tr><th>Tipo de trabajo</th><th>Ritmo respecto a tu CSS (por 100 m)</th><th>Ejemplo de sesión</th></tr>
+    <tr><td>Aeróbico suave</td><td>CSS + 8 a 12 s</td><td>6-8 x 200 m con 20 s de descanso</td></tr>
+    <tr><td>Umbral</td><td>CSS (± 2 s)</td><td>5-10 x 100 m o 4 x 300 m con 15-20 s de descanso</td></tr>
+    <tr><td>Velocidad</td><td>CSS − 3 a 5 s</td><td>8-12 x 50 m con 20-30 s de descanso</td></tr>
+  </table>
+  <p>Por ejemplo, con una CSS de 1:50 por 100 m, el aeróbico suave estaría en torno a 1:58-2:02, el umbral en 1:50 y la velocidad entre 1:45 y 1:47.</p>
+  <p>Para sesiones concretas y cómo encajar la natación en un plan de triatlón, lee <a href="/natacion-para-triatlon" style="color:var(--orange)">la guía de natación para triatlón</a>. Si preparas tu primera prueba, empieza por <a href="/preparar-primer-triatlon" style="color:var(--orange)">la de preparar tu primer triatlón</a>.</p>
+
+  <h2>Cuándo <em>repetir</em> el test</h2>
+  <p>Repite el test cada 6 a 8 semanas, o al terminar un bloque de entrenamiento, y siempre en condiciones parecidas (misma piscina, mismo momento del día, descansado). Si tu CSS mejora, ajusta los ritmos de las series. Si no cambia, no pasa nada: la técnica y la constancia suelen dar más ganancias en natación que apretar el ritmo.</p>
+
+  <h2>Limitaciones <em>del método</em></h2>
+  <ul class="lista">
+    <li>Es una estimación, no una medida de laboratorio. Dos personas con la misma CSS pueden tener distinta resistencia.</li>
+    <li>Depende de que los dos esfuerzos sean realmente máximos y bien repartidos.</li>
+    <li>Está pensada para piscina. En aguas abiertas, con corriente, oleaje o neopreno, los ritmos serán distintos.</li>
+    <li>Si estás empezando a nadar, la mejora de la técnica pesa más que cualquier ritmo; empieza por ahí.</li>
+  </ul>
+
+  <div class="cta-box reveal">
+    <h3>¿Quieres un plan de natación con tus ritmos?</h3>
+    <p>TriCoach AI usa tu nivel y tus tiempos para proponerte sesiones de piscina dentro de un plan completo. Cuéntale tu objetivo y cuántos días puedes nadar.</p>
+    <a href="https://getricoach.com/app" class="btn-primary">Empezar gratis →</a>
+    <p class="cta-note">7 días de prueba Pro sin tarjeta · Después, plan gratuito · 100% en español</p>
+  </div>
+
+
+  <h2>Preguntas <em>frecuentes</em></h2>
+
+  <h3>¿Qué es la CSS en natación?</h3>
+  <p>Es la velocidad crítica de natación: un ritmo por cada 100 metros, calculado con un 400 m y un 200 m a tope, que sirve de referencia para fijar los ritmos de las series.</p>
+  <h3>¿Puedo calcularla con otras distancias?</h3>
+  <p>Sí, hay variantes con 200 m y 100 m o con 800 m y 400 m, pero esta calculadora usa 400 m y 200 m, la combinación más habitual.</p>
+  <h3>¿Cómo sé si el test salió bien?</h3>
+  <p>Si el 200 m es claramente más rápido por 100 m que el 400 m, y la diferencia entre ambos tiene sentido, el resultado suele ser coherente. Si no, repite con más descanso.</p>
+  <h3>¿Sirve para aguas abiertas?</h3>
+  <p>Es una referencia para piscina. En aguas abiertas los ritmos cambian por el oleaje, la corriente, la ropa y la orientación.</p>
+  <h3>¿Cada cuánto repito el test?</h3>
+  <p>Cada 6 a 8 semanas o al acabar un bloque, en condiciones parecidas y con descanso.</p>
+  <h3>¿Necesito pulsómetro?</h3>
+  <p>No. Es una de las ventajas del método: solo necesitas una piscina y un cronómetro.</p>
+
+</div>
+
+<div class="related">
+  <div class="related-inner">
+    <h3>Guías relacionadas</h3>
+    <div class="related-grid">
+      <a href="/natacion-para-triatlon" class="related-card">
+        <div class="related-card-label">Guía</div>
+        <h4>Natación para triatlón</h4>
+      </a>
+      <a href="/preparar-primer-triatlon" class="related-card">
+        <div class="related-card-label">Guía</div>
+        <h4>Preparar tu primer triatlón</h4>
+      </a>
+      <a href="/calculadora-zonas-pulso" class="related-card">
+        <div class="related-card-label">Guía</div>
+        <h4>Calculadora de zonas de pulso</h4>
+      </a>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-logo"><span style="width:7px;height:7px;border-radius:50%;background:var(--orange)"></span>TriCoach AI</div>
+  <div class="footer-links">
+    <a href="/" class="footer-link">Inicio</a>
+    <a href="/plan-entrenamiento-triatlon" class="footer-link">Triatlón</a>
+    <a href="mailto:coach@getricoach.com" class="footer-link">Contacto</a>
+    <a href="https://tally.so/r/VL8pyl" target="_blank" class="footer-link">Reportar problema</a>
+  </div>
+  <nav aria-label="Guías de entrenamiento" style="display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;max-width:900px;margin:0 auto 14px"><a href="/plan-entrenamiento-triatlon" class="footer-link">Plan de entrenamiento de triatlón</a><a href="/preparar-primer-triatlon" class="footer-link">Triatlón para principiantes</a><a href="/plan-media-maraton" class="footer-link">Plan de entrenamiento media maratón</a><a href="/plan-entrenamiento-hyrox" class="footer-link">Plan de entrenamiento Hyrox</a><a href="/maraton-valencia" class="footer-link">Maratón Valencia</a><a href="/maraton-madrid" class="footer-link">Maratón Madrid</a><a href="/maraton-barcelona" class="footer-link">Maratón Barcelona</a><a href="/plan-entrenamiento-10k" class="footer-link">Plan de entrenamiento 10K</a><a href="/plan-primer-maraton" class="footer-link">Maratón para principiantes</a><a href="/calculadora-ritmo-maraton" class="footer-link">Calculadora de ritmo de maratón</a><a href="/natacion-para-triatlon" class="footer-link">Natación para triatlón</a><a href="/plan-entrenamiento-5k" class="footer-link">Plan de entrenamiento 5K</a><a href="/bici-para-triatlon" class="footer-link">Bici para triatlón</a><a href="/recuperacion-entrenamiento" class="footer-link">Recuperación entre entrenamientos</a><a href="/entrenamiento-fuerza-corredores" class="footer-link">Fuerza para corredores</a><a href="/nutricion-carrera-larga" class="footer-link">Nutrición en carreras largas</a><a href="/volver-a-entrenar-tras-parar" class="footer-link">Volver a entrenar tras un parón</a><a href="/calculadora-zonas-pulso" class="footer-link">Calculadora de zonas de pulso</a></nav>
+  <p class="footer-note">© 2026 TriCoach AI</p>
+</footer>
+
+<div id="beta-badge" onclick="window.open('https://tally.so/r/VL8pyl','_blank')">
+  <span style="width:6px;height:6px;border-radius:50%;background:var(--orange);animation:pulse 2s infinite;display:inline-block"></span>
+  BETA · Reportar problema
+</div>
+
+<script>
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  function fmt(s){s=Math.round(s);var m=Math.floor(s/60),r=s%60;return m+':'+(r<10?'0':'')+r;}
+  function calcular(){
+    var t4=(parseFloat($('t400m').value)||0)*60+(parseFloat($('t400s').value)||0);
+    var t2=(parseFloat($('t200m').value)||0)*60+(parseFloat($('t200s').value)||0);
+    var nota=$('nota-css'), grid=$('grid-css'), res=$('res-css');
+    if(!(t4>0&&t2>0)){grid.innerHTML='';nota.textContent='Introduce los tiempos de tu 400 m y de tu 200 m.';res.classList.add('show');return;}
+    if(t4<=t2*2){grid.innerHTML='';nota.textContent='El tiempo del 400 m debe ser mayor que el doble del 200 m. Revisa los datos o repite el test con más descanso entre pruebas.';res.classList.add('show');return;}
+    var css=100*(t4-t2)/200;
+    if(css<40||css>240){grid.innerHTML='';nota.textContent='El resultado queda fuera de un rango razonable. Revisa los tiempos introducidos.';res.classList.add('show');return;}
+    var items=[['Aeróbico suave',fmt(css+8)+' - '+fmt(css+12)],['Umbral (tu CSS)',fmt(css)],['Velocidad',fmt(css-5)+' - '+fmt(css-3)]];
+    var html='';
+    items.forEach(function(it,i){html+='<div class="result-zone'+(i===1?' active':'')+'"><div class="result-zone-label">'+it[0]+'</div><div class="result-zone-range">'+it[1]+'</div><div class="result-zone-name">por 100 m</div></div>';});
+    grid.innerHTML=html;
+    nota.textContent='Tu CSS es de '+fmt(css)+' por 100 m. Son valores orientativos: ajústalos con tu sensación y con tu plan.';
+    res.classList.add('show');
+    if(typeof gtag==='function'){try{gtag('event','herramienta_usada',{herramienta:'ritmo_natacion_css'});}catch(e){}}
+  }
+  $('btn-css').addEventListener('click',calcular);
+  ['t400m','t400s','t200m','t200s'].forEach(function(id){$(id).addEventListener('keydown',function(e){if(e.key==='Enter')calcular();});});
+})();
+</script>
+
+</body>
+</html>

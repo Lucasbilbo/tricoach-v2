@@ -152,6 +152,50 @@
   status = 200
 
 [[redirects]]
+  from = "/entrenamiento-brick-triatlon.html"
+  to = "/entrenamiento-brick-triatlon"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/entrenamiento-brick-triatlon"
+  to = "/entrenamiento-brick-triatlon.html"
+  status = 200
+
+[[redirects]]
+  from = "/entrenamiento-series-running.html"
+  to = "/entrenamiento-series-running"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/entrenamiento-series-running"
+  to = "/entrenamiento-series-running.html"
+  status = 200
+
+[[redirects]]
+  from = "/semana-de-descarga-entrenamiento.html"
+  to = "/semana-de-descarga-entrenamiento"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/semana-de-descarga-entrenamiento"
+  to = "/semana-de-descarga-entrenamiento.html"
+  status = 200
+
+[[redirects]]
+  from = "/calculadora-ritmo-natacion-css.html"
+  to = "/calculadora-ritmo-natacion-css"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/calculadora-ritmo-natacion-css"
+  to = "/calculadora-ritmo-natacion-css.html"
+  status = 200
+
+[[redirects]]
   from = "/recuperacion-entrenamiento.html"
   to = "/recuperacion-entrenamiento"
   status = 301
