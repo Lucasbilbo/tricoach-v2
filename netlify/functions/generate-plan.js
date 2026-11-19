@@ -2,6 +2,7 @@ const claudeApi = require('./lib/claude');
 const { validarDuracion } = require('./lib/duraciones');
 const { authenticate, corsHeaders } = require('./lib/auth');
 const https = require('https');
+const { externalIdSesion, borrarEventosTriCoach } = require('./lib/intervals-sync');
 const { evaluarWellness } = require('./lib/wellness');
 const { decidirAccionPlan } = require('./lib/planes');
 const { getMondayOfCurrentWeek, getHoyMadrid } = require('./lib/fechas');
@@ -478,6 +479,23 @@ async function syncIntervalsCalendar(sesionesActivas, weekStart, athleteId, apiK
   const auth = Buffer.from(`API_KEY:${apiKey}`).toString('base64');
   const lunes = new Date(weekStart + 'T12:00:00');
 
+  // Regenerar el plan (forzar) o un reintento volvían a enviar todo sin borrar lo anterior y el
+  // Garmin recibía cada sesión dos veces. Antes de enviar se borran los eventos que TriCoach ya
+  // tenía en esos 7 días (solo los suyos: external_id "tricoach-…" o el formato de nombre antiguo).
+  const fin = new Date(lunes);
+  fin.setDate(lunes.getDate() + 6);
+  try {
+    const limpieza = await withTimeout(
+      borrarEventosTriCoach(athleteId, apiKey, weekStart, fin.toISOString().slice(0, 10)),
+      6000,
+      'Intervals limpieza timeout'
+    );
+    if (!limpieza.ok) console.error('[intervals] no se pudo listar el calendario; se envía sin limpiar');
+    else if (limpieza.borrados > 0) console.error(`[intervals] ${limpieza.borrados} eventos previos de TriCoach reemplazados`);
+  } catch (err) {
+    console.error('[intervals] limpieza falló:', err.message);
+  }
+
   function postIntervalsEvent(sesion) {
     const offset = offsetDesdeInicio(lunes, sesion.dia);
     const fecha = new Date(lunes);
@@ -493,6 +511,7 @@ async function syncIntervalsCalendar(sesionesActivas, weekStart, athleteId, apiK
     const eventBody = JSON.stringify({
       start_date_local: `${dateStr}T07:00:00`,
       category: 'WORKOUT',
+      external_id: externalIdSesion(planId, sesion.dia),
       type: TIPO_MAP[sesion.tipo] || 'Workout',
       name: `${sesion.subtipo || sesion.tipo} — ${sesion.duracion_min}min`,
       ...(desc ? { description: desc } : {}),

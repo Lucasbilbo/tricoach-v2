@@ -43,6 +43,12 @@ El coach no respondía desde el 15-jun-2026: `claude-sonnet-4-20250514` fue reti
 - **Qué vende Pro ahora**: coach avanzado, 20 mensajes al día, plan nuevo cada lunes (auto-plans) e Intervals.icu. La captura está en Free y Pro.
 - **Siguiente fuente de datos automática**: app nativa con Apple Health / Health Connect. Garmin directo exige solicitar como organización; Intervals.icu ya no sirve de puente para datos de Garmin ni de Strava.
 
+## 🔁 INTERVALS SIN DUPLICADOS (19 noviembre 2026)
+- **Qué pasó**: regenerar el plan (`forzar`, PATCH sobre la misma fila) volvía a enviar TODAS las sesiones a Intervals sin borrar las anteriores, y el botón "Enviar a Intervals" de Hoy creaba otro evento con otro nombre. El Garmin recibía cada sesión dos veces (visto el 20-nov: "Fuerza general y core — 50min" ×2). Además `plans.intervals_event_ids` no existía (el PATCH fallaba en silencio): **migración 013** ya aplicada.
+- **Cómo**: `netlify/functions/lib/intervals-sync.js`. Cada evento de TriCoach lleva `external_id = tricoach-<planId>-<dia>`; antes de enviar (generate-plan e `intervals.js` POST) se borran los eventos de TriCoach de esos días (`esEventoTriCoach`: external_id `tricoach-…` o el nombre antiguo `"… — NNmin"` / `"… — TriCoach"`). Las sesiones del Coach Dashboard (nombres con " · ", `coach_sessions.intervals_event_id`) NO se tocan nunca. Si no se puede listar el calendario, se envía igual y queda `console.error`.
+- **Regla**: una cuenta de pruebas no puede compartir `intervals_athlete_id` con la principal (la de yahoo lo compartía; credenciales quitadas).
+- Test: `intervals-sync.test.js`.
+
 ## 🚫 BAJA DE EMAILS (13 noviembre 2026)
 - **Por qué**: el pie decía "responde y te damos de baja", pero la baja era manual y solo `session-reminder` respetaba una marca. Una persona respondió "no quiero más correos" al email de recuperación.
 - **Cómo**: `profiles.emails_baja_at` (**migración 012, aplicar ANTES de fusionar**: las consultas de los crons usan la columna). Enlace firmado (HMAC del userId con `INTERNAL_API_SECRET`, `lib/baja.js`) → `baja-emails.js` (GET enseña botón; POST aplica; también vale el "un clic" de `List-Unsubscribe-Post`). Aplica `emails_baja_at` y `recordatorios_email=false`.
@@ -96,7 +102,7 @@ El coach sabe lo que entrena el usuario por el check-in de la sesión (hecho, es
 - Frontend: React + Vite (JavaScript, NO TypeScript)
 - Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co) — RLS activado
 - Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
-- Tests: Vitest — **407 tests pasando** (44 archivos, cargan sin .env) + Playwright E2E (3 specs)
+- Tests: Vitest — **414 tests pasando** (44 archivos, cargan sin .env) + Playwright E2E (3 specs)
 - Deploy: Netlify (producción: https://getricoach.com — la app vive en `/app`; `tricoach-v2.netlify.app` sigue como alias)
 - Pagos: Stripe (checkout + webhooks)
 - Email: Resend (coach@getricoach.com)
@@ -205,7 +211,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 
 ### Tests
 - Ejecutar `npm test` al terminar SIEMPRE
-- **407 tests deben pasar** (44 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
+- **414 tests deben pasar** (45 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
 - No borrar ni modificar tests existentes sin motivo explícito
 
 ## Estado del proyecto — Fases completadas
@@ -313,7 +319,7 @@ tricoach-v2/
 ├── supabase/
 │   └── migrations/            — 001_training_cycles, 002_strava_user_credentials (obsoleta), 003_unique_plan_semana,
 │                                004_contexto_proxima_semana, 005_trial_pro, 006_contexto_null, 007_emails_usuario,
-│                                008_capturas_semana, 009_recordatorio_sesion, 010_trial_dia3, 011_trial_reactivacion, 012_baja_emails. Las ejecuta Lucas a mano en Supabase.
+│                                008_capturas_semana, 009_recordatorio_sesion, 010_trial_dia3, 011_trial_reactivacion, 012_baja_emails, 013_intervals_event_ids. Las ejecuta Lucas a mano en Supabase (la 013 ya está aplicada).
 ├── src/
 │   ├── components/
 │   │   ├── Login.jsx, Onboarding.jsx (3 pantallas), WelcomeGuide.jsx
@@ -386,7 +392,7 @@ tricoach-v2/
 │       ├── strava-sync.js           — sync Strava → plan; exporta syncUsuario() reutilizable; recalcula volumen_real_min
 │       ├── strava-match-activity.js — match actividad Strava con sesión del plan
 │       ├── strava-feedback.js       — feedback automático post-entreno (Pro, fire-and-forget)
-│       └── intervals.js             — integración Intervals.icu (GET/POST/DELETE)
+│       └── intervals.js             — integración Intervals.icu (GET/POST/DELETE; el POST de TriCoach reemplaza, no duplica)
 ├── index.html
 ├── netlify.toml
 ├── vite.config.js, playwright.config.js, eslint.config.js
@@ -566,7 +572,7 @@ Helpers canónicos en `src/lib/fechas.js` — usar SIEMPRE estos, no reimplement
 Usados en `WeeklyPlan.jsx` y `autoAdjust.js`. `buildSystemPrompt.js` mantiene su copia interna deliberadamente (cubierto por 32 tests, no tocar sin motivo).
 Al abrir `ModalCompletarSesion`, WeeklyPlan adjunta `fecha` a la sesión (`{ ...sesion, fecha: sesionFecha }`) — necesario para el auto-import de Strava del modal.
 
-## Tests — 407 pasando (44 archivos) + 3 specs E2E Playwright
+## Tests — 414 pasando (45 archivos) + 3 specs E2E Playwright
 
 Tests más pesados (referencia rápida):
 - `systemPrompt.test.js` — buildSystemPrompt (32 tests)

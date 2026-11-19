@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { completarSesion, autoAdjustPlan } from '../lib/plans'
 import { checkShouldAdjust } from '../lib/autoAdjust'
+import { getHoyMadrid } from '../lib/fechas'
 import CicloCompletadoBanner from './CicloCompletadoBanner'
 import AdjustmentBanner from './AdjustmentBanner'
 
@@ -208,9 +209,12 @@ export default function Dashboard({ userId, plan, profile, activeCycle, loading,
         },
         body: JSON.stringify({
           userId,
-          start_date_local: new Date().toISOString().slice(0, 19),
+          // Mismo día (Madrid), nombre e identificador que el envío automático del plan:
+          // así reemplaza esa sesión en Intervals en vez de duplicarla
+          start_date_local: `${getHoyMadrid()}T07:00:00`,
           category: 'WORKOUT',
-          name: `${sesion.tipo} — TriCoach`,
+          external_id: `tricoach-${plan?.id || 'sin-plan'}-${String(sesion.dia || '').toLowerCase()}`,
+          name: `${sesion.subtipo || sesion.tipo} — ${sesion.duracion_min || 30}min`,
           description: sesion.descripcion || '',
           moving_time: (sesion.duracion_min || 30) * 60,
           type: sesion.tipo === 'Correr' ? 'Run'

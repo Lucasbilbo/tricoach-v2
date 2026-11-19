@@ -1,5 +1,6 @@
 const { authenticate, corsHeaders } = require('./lib/auth')
 const https = require('https')
+const { borrarEventosTriCoach, PREFIJO_EXTERNAL_ID } = require('./lib/intervals-sync')
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY
@@ -117,6 +118,16 @@ exports.handler = async (event) => {
 
     const creds = await getIntervalsCredentials(userId)
     if (!creds) return { statusCode: 403, headers: CORS, body: JSON.stringify({ error: 'Intervals no configurado' }) }
+
+    // Reenvío manual de una sesión de TriCoach: reemplaza la que TriCoach ya tuviera ese día
+    // (el envío automático del plan también la dejó en el calendario) en vez de duplicarla.
+    if (typeof eventData.external_id === 'string' && eventData.external_id.startsWith(PREFIJO_EXTERNAL_ID)) {
+      const dia = String(eventData.start_date_local || '').slice(0, 10)
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dia)) {
+        const limpieza = await borrarEventosTriCoach(creds.athleteId, creds.apiKey, dia, dia)
+        if (!limpieza.ok) console.error('[intervals] no se pudo listar el día; se envía sin limpiar')
+      }
+    }
 
     const result = await intervalsRequest('POST', `/api/v1/athlete/${creds.athleteId}/events`, creds.apiKey, eventData)
     return { statusCode: result.statusCode, headers: { ...CORS, 'Content-Type': 'application/json' }, body: JSON.stringify(result.body) }
