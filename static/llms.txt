@@ -31,3 +31,7 @@
 - [Nutrición en carreras largas](https://getricoach.com/nutricion-carrera-larga): hidratos por hora, geles, hidratación y cómo ensayar tu estrategia antes de un maratón o triatlón.
 - [Volver a entrenar tras un parón](https://getricoach.com/volver-a-entrenar-tras-parar): cuánto volumen retomar, cómo subir la carga y plan de 6 semanas para volver a correr.
 - [Calculadora de zonas de pulso](https://getricoach.com/calculadora-zonas-pulso): calcula tus 5 zonas de frecuencia cardíaca por porcentaje o Karvonen.
+- [Entrenamiento brick para triatlón](https://getricoach.com/entrenamiento-brick-triatlon): qué es un brick, cuándo meterlo en el plan, cómo hacerlo y cuatro sesiones de ejemplo de bici más carrera.
+- [Entrenamiento de series](https://getricoach.com/entrenamiento-series-running): tipos de series, cómo fijar el ritmo, cuatro sesiones de ejemplo y cómo progresar sin lesionarte.
+- [Semana de descarga](https://getricoach.com/semana-de-descarga-entrenamiento): qué es, cada cuánto hacerla, cuánto reducir el volumen y señales de que la necesitas.
+- [Calculadora de ritmo de natación (CSS)](https://getricoach.com/calculadora-ritmo-natacion-css): calcula tu velocidad crítica con un 400 m y un 200 m y obtén ritmos por 100 m para tus series.
