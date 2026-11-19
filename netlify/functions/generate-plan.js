@@ -487,7 +487,7 @@ async function syncIntervalsCalendar(sesionesActivas, weekStart, athleteId, apiK
   try {
     const limpieza = await withTimeout(
       borrarEventosTriCoach(athleteId, apiKey, weekStart, fin.toISOString().slice(0, 10)),
-      6000,
+      3000,
       'Intervals limpieza timeout'
     );
     if (!limpieza.ok) console.error('[intervals] no se pudo listar el calendario; se envía sin limpiar');
@@ -541,7 +541,7 @@ async function syncIntervalsCalendar(sesionesActivas, weekStart, athleteId, apiK
 
   const resultados = await withTimeout(
     Promise.all(sesionesActivas.map(postIntervalsEvent)),
-    8000,
+    5000,
     'Intervals sync timeout global'
   );
 
@@ -1068,14 +1068,23 @@ IMPORTANTE: El campo contexto puede contener información de semanas anteriores 
     }
   }
 
-  // Disparar sync Intervals sin await — fire-and-forget para no bloquear el return
+  // Sync Intervals (espera acotada a 8 s)
   if (profile.intervals_athlete_id && profile.intervals_api_key) {
     const sesionesActivas = planData.sesiones.filter(s => {
       const t = s.tipo?.toLowerCase();
       return t !== 'descanso' && t !== 'resto' && t !== 'rest';
     });
-    syncIntervalsCalendar(sesionesActivas, weekStart, profile.intervals_athlete_id, profile.intervals_api_key, hostname, supabaseKey, plan?.id)
-      .catch(err => console.error('[intervals] sync falló:', err.message));
+    // Se espera (con tope): lanzado en segundo plano, la function podía congelarse tras el return
+    // y dejar el envío a medias (con la limpieza previa la ventana es aún mayor).
+    try {
+      await withTimeout(
+        syncIntervalsCalendar(sesionesActivas, weekStart, profile.intervals_athlete_id, profile.intervals_api_key, hostname, supabaseKey, plan?.id),
+        8000,
+        'Intervals sync tope'
+      );
+    } catch (err) {
+      console.error('[intervals] sync falló:', err.message);
+    }
   }
 
   return {

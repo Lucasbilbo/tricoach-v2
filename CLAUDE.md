@@ -46,7 +46,8 @@ El coach no respondía desde el 15-jun-2026: `claude-sonnet-4-20250514` fue reti
 ## 🔁 INTERVALS SIN DUPLICADOS (19 noviembre 2026)
 - **Qué pasó**: regenerar el plan (`forzar`, PATCH sobre la misma fila) volvía a enviar TODAS las sesiones a Intervals sin borrar las anteriores, y el botón "Enviar a Intervals" de Hoy creaba otro evento con otro nombre. El Garmin recibía cada sesión dos veces (visto el 20-nov: "Fuerza general y core — 50min" ×2). Además `plans.intervals_event_ids` no existía (el PATCH fallaba en silencio): **migración 013** ya aplicada.
 - **Cómo**: `netlify/functions/lib/intervals-sync.js`. Cada evento de TriCoach lleva `external_id = tricoach-<planId>-<dia>`; antes de enviar (generate-plan e `intervals.js` POST) se borran los eventos de TriCoach de esos días (`esEventoTriCoach`: external_id `tricoach-…` o el nombre antiguo `"… — NNmin"` / `"… — TriCoach"`). Las sesiones del Coach Dashboard (nombres con " · ", `coach_sessions.intervals_event_id`) NO se tocan nunca. Si no se puede listar el calendario, se envía igual y queda `console.error`.
-- **Regla**: una cuenta de pruebas no puede compartir `intervals_athlete_id` con la principal (la de yahoo lo compartía; credenciales quitadas).
+- **Envío con espera**: `generate-plan` espera al sync de Intervals (tope 8 s; limpieza 3 s + envío 5 s) en vez de lanzarlo en segundo plano, para que la function no se congele a medias. Si falla, el plan ya está guardado y queda `console.error`.
+- **Regla**: una cuenta de pruebas no puede compartir `intervals_athlete_id` con la principal (la de yahoo lo compartía; credenciales quitadas). **Migración 014** (índice único parcial sobre `profiles.intervals_athlete_id`) escrita pero **PENDIENTE de aplicar** en Supabase.
 - Test: `intervals-sync.test.js`.
 
 ## 🚫 BAJA DE EMAILS (13 noviembre 2026)
@@ -319,7 +320,7 @@ tricoach-v2/
 ├── supabase/
 │   └── migrations/            — 001_training_cycles, 002_strava_user_credentials (obsoleta), 003_unique_plan_semana,
 │                                004_contexto_proxima_semana, 005_trial_pro, 006_contexto_null, 007_emails_usuario,
-│                                008_capturas_semana, 009_recordatorio_sesion, 010_trial_dia3, 011_trial_reactivacion, 012_baja_emails, 013_intervals_event_ids. Las ejecuta Lucas a mano en Supabase (la 013 ya está aplicada).
+│                                008_capturas_semana, 009_recordatorio_sesion, 010_trial_dia3, 011_trial_reactivacion, 012_baja_emails, 013_intervals_event_ids, 014_intervals_athlete_unico. Las ejecuta Lucas a mano en Supabase (la 013 ya está aplicada; la 014 pendiente).
 ├── src/
 │   ├── components/
 │   │   ├── Login.jsx, Onboarding.jsx (3 pantallas), WelcomeGuide.jsx
