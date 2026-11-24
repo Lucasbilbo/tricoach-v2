@@ -13,6 +13,8 @@ const https = require('https');
 const http = require('http');
 const { getMondayOfCurrentWeek } = require('./lib/fechas');
 const { syncUsuario } = require('./strava-sync');
+const { supa } = require('./lib/supa');
+const { cuentasActivas } = require('./lib/actividad');
 
 const BATCH_SIZE = 3;
 const DEADLINE_MS = 20000; // margen frente al límite ~26s de Netlify
@@ -47,6 +49,16 @@ function filtroPlan(ahora = Date.now()) {
 function filtrarElegibles(profiles, cycleUserIds) {
   const conCiclo = new Set(cycleUserIds || []);
   return (profiles || []).filter(p => p?.id && conCiclo.has(p.id));
+}
+
+/**
+ * Pro de pago: siempre. Cuenta solo en prueba (plan distinto de 'pro'): únicamente si está
+ * activa (cuentasActivas, decisión 24-nov-2026: una generación con el modelo caro por cuenta
+ * dormida no se paga). Pura — testeada en auto-plans.test.js.
+ */
+function filtrarPorActividad(elegibles, activasIds) {
+  const activas = activasIds instanceof Set ? activasIds : new Set(activasIds || []);
+  return (elegibles || []).filter(p => p.plan === 'pro' || activas.has(p.id));
 }
 
 /**
@@ -126,14 +138,25 @@ exports.handler = async (event) => {
   const cycles = await supabaseGet(hostname, '/rest/v1/training_cycles?estado=eq.active&select=user_id', supabaseKey);
   const cycleUserIds = Array.isArray(cycles) ? cycles.map(c => c.user_id) : [];
 
-  let profiles = await supabaseGet(hostname, `/rest/v1/profiles?${filtroPlan()}&deleted_at=is.null&select=id,email,nombre,contexto_proxima_semana`, supabaseKey);
+  let profiles = await supabaseGet(hostname, `/rest/v1/profiles?${filtroPlan()}&deleted_at=is.null&select=id,email,nombre,plan,created_at,contexto_proxima_semana`, supabaseKey);
   if (profiles && profiles.code === '42703') {
     // Migración 004 aún no ejecutada — funcionar sin la columna de notas
     console.error('[auto-plans] columna contexto_proxima_semana no existe (migración 004 pendiente) — continuando sin notas');
-    profiles = await supabaseGet(hostname, `/rest/v1/profiles?${filtroPlan()}&deleted_at=is.null&select=id,email,nombre`, supabaseKey);
+    profiles = await supabaseGet(hostname, `/rest/v1/profiles?${filtroPlan()}&deleted_at=is.null&select=id,email,nombre,plan,created_at`, supabaseKey);
   }
 
-  const elegibles = filtrarElegibles(Array.isArray(profiles) ? profiles : [], cycleUserIds);
+  const conCiclo = filtrarElegibles(Array.isArray(profiles) ? profiles : [], cycleUserIds);
+  // Cuentas solo en prueba: únicamente si están activas. Si no se puede leer la actividad, se
+  // generan solo las Pro de pago (nunca se gasta modelo caro a ciegas).
+  const soloPrueba = conCiclo.filter(p => p.plan !== 'pro');
+  let activasIds = new Set();
+  if (soloPrueba.length) {
+    const act = await cuentasActivas(supa, soloPrueba, { lunes: fechaInicio });
+    if (act.ok) activasIds = act.ids;
+    else console.error(`[auto-plans] no se pudo leer la actividad (status ${act.status}); solo Pro de pago`);
+  }
+  const elegibles = filtrarPorActividad(conCiclo, activasIds);
+  const omitidasDormidas = conCiclo.length - elegibles.length;
   const resumen = { generados: 0, ya_existian: 0, fallos: 0, pendientes: 0, syncs_fallidos: 0 };
 
   for (let i = 0; i < elegibles.length; i += BATCH_SIZE) {
@@ -163,7 +186,7 @@ exports.handler = async (event) => {
     }));
   }
 
-  console.log(`[auto-plans] semana=${fechaInicio} elegibles=${elegibles.length} generados=${resumen.generados} ya_existian=${resumen.ya_existian} pendientes=${resumen.pendientes} fallos=${resumen.fallos} syncs_fallidos=${resumen.syncs_fallidos} duracion=${Date.now() - inicio}ms`);
+  console.log(`[auto-plans] semana=${fechaInicio} elegibles=${elegibles.length} dormidas_omitidas=${omitidasDormidas} generados=${resumen.generados} ya_existian=${resumen.ya_existian} pendientes=${resumen.pendientes} fallos=${resumen.fallos} syncs_fallidos=${resumen.syncs_fallidos} duracion=${Date.now() - inicio}ms`);
 
   return {
     statusCode: 200,
@@ -173,4 +196,5 @@ exports.handler = async (event) => {
 
 exports.filtrarElegibles = filtrarElegibles;
 exports.filtroPlan = filtroPlan;
+exports.filtrarPorActividad = filtrarPorActividad;
 exports.construirBodyGeneracion = construirBodyGeneracion;

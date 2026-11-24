@@ -35,3 +35,7 @@
 - [Entrenamiento de series](https://getricoach.com/entrenamiento-series-running): tipos de series, cómo fijar el ritmo, cuatro sesiones de ejemplo y cómo progresar sin lesionarte.
 - [Semana de descarga](https://getricoach.com/semana-de-descarga-entrenamiento): qué es, cada cuánto hacerla, cuánto reducir el volumen y señales de que la necesitas.
 - [Calculadora de ritmo de natación (CSS)](https://getricoach.com/calculadora-ritmo-natacion-css): calcula tu velocidad crítica con un 400 m y un 200 m y obtén ritmos por 100 m para tus series.
+- [Taper: puesta a punto antes de la carrera](https://getricoach.com/taper-puesta-a-punto-carrera): qué es el tapering, cuánto dura según la distancia, cuánto bajar el volumen y cómo organizar la semana de la carrera.
+- [Estrategia de ritmo en carrera](https://getricoach.com/estrategia-ritmo-carrera): ritmo constante, negativo o por esfuerzo, cómo calcular tu ritmo objetivo y cómo salir en 5K, 10K, media y maratón.
+- [Calentamiento antes de correr](https://getricoach.com/calentamiento-antes-de-correr): qué hacer según la sesión, una rutina paso a paso con movilidad dinámica y progresivos, y si conviene estirar antes.
+- [Cuenta atrás hasta tu carrera](https://getricoach.com/calculadora-cuenta-atras-carrera): calcula las semanas que te quedan hasta tu carrera y repártelas en base, desarrollo, específica y puesta a punto.
