@@ -196,6 +196,50 @@
   status = 200
 
 [[redirects]]
+  from = "/taper-puesta-a-punto-carrera.html"
+  to = "/taper-puesta-a-punto-carrera"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/taper-puesta-a-punto-carrera"
+  to = "/taper-puesta-a-punto-carrera.html"
+  status = 200
+
+[[redirects]]
+  from = "/estrategia-ritmo-carrera.html"
+  to = "/estrategia-ritmo-carrera"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/estrategia-ritmo-carrera"
+  to = "/estrategia-ritmo-carrera.html"
+  status = 200
+
+[[redirects]]
+  from = "/calentamiento-antes-de-correr.html"
+  to = "/calentamiento-antes-de-correr"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/calentamiento-antes-de-correr"
+  to = "/calentamiento-antes-de-correr.html"
+  status = 200
+
+[[redirects]]
+  from = "/calculadora-cuenta-atras-carrera.html"
+  to = "/calculadora-cuenta-atras-carrera"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/calculadora-cuenta-atras-carrera"
+  to = "/calculadora-cuenta-atras-carrera.html"
+  status = 200
+
+[[redirects]]
   from = "/recuperacion-entrenamiento.html"
   to = "/recuperacion-entrenamiento"
   status = 301
