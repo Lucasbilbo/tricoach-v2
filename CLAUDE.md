@@ -83,7 +83,7 @@ El coach no respondía desde el 15-jun-2026: `claude-sonnet-4-20250514` fue reti
 - **Regla**: `session-reminder` solo escribe a cuentas con actividad en los últimos 14 días (`cuentaActiva`): alta reciente, haber escrito al coach, o alguna sesión marcada como hecha en el plan de esta semana o la anterior. **Tener plan no cuenta como actividad**: lo genera el cron. Si no puede leer la actividad, no envía nada.
 - **Lección**: antes de añadir o ampliar un email automático, comprobar a quién le llega sumando TODOS los crons (plan automático → plan listo → recordatorio diario → secuencia de prueba). Conceder una prueba a una cuenta la mete en toda la secuencia.
 - **Misma regla en la secuencia de prueba** (decisión de Lucas, 16-nov): `trial-dia3`, `trial-reminder` y `trial-reactivacion` filtran con `cuentasActivas()` de `lib/actividad.js`. Una alta nueva recibe la secuencia entera (su alta cuenta como actividad 14 días); una cuenta antigua a la que se le concede prueba solo si vuelve a usar la app. Al crear un email automático nuevo, pasar los candidatos por `cuentasActivas()` y no enviar si devuelve `ok: false`.
-- Pendiente de decidir: a quién genera plan `auto-plans` (hoy también a cuentas en prueba que no han vuelto; cuesta una generación con Sonnet por cuenta).
+- **`auto-plans` (decidido 24-nov-2026)**: Pro de pago siempre; cuentas solo en prueba únicamente si pasan `cuentasActivas()` (`filtrarPorActividad`). Si no se puede leer la actividad, solo Pro de pago. El log incluye `dormidas_omitidas`.
 
 ## ⏸ PAUSA DEL 29 octubre 2026 (parcialmente levantada el 12-nov: ver sección anterior)
 Estado en que quedaron las automatizaciones durante la pausa:

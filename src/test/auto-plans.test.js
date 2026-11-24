@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { createRequire } from 'module'
 
 const require = createRequire(import.meta.url)
-const { filtrarElegibles, construirBodyGeneracion } = require('../../netlify/functions/auto-plans.js')
+const { filtrarElegibles, construirBodyGeneracion, filtrarPorActividad } = require('../../netlify/functions/auto-plans.js')
 
 describe('auto-plans — selección de elegibles', () => {
   const profiles = [
@@ -56,5 +56,16 @@ describe('auto-plans — body de generación (camino interno)', () => {
       expect('contexto_semana' in body).toBe(false)
       expect('limpiar_contexto' in body).toBe(false)
     }
+  })
+})
+
+describe('filtrarPorActividad (cuentas en prueba dormidas no generan plan)', () => {
+  const lista = [{ id: 'a', plan: 'pro' }, { id: 'b', plan: 'free' }, { id: 'c', plan: 'free' }]
+  it('Pro de pago siempre; prueba solo si está activa', () => {
+    expect(filtrarPorActividad(lista, new Set(['c'])).map(p => p.id)).toEqual(['a', 'c'])
+  })
+  it('sin actividad legible solo quedan las Pro de pago', () => {
+    expect(filtrarPorActividad(lista, new Set()).map(p => p.id)).toEqual(['a'])
+    expect(filtrarPorActividad(null, null)).toEqual([])
   })
 })
