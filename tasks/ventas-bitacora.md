@@ -2,6 +2,23 @@
 
 Registro de lo que se hace en cada sesión del plan `tasks/plan-ventas-2026-11-16.md`. Lo más reciente, arriba. Cada entrada: fecha, qué se hizo (con PR), qué quedó a medias y qué toca después. Solo agregados, sin datos personales.
 
+## 2026-11-24 (martes) — auto-plans, guías y cuenta atrás
+**Hecho**
+- #29: `auto-plans` genera plan a las Pro de pago y, a las cuentas solo en prueba, únicamente si pasan `cuentasActivas()` (si no se puede leer la actividad, solo Pro de pago); el log añade `dormidas_omitidas`. Decidido y documentado en `CLAUDE.md`.
+- #29: 3 guías evergreen (`taper-puesta-a-punto-carrera`, `estrategia-ritmo-carrera`, `calentamiento-antes-de-correr`, 1.500+ palabras, FAQ y JSON-LD) y herramienta `calculadora-cuenta-atras-carrera` (probada en navegador, evento `herramienta_usada`). Redirects, sitemap, `llms.txt` y landing al día; 420 tests y build en verde.
+- Sin PRs abiertos al empezar.
+
+**A medias**
+- Motor B (captura de email + secuencia): necesita tabla nueva en Supabase (migración con copia previa), función de alta con doble confirmación y baja; no empezado.
+- Motor C (revisión del recorrido de activación) y `/precios`: no empezados.
+- Valencia y Madrid siguen sin fecha verificada; IndexNow sin hacer.
+- No se ha comprobado el despliegue de Netlify desde esta sesión.
+
+**Siguiente (jueves 26)**
+- Motor B: diseño y migración de la lista de captura (con copia), función `suscribir-plan` y baja; contar destinatarios antes de la secuencia.
+- Motor C: revisar alta → plan → Hoy → marcar sesión y quitar un paso.
+- `/precios`; 3 guías + 1 herramienta (ideas: primer 10K en 8 semanas, ritmo de series, predictor de tiempos; Sevilla/Barcelona con fecha de `tasks/carreras-espana.md`).
+
 ## 2026-11-19 (jueves) — guías, calculadora y calendario
 **Hecho**
 - #28: 3 guías evergreen (`entrenamiento-brick-triatlon`, `entrenamiento-series-running`, `semana-de-descarga-entrenamiento`, todas 1.500+ palabras con FAQ y JSON-LD) y herramienta `calculadora-ritmo-natacion-css` (400 m + 200 m, en el navegador, evento `herramienta_usada`, probada en navegador). Redirects, sitemap, `llms.txt` y landing al día; 407 tests y build en verde.
