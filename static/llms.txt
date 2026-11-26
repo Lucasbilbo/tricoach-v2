@@ -43,3 +43,4 @@
 - [Cómo prevenir lesiones al correr](https://getricoach.com/prevenir-lesiones-corredor): progresión de carga, fuerza, descanso, zapatillas, sueño y señales de alarma para saber cuándo parar.
 - [Transiciones en triatlón (T1 y T2)](https://getricoach.com/transiciones-triatlon): orden del material, paso a paso de T1 y T2, errores comunes y cómo practicarlas antes de tu primera prueba.
 - [Predictor de tiempos de carrera](https://getricoach.com/calculadora-predictor-tiempos-carrera): estima tu tiempo en 5K, 10K, media maratón y maratón a partir de un resultado reciente con la fórmula de Riegel.
+- [Precios](https://getricoach.com/precios): plan Free sin límite de tiempo, Pro por 14,99 € al mes o 119 € al año, 7 días de prueba Pro sin tarjeta y cancelación sin permanencia.

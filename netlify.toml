@@ -273,6 +273,17 @@
   status = 200
 
 [[redirects]]
+  from = "/precios.html"
+  to = "/precios"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/precios"
+  to = "/precios.html"
+  status = 200
+
+[[redirects]]
   from = "/calculadora-predictor-tiempos-carrera.html"
   to = "/calculadora-predictor-tiempos-carrera"
   status = 301
