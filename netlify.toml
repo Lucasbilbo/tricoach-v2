@@ -240,6 +240,50 @@
   status = 200
 
 [[redirects]]
+  from = "/maraton-sevilla.html"
+  to = "/maraton-sevilla"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/maraton-sevilla"
+  to = "/maraton-sevilla.html"
+  status = 200
+
+[[redirects]]
+  from = "/prevenir-lesiones-corredor.html"
+  to = "/prevenir-lesiones-corredor"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/prevenir-lesiones-corredor"
+  to = "/prevenir-lesiones-corredor.html"
+  status = 200
+
+[[redirects]]
+  from = "/transiciones-triatlon.html"
+  to = "/transiciones-triatlon"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/transiciones-triatlon"
+  to = "/transiciones-triatlon.html"
+  status = 200
+
+[[redirects]]
+  from = "/calculadora-predictor-tiempos-carrera.html"
+  to = "/calculadora-predictor-tiempos-carrera"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/calculadora-predictor-tiempos-carrera"
+  to = "/calculadora-predictor-tiempos-carrera.html"
+  status = 200
+
+[[redirects]]
   from = "/recuperacion-entrenamiento.html"
   to = "/recuperacion-entrenamiento"
   status = 301

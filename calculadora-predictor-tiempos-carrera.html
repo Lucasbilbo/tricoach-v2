@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Predictor de tiempos de carrera: calcula tu 5K, 10K, media y maratón | TriCoach AI</title>
+  <meta name="description" content="Calculadora gratuita de predicción de tiempos con la fórmula de Riegel: introduce un resultado reciente y estima tu tiempo en 5K, 10K, media maratón y maratón. Sin registro." />
+  <meta name="keywords" content="predictor de tiempos carrera, calculadora predicción tiempo maratón, fórmula de Riegel, calcular tiempo media maratón, equivalencias 10K media maratón" />
+  <link rel="canonical" href="https://getricoach.com/calculadora-predictor-tiempos-carrera" />
+  <link rel="alternate" hreflang="es" href="https://getricoach.com/calculadora-predictor-tiempos-carrera" />
+  <link rel="alternate" hreflang="x-default" href="https://getricoach.com/calculadora-predictor-tiempos-carrera" />
+  <meta property="og:title" content="Predictor de tiempos de carrera: calcula tu 5K, 10K, media y maratón" />
+  <meta property="og:description" content="Calculadora gratuita de predicción de tiempos con la fórmula de Riegel: introduce un resultado reciente y estima tu tiempo en 5K, 10K, media maratón y maratón. Sin registro." />
+  <meta property="og:url" content="https://getricoach.com/calculadora-predictor-tiempos-carrera" />
+  <meta property="og:image" content="https://getricoach.com/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:locale" content="es_ES" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://getricoach.com/og-image.png" />
+  <meta property="og:type" content="article" />
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HKG9V6M7KF"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HKG9V6M7KF');
+  </script>
+
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"Article","headline":"Predictor de tiempos de carrera: calcula tu 5K, 10K, media y maratón","description":"Calculadora gratuita de predicción de tiempos con la fórmula de Riegel: introduce un resultado reciente y estima tu tiempo en 5K, 10K, media maratón y maratón. Sin registro.","url":"https://getricoach.com/calculadora-predictor-tiempos-carrera","inLanguage":"es","dateModified":"2026-11-26","author":{"@type":"Organization","name":"TriCoach AI","url":"https://getricoach.com"},"publisher":{"@type":"Organization","name":"TriCoach AI","url":"https://getricoach.com"}}
+  </script>
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"TriCoach AI","item":"https://getricoach.com/"},{"@type":"ListItem","position":2,"name":"Predictor de tiempos de carrera: calcula tu 5K, 10K, media y maratón","item":"https://getricoach.com/calculadora-predictor-tiempos-carrera"}]}
+  </script>
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"¿Qué es la fórmula de Riegel?","acceptedAnswer":{"@type":"Answer","text":"Es una fórmula empírica que estima tu tiempo en otra distancia a partir de un resultado conocido: el tiempo nuevo es el anterior por (distancia nueva ÷ distancia conocida) elevado a 1,06."}},{"@type":"Question","name":"¿Es fiable para predecir un maratón?","acceptedAnswer":{"@type":"Answer","text":"Es un punto de partida. Partiendo de un 5K o un 10K suele ser optimista, porque no tiene en cuenta tu resistencia ni tus tiradas largas. Partiendo de una media maratón reciente es más fiable, aunque muchos corredores acaban por encima."}},{"@type":"Question","name":"¿Qué resultado de partida debo usar?","acceptedAnswer":{"@type":"Answer","text":"Uno reciente (de las últimas 6 a 8 semanas), a esfuerzo máximo y en condiciones normales, sin mucho calor ni desnivel."}},{"@type":"Question","name":"¿Por qué mi tiempo real es peor que la predicción?","acceptedAnswer":{"@type":"Answer","text":"Porque la fórmula asume que has entrenado para la distancia más larga. Si tus tiradas son cortas o la nutrición y el ritmo no están ensayados, el tiempo real será peor."}},{"@type":"Question","name":"¿Guarda la herramienta mis datos?","acceptedAnswer":{"@type":"Answer","text":"No. El cálculo se hace en tu navegador y no se envía ni se guarda ningún dato."}},{"@type":"Question","name":"¿Sirve para triatlón o para otros deportes?","acceptedAnswer":{"@type":"Answer","text":"No está pensada para triatlón. La fórmula describe carreras a pie; en bici o natación el comportamiento del tiempo con la distancia es distinto."}}]}
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #080808; --bg-2: #0d0d0d; --bg-3: #131313; --bg-4: #191919;
+      --orange: #FF6B2B; --orange-dim: rgba(255,107,43,0.12); --orange-border: rgba(255,107,43,0.25);
+      --white: #fff; --white-80: rgba(255,255,255,0.8); --white-60: rgba(255,255,255,0.6);
+      --white-40: rgba(255,255,255,0.4); --white-20: rgba(255,255,255,0.2);
+      --border: rgba(255,255,255,0.08); --border-2: rgba(255,255,255,0.12);
+      --green: #22c55e;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Source Sans 3', sans-serif; background: var(--bg); color: var(--white); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 clamp(20px,5vw,80px); height: 64px;
+      background: rgba(8,8,8,0.92); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .logo { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: var(--white); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+    .logo-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--orange); animation: pulse 2.5s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.35); } }
+    .nav-cta { padding: 8px 20px; background: var(--orange); color: white; border-radius: 6px; font-size: .86rem; font-weight: 600; text-decoration: none; transition: opacity .2s; }
+    .nav-cta:hover { opacity: .88; }
+
+    .hero-article {
+      padding: clamp(60px,8vw,100px) clamp(20px,5vw,80px) clamp(48px,6vw,72px);
+      max-width: 860px; margin: 0 auto; text-align: center;
+    }
+    .breadcrumb { font-size: .78rem; color: var(--white-40); margin-bottom: 20px; }
+    .breadcrumb a { color: var(--orange); text-decoration: none; }
+    .label { font-size: .72rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--orange); margin-bottom: 16px; }
+
+    h1 { font-family: 'Playfair Display', serif; font-size: clamp(2.2rem,5vw,3.8rem); font-weight: 900; line-height: 1.08; letter-spacing: -0.02em; margin-bottom: 20px; }
+    h1 em { font-style: italic; color: var(--orange); }
+
+    .hero-article p { font-size: 1.1rem; color: var(--white-60); line-height: 1.75; max-width: 640px; margin: 0 auto 36px; }
+
+    .article-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: .8rem; color: var(--white-40); flex-wrap: wrap; }
+    .meta-sep { width: 3px; height: 3px; border-radius: 50%; background: var(--white-20); }
+
+    .content { max-width: 760px; margin: 0 auto; padding: 0 clamp(20px,5vw,80px) clamp(72px,10vw,120px); }
+
+    h2 { font-family: 'Playfair Display', serif; font-size: clamp(1.6rem,3vw,2.2rem); font-weight: 900; line-height: 1.15; letter-spacing: -0.02em; margin: 56px 0 16px; }
+    h2 em { font-style: italic; color: var(--orange); }
+    h3 { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: 700; margin: 32px 0 10px; }
+
+    p { font-size: 1rem; color: var(--white-60); line-height: 1.8; margin-bottom: 18px; }
+    strong { color: var(--white-80); font-weight: 600; }
+
+    .info-box {
+      border: 1px solid var(--orange-border); border-radius: 12px;
+      background: var(--orange-dim); padding: 24px 28px; margin: 32px 0;
+    }
+    .info-box-label { font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--orange); margin-bottom: 10px; }
+    .info-box p { color: var(--white-80); margin: 0; font-size: .95rem; }
+
+    .zones-table { width: 100%; border-collapse: collapse; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); margin: 28px 0; }
+    .zones-table th { padding: 13px 18px; background: var(--bg-4); font-size: .8rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--white-40); text-align: left; }
+    .zones-table td { padding: 13px 18px; font-size: .9rem; color: var(--white-60); border-top: 1px solid var(--border); }
+    .zones-table tr.highlight td { background: var(--orange-dim); color: var(--white-80); font-weight: 500; }
+    .zone-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: .75rem; font-weight: 700; }
+    .z1 { background: rgba(34,197,94,.15); color: #22c55e; }
+    .z2 { background: var(--orange-dim); color: var(--orange); }
+    .z3 { background: rgba(234,179,8,.15); color: #eab308; }
+    .z4 { background: rgba(239,68,68,.15); color: #ef4444; }
+    .z5 { background: rgba(168,85,247,.15); color: #a855f7; }
+
+    .calculator {
+      border: 1px solid var(--border-2); border-radius: 16px;
+      background: var(--bg-2); padding: 32px; margin: 36px 0;
+    }
+    .calculator h3 { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; margin: 0 0 8px; }
+    .calc-sub { font-size: .88rem; color: var(--white-40); margin-bottom: 24px !important; }
+
+    .calc-row { display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 20px; }
+    .calc-field { flex: 1; min-width: 140px; }
+    .calc-field label { display: block; font-size: .8rem; font-weight: 600; color: var(--white-40); margin-bottom: 8px; letter-spacing: .06em; text-transform: uppercase; }
+    .calc-field input {
+      width: 100%; padding: 12px 16px;
+      background: var(--bg-3); border: 1px solid var(--border-2);
+      border-radius: 8px; color: var(--white);
+      font-family: 'Source Sans 3', sans-serif; font-size: 1rem;
+      outline: none; transition: border-color .2s;
+    }
+    .calc-field input:focus { border-color: var(--orange); }
+    .calc-field select {
+      width: 100%; padding: 12px 16px;
+      background: var(--bg-3); border: 1px solid var(--border-2);
+      border-radius: 8px; color: var(--white);
+      font-family: 'Source Sans 3', sans-serif; font-size: 1rem;
+      outline: none; cursor: pointer;
+    }
+
+    .btn-calc {
+      padding: 12px 28px; background: var(--orange); color: white;
+      border: none; border-radius: 8px;
+      font-family: 'Source Sans 3', sans-serif; font-size: .95rem; font-weight: 600;
+      cursor: pointer; transition: opacity .2s; white-space: nowrap;
+    }
+    .btn-calc:hover { opacity: .88; }
+
+    .calc-results { display: none; margin-top: 20px; }
+    .calc-results.show { display: block; }
+    .result-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; }
+    @media (max-width: 600px) { .result-grid { grid-template-columns: repeat(2,1fr); } }
+    .result-zone {
+      padding: 14px 12px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--bg-3);
+      text-align: center;
+    }
+    .result-zone.active { border-color: var(--orange); background: var(--orange-dim); }
+    .result-zone-label { font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--white-40); margin-bottom: 6px; }
+    .result-zone-range { font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 700; color: var(--white); }
+    .result-zone-name { font-size: .72rem; color: var(--white-40); margin-top: 4px; }
+    .result-zone.active .result-zone-label { color: var(--orange); }
+    .result-zone.active .result-zone-range { color: var(--white); }
+
+    .week-example {
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--bg-2); overflow: hidden; margin: 28px 0;
+    }
+    .week-header { padding: 14px 20px; background: var(--bg-4); border-bottom: 1px solid var(--border); font-size: .8rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--white-40); }
+    .week-row { display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-top: 1px solid var(--border); }
+    .week-row:first-of-type { border-top: none; }
+    .week-day { font-size: .82rem; font-weight: 600; color: var(--white-40); width: 80px; flex-shrink: 0; }
+    .week-session { flex: 1; }
+    .week-session-name { font-size: .9rem; font-weight: 500; margin-bottom: 2px; }
+    .week-session-desc { font-size: .78rem; color: var(--white-40); }
+    .week-badge { padding: 3px 9px; border-radius: 4px; font-size: .72rem; font-weight: 600; }
+
+    .cta-box {
+      border: 1px solid var(--orange-border); border-radius: 16px;
+      background: var(--orange-dim); padding: 36px; margin: 48px 0;
+      text-align: center;
+    }
+    .cta-box h3 { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 900; margin-bottom: 10px; }
+    .cta-box p { font-size: .95rem; color: var(--white-60); margin-bottom: 24px; line-height: 1.65; }
+    .btn-primary { padding: 14px 32px; background: var(--orange); color: white; border-radius: 8px; font-size: 1rem; font-weight: 600; text-decoration: none; box-shadow: 0 0 32px rgba(255,107,43,.28); transition: all .2s; display: inline-block; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 48px rgba(255,107,43,.4); }
+    .cta-note { font-size: .78rem; color: var(--white-40); margin-top: 12px !important; }
+
+    .related { border-top: 1px solid var(--border); padding: clamp(48px,8vw,80px) clamp(20px,5vw,80px); }
+    .related-inner { max-width: 760px; margin: 0 auto; }
+    .related h3 { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; margin-bottom: 20px; }
+    .related-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+    @media (max-width: 640px) { .related-grid { grid-template-columns: 1fr; } }
+    .related-card { padding: 20px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-2); text-decoration: none; transition: border-color .2s, transform .2s; }
+    .related-card:hover { border-color: var(--border-2); transform: translateY(-2px); }
+    .related-card-label { font-size: .7rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--orange); margin-bottom: 8px; }
+    .related-card h4 { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; color: var(--white); line-height: 1.3; }
+
+    footer { border-top: 1px solid var(--border); padding: 24px clamp(20px,5vw,80px); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: var(--bg); }
+    .footer-logo { font-family: 'Playfair Display', serif; font-size: .95rem; font-weight: 700; color: var(--white); display: flex; align-items: center; gap: 7px; }
+    .footer-links { display: flex; gap: 18px; }
+    .footer-link { font-size: .78rem; color: var(--white-40); text-decoration: none; transition: color .2s; }
+    .footer-link:hover { color: var(--white-60); }
+    .footer-note { font-size: .74rem; color: var(--white-40); }
+
+    #beta-badge { position: fixed; bottom: 80px; right: 20px; z-index: 9999; background: rgba(255,107,43,.12); border: 1px solid rgba(255,107,43,.35); color: var(--orange); padding: 8px 14px; border-radius: 100px; font-size: .74rem; font-weight: 600; letter-spacing: .07em; cursor: pointer; backdrop-filter: blur(8px); display: flex; align-items: center; gap: 6px; transition: all .2s; font-family: 'Source Sans 3', sans-serif; }
+    #beta-badge:hover { background: rgba(255,107,43,.22); }
+
+    .reveal { opacity: 0; transform: translateY(20px); transition: opacity .6s ease, transform .6s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+  
+    ul.lista { margin: 0 0 18px 22px; color: var(--white-60); line-height: 1.8; } ul.lista li { margin-bottom: 6px; } ul.lista strong { color: var(--white-80); }
+    .calc-note { font-size: .8rem; color: var(--white-40); margin-top: 14px; line-height: 1.6; }
+
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="logo"><span class="logo-dot"></span>TriCoach AI</a>
+  <a href="https://getricoach.com/app" class="nav-cta">Empezar gratis →</a>
+</nav>
+
+<div class="hero-article">
+  <div class="breadcrumb"><a href="/">TriCoach AI</a> → Guías de entrenamiento</div>
+  <div class="label">Herramienta gratuita</div>
+  <h1>Predictor de <em>tiempos</em> de carrera</h1>
+  <p>Introduce un resultado reciente y estima tu tiempo en 5K, 10K, media maratón y maratón. Gratis, sin registro, en tu navegador.</p>
+  <div class="article-meta">
+    <span>TriCoach AI</span>
+    <span class="meta-sep"></span>
+    <span>Actualizado 2026</span>
+    <span class="meta-sep"></span>
+    <span>6 min de lectura</span>
+  </div>
+</div>
+
+<div class="content">
+
+
+  <div class="calculator reveal">
+    <h3>Predictor de tiempos de carrera</h3>
+    <p class="calc-sub">Introduce un resultado reciente y calcula una estimación para otras distancias. Todo se calcula en tu navegador.</p>
+    <div class="calc-row">
+      <div class="calc-field"><label for="pt-dist">Distancia de tu resultado</label>
+        <select id="pt-dist">
+          <option value="5">5K</option>
+          <option value="10" selected>10K</option>
+          <option value="21.0975">Media maratón</option>
+          <option value="42.195">Maratón</option>
+        </select>
+      </div>
+      <div class="calc-field"><label for="pt-h">Horas</label><input id="pt-h" type="number" min="0" max="9" step="1" placeholder="0" inputmode="numeric" /></div>
+      <div class="calc-field"><label for="pt-m">Minutos</label><input id="pt-m" type="number" min="0" max="59" step="1" placeholder="50" inputmode="numeric" /></div>
+      <div class="calc-field"><label for="pt-s">Segundos</label><input id="pt-s" type="number" min="0" max="59" step="1" placeholder="0" inputmode="numeric" /></div>
+      <button class="btn-calc" id="pt-btn" type="button">Calcular</button>
+    </div>
+    <div class="calc-results" id="pt-res" aria-live="polite">
+      <p id="pt-resumen" style="color:var(--white-80);margin-bottom:16px"></p>
+      <div class="result-grid" id="pt-grid" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))"></div>
+      <p id="pt-nota" class="calc-note"></p>
+    </div>
+  </div>
+
+  <div class="info-box reveal">
+    <div class="info-box-label">Resumen rápido</div>
+    <p>Escribe un resultado reciente (de una carrera o de un test serio) y la herramienta estima tu tiempo en 5K, 10K, media maratón y maratón con la fórmula de Riegel. Es una estimación: asume que has entrenado para la distancia más larga. Funciona en tu navegador y no guarda ningún dato.</p>
+  </div>
+
+  <h2>Cómo funciona <em>la predicción</em></h2>
+  <p>La herramienta usa la fórmula de Riegel, una de las más conocidas para estimar tiempos de carrera. Dice que el tiempo crece algo más rápido que la distancia: si doblas la distancia, tu tiempo no se duplica exactamente, se multiplica por un poco más de dos. Matemáticamente, el tiempo previsto es el tiempo conocido multiplicado por (distancia nueva ÷ distancia conocida) elevado a 1,06.</p>
+  <p>Un ejemplo: si corres un 10K en 50:00, la fórmula estima la media maratón en torno a 1:50:00 y el maratón en alrededor de 3:50:00. Esas cifras salen de asumir que tu preparación para esas distancias es equivalente a la de tu 10K, algo que a menudo no es cierto. Por eso el resultado es un techo teórico, no una promesa.</p>
+
+  <h2>Cuándo la estimación <em>es fiable</em></h2>
+  <table class="zones-table">
+    <tr><th>Situación</th><th>Fiabilidad</th><th>Qué hacer</th></tr>
+    <tr><td>Un 10K reciente, a tope, para estimar una media maratón</td><td>Buena</td><td>Úsala como referencia y reduce un poco si tus tiradas largas son cortas.</td></tr>
+    <tr><td>Una media maratón reciente para estimar un maratón</td><td>Media</td><td>Suele ser optimista; muchos corredores acaban entre un 3 y un 8 % por encima.</td></tr>
+    <tr><td>Un 5K para estimar un maratón</td><td>Baja</td><td>El 5K mide velocidad, no resistencia. No la uses como objetivo único.</td></tr>
+    <tr><td>Un resultado de hace meses o con mucho calor</td><td>Baja</td><td>Haz un test nuevo en condiciones normales antes de fijar el objetivo.</td></tr>
+    <tr><td>Un resultado de una carrera con mucho desnivel</td><td>Baja</td><td>Compara solo con carreras de perfil parecido.</td></tr>
+  </table>
+  <p>Cuanto más se aleje la distancia que quieres estimar de la que conoces, menos fiable será. En distancias largas pesan cosas que la fórmula no ve: tus tiradas largas, la nutrición, el calor y la gestión del ritmo.</p>
+
+  <h2>Qué hacer con <em>el resultado</em></h2>
+  <ul class="lista">
+    <li><strong>Úsalo como punto de partida, no como sentencia.</strong> Elige un objetivo ligeramente más conservador que la estimación si preparas tu primera distancia larga.</li>
+    <li><strong>Contrástalo con tus entrenamientos.</strong> Si el ritmo previsto para el maratón no lo aguantas durante un bloque de 12 a 16 km en una tirada larga, no es tu ritmo todavía.</li>
+    <li><strong>Calcula tus ritmos de trabajo.</strong> Con un ritmo objetivo definido, las series y los tempos se fijan mejor: mira la guía de <a href="/entrenamiento-series-running" style="color:var(--orange)">entrenamiento de series</a>.</li>
+    <li><strong>Prepara la estrategia.</strong> La guía de <a href="/estrategia-ritmo-carrera" style="color:var(--orange)">estrategia de ritmo en carrera</a> explica cómo salir y cómo repartir el esfuerzo.</li>
+    <li><strong>Pasa a un ritmo por kilómetro por tramos.</strong> La <a href="/calculadora-ritmo-maraton" style="color:var(--orange)">calculadora de ritmo de maratón</a> te da los parciales cada 5 kilómetros.</li>
+    <li><strong>Cuenta las semanas.</strong> La <a href="/calculadora-cuenta-atras-carrera" style="color:var(--orange)">cuenta atrás hasta tu carrera</a> te dice si te da tiempo de preparar ese objetivo.</li>
+  </ul>
+
+  <h2>Cómo hacer un <em>buen test</em> de referencia</h2>
+  <p>Una predicción es tan buena como el dato de partida. Para obtener una referencia fiable:</p>
+  <ol style="margin:0 0 18px 22px;color:var(--white-60);line-height:1.8">
+    <li>Elige un 5K o un 10K plano, en una carrera o en un circuito conocido y sin viento fuerte.</li>
+    <li>Descansa los dos días previos y calienta con <a href="/calentamiento-antes-de-correr" style="color:var(--orange)">una rutina de 10 a 15 minutos</a>.</li>
+    <li>Sal a un ritmo que puedas sostener y deja lo mejor para los últimos kilómetros; un test con salida demasiado rápida da un tiempo peor y una predicción falsa.</li>
+    <li>Apunta el tiempo oficial o el del reloj, junto con las condiciones (temperatura, viento, perfil).</li>
+    <li>Repite el test cada 8 a 12 semanas para ajustar los ritmos a tu forma real.</li>
+  </ol>
+  <p>Si acabas de retomar el entrenamiento, espera a tener unas semanas de continuidad: tu resultado de hoy no refleja lo que podrás hacer dentro de dos meses. En ese caso puede ayudarte la guía de <a href="/volver-a-entrenar-tras-parar" style="color:var(--orange)">volver a entrenar tras un parón</a>.</p>
+
+  <script>
+  (function(){
+    var $=function(id){return document.getElementById(id)};
+    var DIST=[[5,'5K'],[10,'10K'],[21.0975,'Media maratón'],[42.195,'Maratón']];
+    // Fórmula de Riegel: t2 = t1 * (d2/d1)^1.06. Devuelve segundos.
+    function riegel(t1,d1,d2){return t1*Math.pow(d2/d1,1.06);}
+    function fmt(seg){seg=Math.round(seg);var h=Math.floor(seg/3600),m=Math.floor((seg%3600)/60),s=seg%60;
+      return (h>0?h+':'+(m<10?'0':''):'')+m+':'+(s<10?'0':'')+s;}
+    function ritmo(seg,km){var p=Math.round(seg/km),m=Math.floor(p/60),s=p%60;return m+':'+(s<10?'0':'')+s+' /km';}
+    function calcular(){
+      var res=$('pt-res'),resumen=$('pt-resumen'),grid=$('pt-grid'),nota=$('pt-nota');
+      res.classList.add('show');grid.innerHTML='';nota.textContent='';
+      var d1=parseFloat($('pt-dist').value);
+      var h=parseInt($('pt-h').value||'0',10),m=parseInt($('pt-m').value||'0',10),s=parseInt($('pt-s').value||'0',10);
+      if([h,m,s].some(function(x){return isNaN(x)||x<0})||m>59||s>59){resumen.textContent='Revisa el tiempo: minutos y segundos entre 0 y 59.';return;}
+      var t1=h*3600+m*60+s;
+      if(t1<600){resumen.textContent='Introduce un tiempo realista (al menos 10 minutos).';return;}
+      resumen.textContent='Con tu resultado de '+fmt(t1)+' ('+ritmo(t1,d1)+'), estas son las estimaciones:';
+      var html='';
+      DIST.forEach(function(d){
+        var t=Math.abs(d[0]-d1)<0.01?t1:riegel(t1,d1,d[0]);
+        var mismo=Math.abs(d[0]-d1)<0.01;
+        html+='<div class="result-zone'+(mismo?' active':'')+'"><div class="result-zone-label">'+d[1]+'</div><div class="result-zone-range">'+fmt(t)+'</div><div class="result-zone-name">'+ritmo(t,d[0])+(mismo?' · tu dato':'')+'</div></div>';
+      });
+      grid.innerHTML=html;
+      var msg='Son estimaciones con la fórmula de Riegel: suponen que has entrenado para la distancia más larga. ';
+      if(d1<=10)msg+='Para el maratón, partir de un 5K o un 10K suele dar un tiempo optimista; contrástalo con tus tiradas largas.';
+      else msg+='Contrástalas con tus entrenamientos y con las condiciones del día de la carrera.';
+      nota.textContent=msg;
+      if(typeof gtag==='function'){try{gtag('event','herramienta_usada',{herramienta:'predictor_tiempos'});}catch(e){}}
+    }
+    $('pt-btn').addEventListener('click',calcular);
+    ['pt-h','pt-m','pt-s'].forEach(function(id){$(id).addEventListener('keydown',function(e){if(e.key==='Enter')calcular();});});
+    window.__ptRiegel=riegel;
+  })();
+  </script>
+
+
+  <div class="cta-box reveal">
+    <h3>¿Quieres un plan hecho para tu objetivo?</h3>
+    <p>Cuéntale a TriCoach AI tu carrera y tu disponibilidad: el plan semanal reparte los ritmos y las sesiones hasta ese día.</p>
+    <a href="https://getricoach.com/app" class="btn-primary">Empezar gratis →</a>
+    <p class="cta-note">7 días de prueba Pro sin tarjeta · Después, plan gratuito · 100% en español</p>
+  </div>
+
+  <h2>Preguntas <em>frecuentes</em></h2>
+  <h3>¿Qué es la fórmula de Riegel?</h3>
+  <p>Es una fórmula empírica que estima tu tiempo en otra distancia a partir de un resultado conocido: el tiempo nuevo es el anterior por (distancia nueva ÷ distancia conocida) elevado a 1,06.</p>
+  <h3>¿Es fiable para predecir un maratón?</h3>
+  <p>Es un punto de partida. Partiendo de un 5K o un 10K suele ser optimista, porque no tiene en cuenta tu resistencia ni tus tiradas largas. Partiendo de una media maratón reciente es más fiable, aunque muchos corredores acaban por encima.</p>
+  <h3>¿Qué resultado de partida debo usar?</h3>
+  <p>Uno reciente (de las últimas 6 a 8 semanas), a esfuerzo máximo y en condiciones normales, sin mucho calor ni desnivel.</p>
+  <h3>¿Por qué mi tiempo real es peor que la predicción?</h3>
+  <p>Porque la fórmula asume que has entrenado para la distancia más larga. Si tus tiradas son cortas o la nutrición y el ritmo no están ensayados, el tiempo real será peor.</p>
+  <h3>¿Guarda la herramienta mis datos?</h3>
+  <p>No. El cálculo se hace en tu navegador y no se envía ni se guarda ningún dato.</p>
+  <h3>¿Sirve para triatlón o para otros deportes?</h3>
+  <p>No está pensada para triatlón. La fórmula describe carreras a pie; en bici o natación el comportamiento del tiempo con la distancia es distinto.</p>
+
+</div>
+
+<div class="related">
+  <div class="related-inner">
+    <h3>Guías relacionadas</h3>
+    <div class="related-grid">
+      <a href="/calculadora-ritmo-maraton" class="related-card">
+        <div class="related-card-label">Guía</div>
+        <h4>Calculadora de ritmo de maratón</h4>
+      </a>
+      <a href="/estrategia-ritmo-carrera" class="related-card">
+        <div class="related-card-label">Guía</div>
+        <h4>Estrategia de ritmo en carrera</h4>
+      </a>
+      <a href="/plan-media-maraton" class="related-card">
+        <div class="related-card-label">Guía</div>
+        <h4>Plan de media maratón</h4>
+      </a>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-logo"><span style="width:7px;height:7px;border-radius:50%;background:var(--orange)"></span>TriCoach AI</div>
+  <div class="footer-links">
+    <a href="/" class="footer-link">Inicio</a>
+    <a href="/plan-entrenamiento-triatlon" class="footer-link">Triatlón</a>
+    <a href="mailto:coach@getricoach.com" class="footer-link">Contacto</a>
+    <a href="https://tally.so/r/VL8pyl" target="_blank" class="footer-link">Reportar problema</a>
+  </div>
+  <nav aria-label="Guías de entrenamiento" style="display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;max-width:900px;margin:0 auto 14px"><a href="/plan-entrenamiento-triatlon" class="footer-link">Plan de entrenamiento de triatlón</a><a href="/preparar-primer-triatlon" class="footer-link">Triatlón para principiantes</a><a href="/plan-media-maraton" class="footer-link">Plan de entrenamiento media maratón</a><a href="/plan-entrenamiento-hyrox" class="footer-link">Plan de entrenamiento Hyrox</a><a href="/maraton-valencia" class="footer-link">Maratón Valencia</a><a href="/maraton-madrid" class="footer-link">Maratón Madrid</a><a href="/maraton-barcelona" class="footer-link">Maratón Barcelona</a><a href="/plan-entrenamiento-10k" class="footer-link">Plan de entrenamiento 10K</a><a href="/plan-primer-maraton" class="footer-link">Maratón para principiantes</a><a href="/calculadora-ritmo-maraton" class="footer-link">Calculadora de ritmo de maratón</a><a href="/natacion-para-triatlon" class="footer-link">Natación para triatlón</a><a href="/plan-entrenamiento-5k" class="footer-link">Plan de entrenamiento 5K</a><a href="/bici-para-triatlon" class="footer-link">Bici para triatlón</a><a href="/recuperacion-entrenamiento" class="footer-link">Recuperación entre entrenamientos</a><a href="/entrenamiento-fuerza-corredores" class="footer-link">Fuerza para corredores</a><a href="/nutricion-carrera-larga" class="footer-link">Nutrición en carreras largas</a><a href="/volver-a-entrenar-tras-parar" class="footer-link">Volver a entrenar tras un parón</a><a href="/calculadora-zonas-pulso" class="footer-link">Calculadora de zonas de pulso</a></nav>
+  <p class="footer-note">© 2026 TriCoach AI</p>
+</footer>
+
+<div id="beta-badge" onclick="window.open('https://tally.so/r/VL8pyl','_blank')">
+  <span style="width:6px;height:6px;border-radius:50%;background:var(--orange);animation:pulse 2s infinite;display:inline-block"></span>
+  BETA · Reportar problema
+</div>
+
+<script>
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
