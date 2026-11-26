@@ -39,3 +39,7 @@
 - [Estrategia de ritmo en carrera](https://getricoach.com/estrategia-ritmo-carrera): ritmo constante, negativo o por esfuerzo, cómo calcular tu ritmo objetivo y cómo salir en 5K, 10K, media y maratón.
 - [Calentamiento antes de correr](https://getricoach.com/calentamiento-antes-de-correr): qué hacer según la sesión, una rutina paso a paso con movilidad dinámica y progresivos, y si conviene estirar antes.
 - [Cuenta atrás hasta tu carrera](https://getricoach.com/calculadora-cuenta-atras-carrera): calcula las semanas que te quedan hasta tu carrera y repártelas en base, desarrollo, específica y puesta a punto.
+- [Maratón de Sevilla](https://getricoach.com/maraton-sevilla): plan de 16 y 12 semanas, ritmo objetivo, nutrición, ropa de invierno y logística para un maratón llano y rápido de febrero.
+- [Cómo prevenir lesiones al correr](https://getricoach.com/prevenir-lesiones-corredor): progresión de carga, fuerza, descanso, zapatillas, sueño y señales de alarma para saber cuándo parar.
+- [Transiciones en triatlón (T1 y T2)](https://getricoach.com/transiciones-triatlon): orden del material, paso a paso de T1 y T2, errores comunes y cómo practicarlas antes de tu primera prueba.
+- [Predictor de tiempos de carrera](https://getricoach.com/calculadora-predictor-tiempos-carrera): estima tu tiempo en 5K, 10K, media maratón y maratón a partir de un resultado reciente con la fórmula de Riegel.
