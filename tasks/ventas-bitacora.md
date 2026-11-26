@@ -2,6 +2,24 @@
 
 Registro de lo que se hace en cada sesión del plan `tasks/plan-ventas-2026-11-16.md`. Lo más reciente, arriba. Cada entrada: fecha, qué se hizo (con PR), qué quedó a medias y qué toca después. Solo agregados, sin datos personales.
 
+## 2026-11-26 (jueves) — guías, predictor de tiempos y /precios
+**Hecho**
+- #30: 3 guías evergreen (`maraton-sevilla` con fecha 21-feb-2027 releída en la web oficial y título sin año, `prevenir-lesiones-corredor`, `transiciones-triatlon`; ~2.000 palabras, FAQ y JSON-LD) y herramienta `calculadora-predictor-tiempos-carrera` (Riegel, en el navegador, evento `herramienta_usada`, probada con Playwright). Redirects, sitemap, `llms.txt` y landing al día.
+- #31: página `/precios` indexable (Free vs Pro, mensual vs anual, prueba de 7 días, cancelación, FAQ y JSON-LD con ofertas); precios sin tocar; Intervals.icu indicado solo con Pro de pago.
+- 425 tests y build en verde. Sin PRs abiertos al empezar.
+- Embudo (agregados, desde 26-oct): 3 semanas con 1 alta cada una y 3 la semana del 26-oct; solo 1 de ellas ha marcado una sesión. Con este volumen no hay base estadística para el motor C: el cuello de botella sigue siendo el tráfico.
+
+**A medias**
+- Motor B (captura de email + secuencia): no empezado. Necesita tabla nueva en Supabase (migración con copia previa), función `suscribir-plan` con doble confirmación y baja, y contar destinatarios sumando crons.
+- Motor C: sin cambios; revisar el recorrido cuando haya más altas o con una prueba manual de extremo a extremo.
+- Valencia y Madrid sin fecha verificada; IndexNow sin hacer.
+- Despliegue de Netlify: comprobado con la herramienta, deploy actual de `tricoach-v2` en estado `ready`.
+
+**Siguiente (martes 1-dic)**
+- Motor B: migración `015` (tabla de suscriptores con token de confirmación y baja), función `suscribir-plan`, formulario en 2 guías y primer email de la secuencia; copia de seguridad antes.
+- Referidos (semana 3 del plan).
+- 3 guías + 1 herramienta (ideas: primer 10K en 8 semanas con enfoque de principiante, correr con calor, ritmo de recuperación; herramienta: calculadora de calorías/hidratos en carrera).
+
 ## 2026-11-24 (martes) — auto-plans, guías y cuenta atrás
 **Hecho**
 - #29: `auto-plans` genera plan a las Pro de pago y, a las cuentas solo en prueba, únicamente si pasan `cuentasActivas()` (si no se puede leer la actividad, solo Pro de pago); el log añade `dormidas_omitidas`. Decidido y documentado en `CLAUDE.md`.

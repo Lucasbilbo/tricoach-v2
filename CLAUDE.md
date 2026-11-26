@@ -77,6 +77,7 @@ El coach no respondía desde el 15-jun-2026: `claude-sonnet-4-20250514` fue reti
 - **Guía nueva**: `<slug>.html` en la raíz + par de redirects en `netlify.toml` + `sitemap.xml` + `static/llms.txt` + enlace desde la landing (`guias-seo.test.js` y `landing-afirmaciones.test.js` lo comprueban). Vocabulario neutro (vale para España y Latinoamérica); no marcar el contenido evergreen como solo España.
 - **Emails**: antes de crear o ampliar uno, contar a quién llega sumando todos los crons y usar `cuentasActivas` (`lib/actividad.js`), `bajaUserId` y `emails_baja_at=is.null`.
 - **Informes**: solo agregados, nunca emails ni nombres.
+- **`/precios`** (`precios.html`, 26-nov): Free vs Pro, mensual/anual y prueba; si cambia lo que incluye cada plan, actualizarla también (mismo criterio que la landing).
 
 ## 🔕 RECORDATORIO SOLO A CUENTAS ACTIVAS (16 noviembre 2026)
 - **Qué pasó**: el email de recuperación dio 7 días de prueba a 27 cuentas dormidas; `auto-plans` (que incluye cuentas en prueba) les generó plan el lunes, y con plan pasaban a recibir `session-reminder` cada día sin haber vuelto a la app.
