@@ -2,6 +2,22 @@
 
 Registro de lo que se hace en cada sesión del plan `tasks/plan-ventas-2026-11-16.md`. Lo más reciente, arriba. Cada entrada: fecha, qué se hizo (con PR), qué quedó a medias y qué toca después. Solo agregados, sin datos personales.
 
+## 2026-11-27 (viernes; sesión del jueves) — captura de email y 4 páginas nuevas
+**Hecho**
+- #32: motor B (captura de email). Migración `015` (`suscriptores_plan`, tabla nueva con RLS sin políticas; ya aplicada, no toca datos existentes), functions `suscribir-plan` (público, campo trampa, doble confirmación) y `suscripcion` (confirmar y baja con enlaces firmados), formulario en `plan-entrenamiento-10k` y `preparar-primer-triatlon`, evento GA4 `suscripcion_solicitada`. Tests y sección en `CLAUDE.md`. Ningún cron actual escribe a esta lista.
+- #33: 3 guías evergreen (`correr-con-calor`, `escala-rpe-entrenamiento`, `cadencia-al-correr`, ~1.800 palabras, FAQ y JSON-LD) y herramienta `calculadora-hidratos-carrera` (probada en navegador). Redirects, sitemap, `llms.txt` y landing al día.
+- 436 tests y build en verde. Sin PRs abiertos al empezar.
+
+**A medias**
+- Motor B: falta la secuencia de emails a `confirmado` (usa `secuencia_n`). Al crearla: contar destinatarios, filtrar `estado=eq.confirmado`, enlace de baja `urlAccion('baja', id)`. Hasta entonces quien confirma solo recibe la página de gracias. Además, el formulario está solo en 2 guías: extender al resto cuando la secuencia exista.
+- Referidos, envío a clubes y motor C (activación): sin empezar.
+- Valencia y Madrid sin fecha verificada; IndexNow sin hacer.
+
+**Siguiente (martes 1-dic)**
+- Secuencia de 4 emails en 10 días para `confirmado` (cron con `guardScheduled`) y formulario en más guías.
+- Referidos; empezar el envío a clubes (lista revisada en el repo, máx. 15/semana).
+- 3 guías + 1 herramienta (ideas: primer 5K en 6 semanas con enfoque de principiante no repetir, dormir y rendimiento, entrenar con lluvia/frío; herramienta: conversor de ritmo y velocidad).
+
 ## 2026-11-26 (jueves) — guías, predictor de tiempos y /precios
 **Hecho**
 - #30: 3 guías evergreen (`maraton-sevilla` con fecha 21-feb-2027 releída en la web oficial y título sin año, `prevenir-lesiones-corredor`, `transiciones-triatlon`; ~2.000 palabras, FAQ y JSON-LD) y herramienta `calculadora-predictor-tiempos-carrera` (Riegel, en el navegador, evento `herramienta_usada`, probada con Playwright). Redirects, sitemap, `llms.txt` y landing al día.

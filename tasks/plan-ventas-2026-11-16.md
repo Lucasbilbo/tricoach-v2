@@ -82,11 +82,12 @@ Sin presupuesto, el SEO tarda 6-10 semanas en notarse. Enero es el pico en Espa�
 - [ ] 20-nov: borrar `recuperacion-altas`.
 
 **Semana 2 (23-29 nov)**
-- [ ] Captura de email en guías + secuencia (motor B).
+- [x] Captura de email en guías (motor B, #32, 27-nov). [ ] Falta la secuencia de emails.
 - [ ] Revisión del recorrido de activación y primer arreglo (motor C).
 - [x] `auto-plans` solo a cuentas en prueba activas (#29, 24-nov).
 - [x] 3 guías (taper, estrategia de ritmo, calentamiento) + calculadora de cuenta atrás (#29, 24-nov).
 - [x] 3 guías (Sevilla, prevenir lesiones, transiciones) + predictor de tiempos (#30) y `/precios` (#31), 26-nov.
+- [x] 3 guías (calor, RPE, cadencia) + calculadora de hidratos (#33, 27-nov).
 
 **Semana 3 (30 nov-6 dic)**
 - Referidos en producción.

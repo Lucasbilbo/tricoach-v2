@@ -110,7 +110,7 @@ El coach sabe lo que entrena el usuario por el check-in de la sesión (hecho, es
 - Frontend: React + Vite (JavaScript, NO TypeScript)
 - Auth + DB: Supabase (URL: https://luqpjgzpydquqturgjmt.supabase.co) — RLS activado
 - Backend: Netlify Functions (CommonJS — require/exports.handler, NUNCA import/export)
-- Tests: Vitest — **414 tests pasando** (44 archivos, cargan sin .env) + Playwright E2E (3 specs)
+- Tests: Vitest — **436 tests pasando** (44 archivos, cargan sin .env) + Playwright E2E (3 specs)
 - Deploy: Netlify (producción: https://getricoach.com — la app vive en `/app`; `tricoach-v2.netlify.app` sigue como alias)
 - Pagos: Stripe (checkout + webhooks)
 - Email: Resend (coach@getricoach.com)
@@ -219,7 +219,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
 
 ### Tests
 - Ejecutar `npm test` al terminar SIEMPRE
-- **414 tests deben pasar** (45 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
+- **436 tests deben pasar** (46 archivos — actualizado noviembre 2026) — si alguno falla, arreglarlo antes de terminar
 - No borrar ni modificar tests existentes sin motivo explícito
 
 ## Estado del proyecto — Fases completadas
@@ -327,7 +327,7 @@ tricoach-v2/
 ├── supabase/
 │   └── migrations/            — 001_training_cycles, 002_strava_user_credentials (obsoleta), 003_unique_plan_semana,
 │                                004_contexto_proxima_semana, 005_trial_pro, 006_contexto_null, 007_emails_usuario,
-│                                008_capturas_semana, 009_recordatorio_sesion, 010_trial_dia3, 011_trial_reactivacion, 012_baja_emails, 013_intervals_event_ids, 014_intervals_athlete_unico. Las ejecuta Lucas a mano en Supabase (la 013 y la 014 ya están aplicadas).
+│                                008_capturas_semana, 009_recordatorio_sesion, 010_trial_dia3, 011_trial_reactivacion, 012_baja_emails, 013_intervals_event_ids, 014_intervals_athlete_unico, 015_suscriptores_plan. Las ejecuta Lucas a mano en Supabase (la 013 y la 014 ya están aplicadas).
 ├── src/
 │   ├── components/
 │   │   ├── Login.jsx, Onboarding.jsx (3 pantallas), WelcomeGuide.jsx
