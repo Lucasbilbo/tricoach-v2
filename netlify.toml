@@ -273,6 +273,50 @@
   status = 200
 
 [[redirects]]
+  from = "/correr-con-calor.html"
+  to = "/correr-con-calor"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/correr-con-calor"
+  to = "/correr-con-calor.html"
+  status = 200
+
+[[redirects]]
+  from = "/escala-rpe-entrenamiento.html"
+  to = "/escala-rpe-entrenamiento"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/escala-rpe-entrenamiento"
+  to = "/escala-rpe-entrenamiento.html"
+  status = 200
+
+[[redirects]]
+  from = "/cadencia-al-correr.html"
+  to = "/cadencia-al-correr"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/cadencia-al-correr"
+  to = "/cadencia-al-correr.html"
+  status = 200
+
+[[redirects]]
+  from = "/calculadora-hidratos-carrera.html"
+  to = "/calculadora-hidratos-carrera"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/calculadora-hidratos-carrera"
+  to = "/calculadora-hidratos-carrera.html"
+  status = 200
+
+[[redirects]]
   from = "/precios.html"
   to = "/precios"
   status = 301
