@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora de hidratos y líquido en carrera | TriCoach AI</title>
+  <meta name="description" content="Calcula una referencia de hidratos por hora, total en carrera, geles y líquido según la duración, tu experiencia y la temperatura. Gratis y sin registro." />
+  <meta name="keywords" content="calculadora hidratos carrera, cuántos geles en maratón, hidratos por hora, nutrición en carrera, hidratación al correr" />
+  <link rel="canonical" href="https://getricoach.com/calculadora-hidratos-carrera" />
+  <link rel="alternate" hreflang="es" href="https://getricoach.com/calculadora-hidratos-carrera" />
+  <link rel="alternate" hreflang="x-default" href="https://getricoach.com/calculadora-hidratos-carrera" />
+  <meta property="og:title" content="Calculadora de hidratos y líquido en carrera" />
+  <meta property="og:description" content="Calcula una referencia de hidratos por hora, total en carrera, geles y líquido según la duración, tu experiencia y la temperatura. Gratis y sin registro." />
+  <meta property="og:url" content="https://getricoach.com/calculadora-hidratos-carrera" />
+  <meta property="og:image" content="https://getricoach.com/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:locale" content="es_ES" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://getricoach.com/og-image.png" />
+  <meta property="og:type" content="article" />
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HKG9V6M7KF"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HKG9V6M7KF');
+  </script>
+
+  <script type="application/ld+json">
+  {"@context": "https://schema.org", "@type": "Article", "headline": "Calculadora de hidratos y líquido en carrera", "description": "Calcula una referencia de hidratos por hora, total en carrera, geles y líquido según la duración, tu experiencia y la temperatura. Gratis y sin registro.", "inLanguage": "es", "datePublished": "2026-11-27", "dateModified": "2026-11-27", "author": {"@type": "Organization", "name": "TriCoach AI"}, "publisher": {"@type": "Organization", "name": "TriCoach AI", "url": "https://getricoach.com"}, "mainEntityOfPage": "https://getricoach.com/calculadora-hidratos-carrera"}
+  </script>
+  <script type="application/ld+json">
+  {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "TriCoach AI", "item": "https://getricoach.com/"}, {"@type": "ListItem", "position": 2, "name": "Calculadora de hidratos y líquido en carrera", "item": "https://getricoach.com/calculadora-hidratos-carrera"}]}
+  </script>
+  <script type="application/ld+json">
+  {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Cuántos hidratos debo tomar por hora en una carrera?", "acceptedAnswer": {"@type": "Answer", "text": "Como referencia general, en esfuerzos de entre una hora y cuarto y dos horas se suele hablar de 30 a 60 g por hora, y en pruebas más largas, con el intestino entrenado, hasta 90 g por hora. Prueba y ajusta en tus entrenamientos largos."}}, {"@type": "Question", "name": "¿Hace falta tomar hidratos en una carrera de menos de una hora?", "acceptedAnswer": {"@type": "Answer", "text": "Normalmente no, si llegas bien alimentado. En esfuerzos cortos el cuerpo suele tener suficiente energía almacenada."}}, {"@type": "Question", "name": "¿Cuántos geles necesito para un maratón?", "acceptedAnswer": {"@type": "Answer", "text": "Depende de tu tiempo, de tu experiencia y de los gramos que aporte cada gel. La calculadora te da una estimación con tus datos; lo habitual es repartirlos en tomas regulares y probar la estrategia en tiradas largas."}}, {"@type": "Question", "name": "¿Cuánto líquido debo beber por hora?", "acceptedAnswer": {"@type": "Answer", "text": "No hay una cifra única: suele hablarse de un rango amplio que depende del calor y de lo que sudes. Guíate por la sed, prueba en entrenamiento y evita beber en exceso agua sola durante muchas horas."}}, {"@type": "Question", "name": "¿Qué pasa si los geles me sientan mal?", "acceptedAnswer": {"@type": "Answer", "text": "Baja la cantidad, espacia las tomas y practica con calma. Si persisten las molestias, prueba otro formato (bebida, barrita o alimentos sólidos) y consulta con un profesional si es un problema recurrente."}}, {"@type": "Question", "name": "¿Esta calculadora sirve para triatlón o ciclismo?", "acceptedAnswer": {"@type": "Answer", "text": "Los rangos de hidratos por hora se usan con frecuencia en ejercicios de resistencia prolongados, pero en bici suele tolerarse más cantidad que corriendo. Úsala como orientación y ajusta con tus pruebas."}}]}
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #080808; --bg-2: #0d0d0d; --bg-3: #131313; --bg-4: #191919;
+      --orange: #FF6B2B; --orange-dim: rgba(255,107,43,0.12); --orange-border: rgba(255,107,43,0.25);
+      --white: #fff; --white-80: rgba(255,255,255,0.8); --white-60: rgba(255,255,255,0.6);
+      --white-40: rgba(255,255,255,0.4); --white-20: rgba(255,255,255,0.2);
+      --border: rgba(255,255,255,0.08); --border-2: rgba(255,255,255,0.12);
+      --green: #22c55e;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Source Sans 3', sans-serif; background: var(--bg); color: var(--white); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 clamp(20px,5vw,80px); height: 64px;
+      background: rgba(8,8,8,0.92); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .logo { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: var(--white); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+    .logo-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--orange); animation: pulse 2.5s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.35); } }
+    .nav-cta { padding: 8px 20px; background: var(--orange); color: white; border-radius: 6px; font-size: .86rem; font-weight: 600; text-decoration: none; transition: opacity .2s; }
+    .nav-cta:hover { opacity: .88; }
+
+    .hero-article {
+      padding: clamp(60px,8vw,100px) clamp(20px,5vw,80px) clamp(48px,6vw,72px);
+      max-width: 860px; margin: 0 auto; text-align: center;
+    }
+    .breadcrumb { font-size: .78rem; color: var(--white-40); margin-bottom: 20px; }
+    .breadcrumb a { color: var(--orange); text-decoration: none; }
+    .label { font-size: .72rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--orange); margin-bottom: 16px; }
+
+    h1 { font-family: 'Playfair Display', serif; font-size: clamp(2.2rem,5vw,3.8rem); font-weight: 900; line-height: 1.08; letter-spacing: -0.02em; margin-bottom: 20px; }
+    h1 em { font-style: italic; color: var(--orange); }
+
+    .hero-article p { font-size: 1.1rem; color: var(--white-60); line-height: 1.75; max-width: 640px; margin: 0 auto 36px; }
+
+    .article-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: .8rem; color: var(--white-40); flex-wrap: wrap; }
+    .meta-sep { width: 3px; height: 3px; border-radius: 50%; background: var(--white-20); }
+
+    .content { max-width: 760px; margin: 0 auto; padding: 0 clamp(20px,5vw,80px) clamp(72px,10vw,120px); }
+
+    h2 { font-family: 'Playfair Display', serif; font-size: clamp(1.6rem,3vw,2.2rem); font-weight: 900; line-height: 1.15; letter-spacing: -0.02em; margin: 56px 0 16px; }
+    h2 em { font-style: italic; color: var(--orange); }
+    h3 { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: 700; margin: 32px 0 10px; }
+
+    p { font-size: 1rem; color: var(--white-60); line-height: 1.8; margin-bottom: 18px; }
+    strong { color: var(--white-80); font-weight: 600; }
+
+    .info-box {
+      border: 1px solid var(--orange-border); border-radius: 12px;
+      background: var(--orange-dim); padding: 24px 28px; margin: 32px 0;
+    }
+    .info-box-label { font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--orange); margin-bottom: 10px; }
+    .info-box p { color: var(--white-80); margin: 0; font-size: .95rem; }
+
+    .zones-table { width: 100%; border-collapse: collapse; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); margin: 28px 0; }
+    .zones-table th { padding: 13px 18px; background: var(--bg-4); font-size: .8rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--white-40); text-align: left; }
+    .zones-table td { padding: 13px 18px; font-size: .9rem; color: var(--white-60); border-top: 1px solid var(--border); }
+    .zones-table tr.highlight td { background: var(--orange-dim); color: var(--white-80); font-weight: 500; }
+    .zone-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: .75rem; font-weight: 700; }
+    .z1 { background: rgba(34,197,94,.15); color: #22c55e; }
+    .z2 { background: var(--orange-dim); color: var(--orange); }
+    .z3 { background: rgba(234,179,8,.15); color: #eab308; }
+    .z4 { background: rgba(239,68,68,.15); color: #ef4444; }
+    .z5 { background: rgba(168,85,247,.15); color: #a855f7; }
+
+    .calculator {
+      border: 1px solid var(--border-2); border-radius: 16px;
+      background: var(--bg-2); padding: 32px; margin: 36px 0;
+    }
+    .calculator h3 { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; margin: 0 0 8px; }
+    .calc-sub { font-size: .88rem; color: var(--white-40); margin-bottom: 24px !important; }
+
+    .calc-row { display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 20px; }
+    .calc-field { flex: 1; min-width: 140px; }
+    .calc-field label { display: block; font-size: .8rem; font-weight: 600; color: var(--white-40); margin-bottom: 8px; letter-spacing: .06em; text-transform: uppercase; }
+    .calc-field input {
+      width: 100%; padding: 12px 16px;
+      background: var(--bg-3); border: 1px solid var(--border-2);
+      border-radius: 8px; color: var(--white);
+      font-family: 'Source Sans 3', sans-serif; font-size: 1rem;
+      outline: none; transition: border-color .2s;
+    }
+    .calc-field input:focus { border-color: var(--orange); }
+    .calc-field select {
+      width: 100%; padding: 12px 16px;
+      background: var(--bg-3); border: 1px solid var(--border-2);
+      border-radius: 8px; color: var(--white);
+      font-family: 'Source Sans 3', sans-serif; font-size: 1rem;
+      outline: none; cursor: pointer;
+    }
+
+    .btn-calc {
+      padding: 12px 28px; background: var(--orange); color: white;
+      border: none; border-radius: 8px;
+      font-family: 'Source Sans 3', sans-serif; font-size: .95rem; font-weight: 600;
+      cursor: pointer; transition: opacity .2s; white-space: nowrap;
+    }
+    .btn-calc:hover { opacity: .88; }
+
+    .calc-results { display: none; margin-top: 20px; }
+    .calc-results.show { display: block; }
+    .result-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; }
+    @media (max-width: 600px) { .result-grid { grid-template-columns: repeat(2,1fr); } }
+    .result-zone {
+      padding: 14px 12px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--bg-3);
+      text-align: center;
+    }
+    .result-zone.active { border-color: var(--orange); background: var(--orange-dim); }
+    .result-zone-label { font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--white-40); margin-bottom: 6px; }
+    .result-zone-range { font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 700; color: var(--white); }
+    .result-zone-name { font-size: .72rem; color: var(--white-40); margin-top: 4px; }
+    .result-zone.active .result-zone-label { color: var(--orange); }
+    .result-zone.active .result-zone-range { color: var(--white); }
+
+    .week-example {
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--bg-2); overflow: hidden; margin: 28px 0;
+    }
+    .week-header { padding: 14px 20px; background: var(--bg-4); border-bottom: 1px solid var(--border); font-size: .8rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--white-40); }
+    .week-row { display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-top: 1px solid var(--border); }
+    .week-row:first-of-type { border-top: none; }
+    .week-day { font-size: .82rem; font-weight: 600; color: var(--white-40); width: 80px; flex-shrink: 0; }
+    .week-session { flex: 1; }
+    .week-session-name { font-size: .9rem; font-weight: 500; margin-bottom: 2px; }
+    .week-session-desc { font-size: .78rem; color: var(--white-40); }
+    .week-badge { padding: 3px 9px; border-radius: 4px; font-size: .72rem; font-weight: 600; }
+
+    .cta-box {
+      border: 1px solid var(--orange-border); border-radius: 16px;
+      background: var(--orange-dim); padding: 36px; margin: 48px 0;
+      text-align: center;
+    }
+    .cta-box h3 { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 900; margin-bottom: 10px; }
+    .cta-box p { font-size: .95rem; color: var(--white-60); margin-bottom: 24px; line-height: 1.65; }
+    .btn-primary { padding: 14px 32px; background: var(--orange); color: white; border-radius: 8px; font-size: 1rem; font-weight: 600; text-decoration: none; box-shadow: 0 0 32px rgba(255,107,43,.28); transition: all .2s; display: inline-block; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 48px rgba(255,107,43,.4); }
+    .cta-note { font-size: .78rem; color: var(--white-40); margin-top: 12px !important; }
+
+    .related { border-top: 1px solid var(--border); padding: clamp(48px,8vw,80px) clamp(20px,5vw,80px); }
+    .related-inner { max-width: 760px; margin: 0 auto; }
+    .related h3 { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; margin-bottom: 20px; }
+    .related-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+    @media (max-width: 640px) { .related-grid { grid-template-columns: 1fr; } }
+    .related-card { padding: 20px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-2); text-decoration: none; transition: border-color .2s, transform .2s; }
+    .related-card:hover { border-color: var(--border-2); transform: translateY(-2px); }
+    .related-card-label { font-size: .7rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--orange); margin-bottom: 8px; }
+    .related-card h4 { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; color: var(--white); line-height: 1.3; }
+
+    footer { border-top: 1px solid var(--border); padding: 24px clamp(20px,5vw,80px); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: var(--bg); }
+    .footer-logo { font-family: 'Playfair Display', serif; font-size: .95rem; font-weight: 700; color: var(--white); display: flex; align-items: center; gap: 7px; }
+    .footer-links { display: flex; gap: 18px; }
+    .footer-link { font-size: .78rem; color: var(--white-40); text-decoration: none; transition: color .2s; }
+    .footer-link:hover { color: var(--white-60); }
+    .footer-note { font-size: .74rem; color: var(--white-40); }
+
+    #beta-badge { position: fixed; bottom: 80px; right: 20px; z-index: 9999; background: rgba(255,107,43,.12); border: 1px solid rgba(255,107,43,.35); color: var(--orange); padding: 8px 14px; border-radius: 100px; font-size: .74rem; font-weight: 600; letter-spacing: .07em; cursor: pointer; backdrop-filter: blur(8px); display: flex; align-items: center; gap: 6px; transition: all .2s; font-family: 'Source Sans 3', sans-serif; }
+    #beta-badge:hover { background: rgba(255,107,43,.22); }
+
+    .reveal { opacity: 0; transform: translateY(20px); transition: opacity .6s ease, transform .6s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+  
+    ul.lista { margin: 0 0 18px 22px; color: var(--white-60); line-height: 1.8; } ul.lista li { margin-bottom: 6px; } ul.lista strong { color: var(--white-80); }
+    .calc-note { font-size: .8rem; color: var(--white-40); margin-top: 14px; line-height: 1.6; }
+
+    .calculator {
+      border: 1px solid var(--border-2); border-radius: 16px;
+      background: var(--bg-2); padding: 32px; margin: 36px 0;
+    }
+    .calculator h3 { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; margin: 0 0 8px; }
+    .calc-sub { font-size: .88rem; color: var(--white-40); margin-bottom: 24px !important; }
+
+    .calc-row { display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 20px; }
+    .calc-field { flex: 1; min-width: 140px; }
+    .calc-field label { display: block; font-size: .8rem; font-weight: 600; color: var(--white-40); margin-bottom: 8px; letter-spacing: .06em; text-transform: uppercase; }
+    .calc-field input {
+      width: 100%; padding: 12px 16px;
+      background: var(--bg-3); border: 1px solid var(--border-2);
+      border-radius: 8px; color: var(--white);
+      font-family: 'Source Sans 3', sans-serif; font-size: 1rem;
+      outline: none; transition: border-color .2s;
+    }
+    .calc-field input:focus { border-color: var(--orange); }
+    .calc-field select {
+      width: 100%; padding: 12px 16px;
+      background: var(--bg-3); border: 1px solid var(--border-2);
+      border-radius: 8px; color: var(--white);
+      font-family: 'Source Sans 3', sans-serif; font-size: 1rem;
+      outline: none; cursor: pointer;
+    }
+
+    .btn-calc {
+      padding: 12px 28px; background: var(--orange); color: white;
+      border: none; border-radius: 8px;
+      font-family: 'Source Sans 3', sans-serif; font-size: .95rem; font-weight: 600;
+      cursor: pointer; transition: opacity .2s; white-space: nowrap;
+    }
+    .btn-calc:hover { opacity: .88; }
+
+    .calc-results { display: none; margin-top: 20px; }
+    .calc-results.show { display: block; }
+    .result-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; }
+    @media (max-width: 600px) { .result-grid { grid-template-columns: repeat(2,1fr); } }
+    .result-zone {
+      padding: 14px 12px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--bg-3);
+      text-align: center;
+    }
+    .result-zone.active { border-color: var(--orange); background: var(--orange-dim); }
+    .result-zone-label { font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--white-40); margin-bottom: 6px; }
+    .result-zone-range { font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 700; color: var(--white); }
+    .result-zone-name { font-size: .72rem; color: var(--white-40); margin-top: 4px; }
+    .result-zone.active .result-zone-label { color: var(--orange); }
+    .result-zone.active .result-zone-range { color: var(--white); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="logo"><span class="logo-dot"></span>TriCoach AI</a>
+  <a href="https://getricoach.com/app" class="nav-cta">Empezar gratis →</a>
+</nav>
+
+<div class="hero-article">
+  <div class="breadcrumb"><a href="/">TriCoach AI</a> → Guías de entrenamiento</div>
+  <div class="label">Guía completa</div>
+  <h1>Calculadora de <em>hidratos</em> en carrera</h1>
+  <p>Una referencia de hidratos por hora, geles y líquido según la duración de tu prueba, tu experiencia y la temperatura.</p>
+  <div class="article-meta">
+    <span>TriCoach AI</span>
+    <span class="meta-sep"></span>
+    <span>Actualizado 2026</span>
+    <span class="meta-sep"></span>
+    <span>6 min de lectura</span>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="info-box reveal">
+    <div class="info-box-label">Resumen rápido</div>
+    <p>Esta calculadora da rangos orientativos de hidratos y líquido para tu carrera: de 30 a 60 g/h entre 1 h 15 y 2 h, y más solo con el intestino entrenado. Sube poco a poco en entrenamientos largos, no estrenes nada el día de la prueba y consulta a un profesional si tienes una condición médica.</p>
+  </div>
+
+  <div class="calculator reveal">
+    <h3>Calculadora de hidratos y líquido en carrera</h3>
+    <p class="calc-sub">Introduce la duración estimada y tu experiencia tomando hidratos durante el esfuerzo. Todo se calcula en tu navegador, sin guardar datos.</p>
+    <div class="calc-row">
+      <div class="calc-field"><label for="hc-h">Horas</label><input id="hc-h" type="number" min="0" max="24" step="1" placeholder="2" inputmode="numeric" /></div>
+      <div class="calc-field"><label for="hc-m">Minutos</label><input id="hc-m" type="number" min="0" max="59" step="1" placeholder="30" inputmode="numeric" /></div>
+      <div class="calc-field"><label for="hc-exp">Experiencia con hidratos en carrera</label>
+        <select id="hc-exp"><option value="ninguna">Ninguna o poca</option><option value="algo" selected>Algo (los he probado en tiradas largas)</option><option value="habituado">Mucha (los tomo a menudo y los tolero bien)</option></select>
+      </div>
+    </div>
+    <div class="calc-row">
+      <div class="calc-field"><label for="hc-temp">Temperatura</label>
+        <select id="hc-temp"><option value="fresco">Fresco</option><option value="templado" selected>Templado</option><option value="calor">Calor</option></select>
+      </div>
+      <div class="calc-field"><label for="hc-gel">Gramos de hidratos por gel</label><input id="hc-gel" type="number" min="10" max="60" step="1" value="25" inputmode="numeric" /></div>
+      <button class="btn-calc" id="hc-btn" type="button">Calcular</button>
+    </div>
+    <div class="calc-results" id="hc-res" aria-live="polite">
+      <p id="hc-resumen" style="color:var(--white-80);margin-bottom:16px"></p>
+      <div class="result-grid" id="hc-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))"></div>
+      <p id="hc-nota" class="calc-note"></p>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    var $=function(id){return document.getElementById(id)};
+    // Rangos orientativos de hidratos (g/h) según duración y experiencia; en pruebas largas se llega a 90 g/h solo con el intestino entrenado.
+    function rangoHidratos(min,exp){
+      if(min<45)return [0,0];
+      if(min<75)return [0,30];
+      if(min<=120)return exp==='ninguna'?[20,40]:[30,60];
+      if(exp==='ninguna')return [30,45];
+      if(exp==='algo')return [30,60];
+      return [60,90];
+    }
+    function rangoLiquido(temp){return temp==='calor'?[500,800]:temp==='fresco'?[400,600]:[400,700];}
+    function card(label,valor,sub){return '<div class="result-zone"><div class="result-zone-label">'+label+'</div><div class="result-zone-range">'+valor+'</div><div class="result-zone-name">'+sub+'</div></div>';}
+    function calcular(){
+      var res=$('hc-res'),resumen=$('hc-resumen'),grid=$('hc-grid'),nota=$('hc-nota');
+      res.classList.add('show');grid.innerHTML='';nota.textContent='';
+      var h=parseInt($('hc-h').value||'0',10),m=parseInt($('hc-m').value||'0',10);
+      var gel=parseFloat($('hc-gel').value);
+      if([h,m].some(function(x){return isNaN(x)||x<0})||m>59){resumen.textContent='Revisa la duración: minutos entre 0 y 59.';return;}
+      var min=h*60+m;
+      if(min<20){resumen.textContent='Introduce una duración de al menos 20 minutos.';return;}
+      if(isNaN(gel)||gel<10||gel>60){resumen.textContent='Revisa los gramos por gel (entre 10 y 60).';return;}
+      var exp=$('hc-exp').value,temp=$('hc-temp').value;
+      var r=rangoHidratos(min,exp),l=rangoLiquido(temp),horas=min/60;
+      var html='';
+      if(r[1]===0){
+        resumen.textContent='En un esfuerzo de menos de 45 minutos, normalmente no hace falta tomar hidratos durante la carrera si llegas bien alimentado.';
+        html+=card('Hidratos','No necesarios','llega bien alimentado');
+      } else {
+        var tmin=Math.round(r[0]*horas),tmax=Math.round(r[1]*horas);
+        resumen.textContent='Para '+(h>0?h+' h ':'')+(m>0?m+' min':'')+', una referencia orientativa:';
+        html+=card('Hidratos por hora',r[0]+'-'+r[1]+' g','según duración y experiencia');
+        html+=card('Total en la prueba',tmin+'-'+tmax+' g','a lo largo del esfuerzo');
+        html+=card('Geles equivalentes',Math.ceil(tmin/gel)+'-'+Math.ceil(tmax/gel),'de '+gel+' g cada uno');
+      }
+      html+=card('Líquido por hora',l[0]+'-'+l[1]+' ml','según la temperatura');
+      grid.innerHTML=html;
+      var msg='Son rangos generales de nutrición deportiva, no una prescripción: ajusta con tus pruebas en entrenamientos largos, tu sudoración y lo que tu estómago tolera. ';
+      if(r[1]>60)msg+='Más de 60 g/h solo tiene sentido si has entrenado el intestino con semanas de práctica. ';
+      msg+='Si tienes diabetes u otra condición médica, consulta antes con tu profesional sanitario.';
+      nota.textContent=msg;
+      if(typeof gtag==='function'){try{gtag('event','herramienta_usada',{herramienta:'hidratos_carrera'});}catch(e){}}
+    }
+    $('hc-btn').addEventListener('click',calcular);
+    ['hc-h','hc-m','hc-gel'].forEach(function(id){$(id).addEventListener('keydown',function(e){if(e.key==='Enter')calcular();});});
+    window.__hcRango=rangoHidratos;
+  })();
+  </script>
+
+  <h2>Cómo leer <em>los resultados</em></h2>
+  <p>La calculadora te da un rango y no una cifra exacta, a propósito. La cantidad de hidratos que conviene tomar en carrera depende de la duración, de la intensidad, de tu tamaño, de lo que hayas comido antes y, sobre todo, de lo que tu estómago tolera. Un rango te permite empezar por la parte baja, probar en entrenamientos y subir si lo toleras.</p>
+  <ul class="lista">
+    <li><strong>Menos de 45 minutos:</strong> normalmente no hace falta tomar hidratos durante el esfuerzo si llegas bien alimentado.</li>
+    <li><strong>Entre 45 y 75 minutos:</strong> pequeñas cantidades pueden ayudar, aunque no son imprescindibles.</li>
+    <li><strong>De 1 h 15 a 2 h:</strong> la referencia habitual es de 30 a 60 g por hora, según tu experiencia.</li>
+    <li><strong>Más de 2 horas:</strong> se suele recomendar tomar de forma regular y, solo con el intestino entrenado, subir hasta 90 g por hora combinando distintos tipos de hidratos.</li>
+  </ul>
+  <p>El líquido es un rango aún más personal: depende de cuánto sudes, que varía mucho entre personas y con el calor. Si quieres más contexto sobre cómo organizar alimentación y bebida en pruebas largas, tienes la guía de <a href="/nutricion-carrera-larga">nutrición en carreras largas</a>, y para el calor, la de <a href="/correr-con-calor">correr con calor</a>.</p>
+
+  <h2>Cómo traducir los gramos <em>a cosas reales</em></h2>
+  <p>Los gramos no se comen: se comen geles, barritas, bebida con hidratos, plátano o fruta seca. Un gel típico aporta alrededor de 20 a 30 g de hidratos, pero varía mucho de una marca a otra, y por eso la calculadora te deja cambiar ese dato. Lee la etiqueta de tu producto y ponla en el campo «Gramos de hidratos por gel».</p>
+  <p>Una forma práctica de organizarlo es repartir las tomas en intervalos regulares, por ejemplo cada 20 a 30 minutos, en vez de tomar mucho de golpe. Tomar poca cantidad cada vez es más fácil para el estómago y mantiene el aporte estable. Y la bebida con hidratos también cuenta: si bebes una bebida deportiva, resta esos gramos de lo que debes tomar en geles.</p>
+
+  <h2>Entrena tu <em>estómago</em></h2>
+  <p>El sistema digestivo se adapta a lo que le das. Si nunca has tomado hidratos durante un esfuerzo largo, empieza con cantidades bajas en tus tiradas largas y sube de forma gradual a lo largo de varias semanas. Prueba exactamente lo que vas a usar en carrera: marca, sabor, momento y cantidad. Y no estrenes nada el día de la prueba.</p>
+  <ul class="lista">
+    <li>Anota qué tomaste, cuánto y cómo te sentó.</li>
+    <li>Si aparecen molestias, baja la cantidad o espacia más las tomas antes de cambiar de producto.</li>
+    <li>Bebe agua junto con los geles concentrados, según las indicaciones del fabricante.</li>
+    <li>Practica en los ritmos y el clima parecidos a los de la carrera, porque el calor y la intensidad empeoran la tolerancia.</li>
+  </ul>
+
+  <h2>Límites <em>de la calculadora</em></h2>
+  <p>Esta herramienta es una guía general y no sustituye a un dietista-nutricionista deportivo. No tiene en cuenta tu peso, tu ritmo exacto, tu sudoración, tu dieta de los días previos ni condiciones médicas. Si tienes diabetes, problemas digestivos, hipertensión o cualquier condición que afecte a cómo tratas los hidratos o los líquidos, habla con tu profesional sanitario antes de aplicar estas pautas.</p>
+
+
+  <div class="cta-box reveal">
+    <h3>¿Quieres un plan que se adapte a ti?</h3>
+    <p>TriCoach AI arma tu semana según tu nivel y tu disponibilidad, la ajusta con lo que vas haciendo y el coach resuelve tus dudas por chat.</p>
+    <a href="https://getricoach.com/app" class="btn-primary">Empezar gratis →</a>
+    <p class="cta-note">7 días de prueba Pro sin tarjeta · Después, plan gratuito · 100% en español</p>
+  </div>
+
+  <h2>Preguntas <em>frecuentes</em></h2>
+  <h3>¿Cuántos hidratos debo tomar por hora en una carrera?</h3>
+  <p>Como referencia general, en esfuerzos de entre una hora y cuarto y dos horas se suele hablar de 30 a 60 g por hora, y en pruebas más largas, con el intestino entrenado, hasta 90 g por hora. Prueba y ajusta en tus entrenamientos largos.</p>
+  <h3>¿Hace falta tomar hidratos en una carrera de menos de una hora?</h3>
+  <p>Normalmente no, si llegas bien alimentado. En esfuerzos cortos el cuerpo suele tener suficiente energía almacenada.</p>
+  <h3>¿Cuántos geles necesito para un maratón?</h3>
+  <p>Depende de tu tiempo, de tu experiencia y de los gramos que aporte cada gel. La calculadora te da una estimación con tus datos; lo habitual es repartirlos en tomas regulares y probar la estrategia en tiradas largas.</p>
+  <h3>¿Cuánto líquido debo beber por hora?</h3>
+  <p>No hay una cifra única: suele hablarse de un rango amplio que depende del calor y de lo que sudes. Guíate por la sed, prueba en entrenamiento y evita beber en exceso agua sola durante muchas horas.</p>
+  <h3>¿Qué pasa si los geles me sientan mal?</h3>
+  <p>Baja la cantidad, espacia las tomas y practica con calma. Si persisten las molestias, prueba otro formato (bebida, barrita o alimentos sólidos) y consulta con un profesional si es un problema recurrente.</p>
+  <h3>¿Esta calculadora sirve para triatlón o ciclismo?</h3>
+  <p>Los rangos de hidratos por hora se usan con frecuencia en ejercicios de resistencia prolongados, pero en bici suele tolerarse más cantidad que corriendo. Úsala como orientación y ajusta con tus pruebas.</p>
+
+</div>
+
+<div class="related">
+  <div class="related-inner">
+    <h3>Guías relacionadas</h3>
+    <div class="related-grid">
+      <a href="/nutricion-carrera-larga" class="related-card">
+        <div class="related-card-label">Guía</div>
+        <h4>Nutrición en carreras largas</h4>
+      </a>
+      <a href="/correr-con-calor" class="related-card">
+        <div class="related-card-label">Guía</div>
+        <h4>Correr con calor</h4>
+      </a>
+      <a href="/calculadora-predictor-tiempos-carrera" class="related-card">
+        <div class="related-card-label">Guía</div>
+        <h4>Predictor de tiempos de carrera</h4>
+      </a>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-logo"><span style="width:7px;height:7px;border-radius:50%;background:var(--orange)"></span>TriCoach AI</div>
+  <div class="footer-links">
+    <a href="/" class="footer-link">Inicio</a>
+    <a href="/plan-entrenamiento-triatlon" class="footer-link">Triatlón</a>
+    <a href="mailto:coach@getricoach.com" class="footer-link">Contacto</a>
+    <a href="https://tally.so/r/VL8pyl" target="_blank" class="footer-link">Reportar problema</a>
+  </div>
+  <nav aria-label="Guías de entrenamiento" style="display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;max-width:900px;margin:0 auto 14px"><a href="/plan-entrenamiento-triatlon" class="footer-link">Plan de entrenamiento de triatlón</a><a href="/preparar-primer-triatlon" class="footer-link">Triatlón para principiantes</a><a href="/plan-media-maraton" class="footer-link">Plan de entrenamiento media maratón</a><a href="/plan-entrenamiento-hyrox" class="footer-link">Plan de entrenamiento Hyrox</a><a href="/maraton-valencia" class="footer-link">Maratón Valencia</a><a href="/maraton-madrid" class="footer-link">Maratón Madrid</a><a href="/maraton-barcelona" class="footer-link">Maratón Barcelona</a><a href="/plan-entrenamiento-10k" class="footer-link">Plan de entrenamiento 10K</a><a href="/plan-primer-maraton" class="footer-link">Maratón para principiantes</a><a href="/calculadora-ritmo-maraton" class="footer-link">Calculadora de ritmo de maratón</a><a href="/natacion-para-triatlon" class="footer-link">Natación para triatlón</a><a href="/plan-entrenamiento-5k" class="footer-link">Plan de entrenamiento 5K</a><a href="/bici-para-triatlon" class="footer-link">Bici para triatlón</a><a href="/recuperacion-entrenamiento" class="footer-link">Recuperación entre entrenamientos</a><a href="/entrenamiento-fuerza-corredores" class="footer-link">Fuerza para corredores</a><a href="/nutricion-carrera-larga" class="footer-link">Nutrición en carreras largas</a><a href="/volver-a-entrenar-tras-parar" class="footer-link">Volver a entrenar tras un parón</a><a href="/calculadora-zonas-pulso" class="footer-link">Calculadora de zonas de pulso</a></nav>
+  <p class="footer-note">© 2026 TriCoach AI</p>
+</footer>
+
+<div id="beta-badge" onclick="window.open('https://tally.so/r/VL8pyl','_blank')">
+  <span style="width:6px;height:6px;border-radius:50%;background:var(--orange);animation:pulse 2s infinite;display:inline-block"></span>
+  BETA · Reportar problema
+</div>
+
+<script>
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
