@@ -79,6 +79,12 @@ El coach no respondía desde el 15-jun-2026: `claude-sonnet-4-20250514` fue reti
 - **Informes**: solo agregados, nunca emails ni nombres.
 - **`/precios`** (`precios.html`, 26-nov): Free vs Pro, mensual/anual y prueba; si cambia lo que incluye cada plan, actualizarla también (mismo criterio que la landing).
 
+## 📬 CAPTURA DE EMAIL EN GUÍAS (27 noviembre 2026) — motor B del plan de ventas
+- **Tabla `suscriptores_plan`** (migración 015, YA aplicada; tabla nueva, RLS sin políticas: solo la service key). Estados `pendiente` → `confirmado` → `baja`; índice único sobre `lower(email)`. Quien está de baja no se reactiva, ni con un enlace viejo ni volviendo a dejar su email.
+- **Flujo**: formulario en la guía → `suscribir-plan` (público, CORS, campo trampa `website`, respuesta siempre `ok`, reenvío mínimo cada 10 min) → email de confirmación (`force`, es transaccional) → `suscripcion?a=confirmar|baja` (GET enseña botón, POST aplica). Enlaces firmados con HMAC de `INTERNAL_API_SECRET` (`lib/suscripcion.js`), distintos de la baja de usuarios (`lib/baja.js`).
+- **Formulario**: de momento solo en `plan-entrenamiento-10k` y `preparar-primer-triatlon` (bloque `.sub-box`); evento GA4 `suscripcion_solicitada`.
+- **Pendiente**: la secuencia de emails a `confirmado` (usa `secuencia_n` / `secuencia_ultimo_at`). Esta lista NO la toca ningún cron actual; al crear la secuencia, filtrar `estado=eq.confirmado` y poner enlace de baja `urlAccion('baja', id)`.
+
 ## 🔕 RECORDATORIO SOLO A CUENTAS ACTIVAS (16 noviembre 2026)
 - **Qué pasó**: el email de recuperación dio 7 días de prueba a 27 cuentas dormidas; `auto-plans` (que incluye cuentas en prueba) les generó plan el lunes, y con plan pasaban a recibir `session-reminder` cada día sin haber vuelto a la app.
 - **Regla**: `session-reminder` solo escribe a cuentas con actividad en los últimos 14 días (`cuentaActiva`): alta reciente, haber escrito al coach, o alguna sesión marcada como hecha en el plan de esta semana o la anterior. **Tener plan no cuenta como actividad**: lo genera el cron. Si no puede leer la actividad, no envía nada.

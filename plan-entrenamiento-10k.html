@@ -184,6 +184,15 @@
     .calc-out { display: none; margin-top: 8px; }
     .calc-out.show { display: block; }
     .calc-sel { width: 100%; padding: 12px 16px; background: var(--bg-3); border: 1px solid var(--border-2); border-radius: 8px; color: var(--white); font-family: inherit; font-size: 1rem; }
+  
+    .sub-box { max-width: 640px; margin: 28px auto; padding: 22px; border: 1px solid var(--white-10, #2a2a2a); border-radius: 14px; }
+    .sub-box h3 { font-size: 1.1rem; margin-bottom: 6px; }
+    .sub-box p { font-size: .88rem; color: var(--white-60); margin-bottom: 14px; line-height: 1.55; }
+    .sub-box form { display: flex; gap: 8px; flex-wrap: wrap; }
+    .sub-box input[type=email] { flex: 1 1 200px; min-width: 0; padding: 12px 14px; border-radius: 10px; border: 1px solid #333; background: #111; color: #f5f0e8; font-size: 16px; }
+    .sub-box button { padding: 12px 22px; border: 0; border-radius: 24px; background: var(--orange); color: #fff; font-weight: 700; font-size: .95rem; cursor: pointer; }
+    .sub-box .sub-msg { font-size: .85rem; margin-top: 10px; min-height: 1em; }
+    .sub-box .sub-hp { position: absolute; left: -9999px; }
   </style>
 </head>
 <body>
@@ -330,6 +339,34 @@
     <a href="https://getricoach.com/app" class="btn-primary">Crear mi plan gratis →</a>
     <p class="cta-note">7 días de prueba Pro sin tarjeta · Después, plan gratuito · 100% en español</p>
   </div>
+
+  <div class="sub-box" id="sub-box">
+    <h3>Recibe más guías como esta en tu email</h3>
+    <p>Consejos de entrenamiento y cómo probar el coach de TriCoach AI. Confirmas tu email y te das de baja con un clic cuando quieras.</p>
+    <form id="sub-form" novalidate>
+      <input type="email" name="email" placeholder="tu@email.com" autocomplete="email" required aria-label="Tu email" />
+      <input type="text" name="website" class="sub-hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
+      <button type="submit">Quiero recibirlas</button>
+    </form>
+    <p class="sub-msg" id="sub-msg" role="status"></p>
+  </div>
+  <script>
+    (function () {
+      var f = document.getElementById('sub-form'); if (!f) return;
+      f.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var msg = document.getElementById('sub-msg');
+        var email = f.email.value.trim();
+        if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(email)) { msg.textContent = 'Revisa el email.'; return; }
+        msg.textContent = 'Enviando…';
+        fetch('/.netlify/functions/suscribir-plan', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email, origen: location.pathname.replace(/^\/|\.html$/g, ''), website: f.website.value }) })
+          .then(function (r) { if (!r.ok) throw new Error(); msg.textContent = 'Te hemos enviado un email: pulsa el enlace para confirmar.'; f.reset(); if (window.gtag) gtag('event', 'suscripcion_solicitada'); })
+          .catch(function () { msg.textContent = 'No hemos podido guardarlo. Inténtalo de nuevo en un rato.'; });
+      });
+    })();
+  </script>
+
 </div>
 
 <div class="related">
